@@ -1,0 +1,22 @@
+name: auth-app-backend
+services:
+- name: backend
+  source_dir: /backend
+  github:
+    repo: Joshua-bayagalla/auth-app
+    branch: main
+  run_command: uvicorn main:app --host 0.0.0.0 --port $PORT
+  environment_slug: python
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  health_check:
+    http_path: /health
+  routes:
+  - path: /
+  envs:
+  - key: PORT
+    value: "8080"
+  - key: PYTHON_VERSION
+    value: "3.11.7"
+  - key: PYTHONPATH
+    value: "/app/backend"
