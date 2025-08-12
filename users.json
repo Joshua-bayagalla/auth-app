@@ -1,0 +1,32 @@
+{
+  "test7@example.com": {
+    "email": "test7@example.com",
+    "password": "test123",
+    "verified": true,
+    "role": "user"
+  },
+  "joshbayagalla@gmail.com": {
+    "email": "joshbayagalla@gmail.com",
+    "password": "lord@143",
+    "verified": true,
+    "role": "user"
+  },
+  "user@example.com": {
+    "email": "user@example.com",
+    "password": "user123",
+    "verified": true,
+    "role": "user"
+  },
+  "admin@example.com": {
+    "email": "admin@example.com",
+    "password": "admin123",
+    "verified": true,
+    "role": "admin"
+  },
+  "info@jobpool.in": {
+    "email": "info@jobpool.in",
+    "password": "lord@143",
+    "verified": true,
+    "role": "user"
+  }
+}

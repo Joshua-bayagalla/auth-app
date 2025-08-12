@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:13
+    container_name: vehicle_rental_db
+    environment:
+      POSTGRES_DB: vehicle_rental_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - vehicle_rental_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Backend
+  backend:
+    build: .
+    container_name: vehicle_rental_backend
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/vehicle_rental_db
+      - SECRET_KEY=your-super-secret-key-change-this-in-production
+      - DEBUG=True
+      - HOST=0.0.0.0
+      - PORT=8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./.env:/app/.env:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - vehicle_rental_network
+    restart: unless-stopped
+
+  # Redis (for caching and sessions - optional)
+  redis:
+    image: redis:6-alpine
+    container_name: vehicle_rental_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - vehicle_rental_network
+    restart: unless-stopped
+
+  # Nginx (for production - optional)
+  nginx:
+    image: nginx:alpine
+    container_name: vehicle_rental_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./uploads:/var/www/uploads:ro
+    depends_on:
+      - backend
+    networks:
+      - vehicle_rental_network
+    restart: unless-stopped
+    profiles:
+      - production
+
+volumes:
+  postgres_data:
+
+networks:
+  vehicle_rental_network:
+    driver: bridge
