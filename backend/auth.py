@@ -76,3 +76,4 @@ def get_current_admin_user(current_user: User = Depends(get_current_user)) -> Us
 
 def generate_verification_token() -> str:
     return secrets.token_urlsafe(32)
+

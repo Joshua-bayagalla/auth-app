@@ -128,3 +128,4 @@ class Rental(Base):
     # Relationships
     driver = relationship("Driver")
     vehicle = relationship("Vehicle")
+

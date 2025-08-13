@@ -378,3 +378,4 @@ async def get_driver_stats(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error fetching driver stats: {str(e)}"
         )
+

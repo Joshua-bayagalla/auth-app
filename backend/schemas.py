@@ -201,3 +201,4 @@ class EmailVerification(BaseModel):
 
 class ResendVerification(BaseModel):
     email: EmailStr
+

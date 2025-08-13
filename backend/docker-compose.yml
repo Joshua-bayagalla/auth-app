@@ -77,3 +77,4 @@ volumes:
 networks:
   vehicle_rental_network:
     driver: bridge
+

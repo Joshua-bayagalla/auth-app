@@ -89,3 +89,4 @@ function ImageSlider({ images, autoSlide = true, interval = 3000 }) {
 }
 
 export default ImageSlider;
+

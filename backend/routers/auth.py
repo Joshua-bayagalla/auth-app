@@ -200,3 +200,4 @@ async def create_admin(user_data: UserCreate, db: Session = Depends(get_db)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error creating admin user: {str(e)}"
         )
+

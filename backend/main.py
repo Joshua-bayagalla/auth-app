@@ -23,6 +23,12 @@ app.add_middleware(
         "http://localhost:3000", 
         "http://localhost:5173", 
         "http://localhost:5174",
+        "http://localhost:5175",
+        "http://localhost:5176",
+        "http://localhost:5177",
+        "http://localhost:5178",
+        "http://localhost:5179",
+        "http://localhost:5180",
         "https://drivenow-frontend.onrender.com",  # Production frontend
         "https://*.onrender.com"  # All Render subdomains
     ],
@@ -60,6 +66,109 @@ class SimpleRental(BaseModel):
 # In-memory storage for rental applications (in production, this would be in a database)
 rental_applications = []
 application_id_counter = 1
+
+# In-memory storage for vehicles and drivers
+vehicles = []
+drivers = []
+vehicle_id_counter = 1
+driver_id_counter = 1
+
+# Add sample data for demonstration
+def initialize_sample_data():
+    global vehicles, rental_applications, vehicle_id_counter, application_id_counter
+    
+    # Sample vehicle data
+    sample_vehicle = {
+        "id": 1,
+        "make": "Mercedes",
+        "model": "G-Wagon",
+        "year": "2022",
+        "licensePlate": "ABC3242",
+        "vin": "1HGBH41JXMN109186",
+        "bondAmount": 2000,
+        "rentPerWeek": 200,
+        "currentMileage": 39,
+        "odoMeter": 30000,
+        "nextServiceDate": "2025-08-30",
+        "vehicleType": "SUV",
+        "color": "Silver",
+        "fuelType": "Diesel",
+        "transmission": "Automatic",
+        "status": "available",
+        "photoUrl": "/uploads/vehicles/sample_vehicle.jpg",
+        "photoUrls": [
+            "/uploads/vehicles/sample_vehicle.jpg",
+            "/uploads/vehicles/sample_vehicle_2.jpg"
+        ],
+        "documents": [
+            {
+                "type": "Car Contract",
+                "url": "/uploads/documents/car_contract.pdf",
+                "name": "car_contract.pdf",
+                "expiryDate": "2025-12-31"
+            },
+            {
+                "type": "Red Book Inspection Report",
+                "url": "/uploads/documents/red_book_report.pdf",
+                "name": "red_book_report.pdf",
+                "expiryDate": "2025-06-30"
+            },
+            {
+                "type": "Car Registration",
+                "url": "/uploads/documents/car_registration.pdf",
+                "name": "car_registration.pdf",
+                "expiryDate": "2025-09-15"
+            },
+            {
+                "type": "Car Insurance",
+                "url": "/uploads/documents/car_insurance.pdf",
+                "name": "car_insurance.pdf",
+                "expiryDate": "2025-03-20"
+            },
+            {
+                "type": "CPV Registration",
+                "url": "/uploads/documents/cpv_registration.pdf",
+                "name": "cpv_registration.pdf",
+                "expiryDate": "2025-11-10"
+            }
+        ],
+        "requiredDocuments": [],
+        "createdAt": "2024-01-01T00:00:00.000Z",
+        "updatedAt": "2024-01-01T00:00:00.000Z"
+    }
+    
+    vehicles.append(sample_vehicle)
+    vehicle_id_counter = 2
+    
+    # Sample rental application
+    sample_rental = {
+        "id": 1,
+        "vehicle_id": 1,
+        "vehicle_details": sample_vehicle,
+        "contract_period": "1 month",
+        "first_name": "Joshua",
+        "last_name": "Bayagalla",
+        "email": "joshbayagalla@gmail.com",
+        "phone": "08096432168",
+        "license_number": "12KWDWDHU12",
+        "license_expiry": "2025-08-30",
+        "address": "12-1-468/12 Shiva Shanker Colony, Fathullaguda",
+        "emergency_contact": "Emergency Contact",
+        "emergency_phone": "1212121",
+        "status": "approved",
+        "submitted_at": "2024-01-01T00:00:00.000Z",
+        "admin_notes": "",
+        "processed_at": "2024-01-01T00:00:00.000Z",
+        "processed_by": "admin@example.com",
+        "payment_receipt_url": "/uploads/payments/sample_payment_receipt.png",
+        "payment_receipt_uploaded": True
+    }
+    
+    rental_applications.append(sample_rental)
+    application_id_counter = 2
+
+# Initialize sample data
+initialize_sample_data()
 
 # Simple login endpoint for testing
 @app.post("/login")
@@ -100,7 +209,7 @@ async def verify_email(verification_data: dict):
     
     # For demo purposes, always return success
     return {
-        "message": "Email verified successfully! You can now log in.",
+        "message": "Email verified successfully!",
         "verified": True
     }
 
@@ -111,73 +220,72 @@ async def resend_verification(resend_data: dict):
     
     # For demo purposes, always return success
     return {
-        "message": "Verification email sent successfully! Please check your inbox.",
+        "message": "Verification email sent successfully!",
         "email": email
     }
 
 # File upload endpoint
 @app.post("/api/upload")
 async def upload_file(file: UploadFile = File(...)):
-    """Upload a file"""
+    """Upload a file (image or document)"""
     try:
+        # Determine upload directory based on file type
+        if file.content_type and file.content_type.startswith('image/'):
+            upload_dir = "uploads/vehicles"
+        else:
+            upload_dir = "uploads/documents"
+        
+        # Create directory if it doesn't exist
+        os.makedirs(upload_dir, exist_ok=True)
+        
         # Generate unique filename
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{timestamp}_{file.filename}"
+        file_path = os.path.join(upload_dir, filename)
         
-        # Determine file type and save to appropriate directory
-        if file.content_type and file.content_type.startswith('image/'):
-            file_path = f"uploads/vehicles/{filename}"
-        else:
-            file_path = f"uploads/documents/{filename}"
-        
-        # Save the file
+        # Save file
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         
         # Return the URL path
-        url_path = f"/uploads/vehicles/{filename}" if file.content_type and file.content_type.startswith('image/') else f"/uploads/documents/{filename}"
+        url_path = f"/{upload_dir}/{filename}"
         
         return {
             "message": "File uploaded successfully",
-            "filename": filename,
-            "url": url_path
+            "url": url_path,
+            "filename": filename
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error uploading file: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 # Payment receipt upload endpoint
 @app.post("/api/upload-payment-receipt")
 async def upload_payment_receipt(file: UploadFile = File(...)):
-    """Upload a payment receipt"""
+    """Upload payment receipt"""
     try:
+        # Create payments directory if it doesn't exist
+        upload_dir = "uploads/payments"
+        os.makedirs(upload_dir, exist_ok=True)
+        
         # Generate unique filename
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"payment_{timestamp}_{file.filename}"
+        file_path = os.path.join(upload_dir, filename)
         
-        # Save to payments directory
-        file_path = f"uploads/payments/{filename}"
-        
-        # Save the file
+        # Save file
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         
         # Return the URL path
-        url_path = f"/uploads/payments/{filename}"
+        url_path = f"/{upload_dir}/{filename}"
         
         return {
             "message": "Payment receipt uploaded successfully",
-            "filename": filename,
-            "url": url_path
+            "url": url_path,
+            "filename": filename
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error uploading payment receipt: {str(e)}")
-
-# In-memory storage for vehicles and drivers
-vehicles = []
-vehicle_id_counter = 1
-
-drivers = []
-driver_id_counter = 1
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 # Vehicles endpoints
 @app.get("/api/vehicles")
@@ -209,6 +317,8 @@ async def create_vehicle(vehicle_data: dict):
         "status": vehicle_data.get("status", "available"),
         "photoUrl": vehicle_data.get("photoUrl", ""),
         "photoUrls": vehicle_data.get("photoUrls", []),
+        "documents": vehicle_data.get("documents", []),
+        "requiredDocuments": vehicle_data.get("requiredDocuments", []),
         "createdAt": "2024-01-01T00:00:00.000Z",
         "updatedAt": "2024-01-01T00:00:00.000Z"
     }
@@ -328,44 +438,29 @@ async def delete_driver(driver_id: int):
 async def get_document_types():
     """Get available document types"""
     return {
-        "license": "Driver's License",
-        "insurance": "Insurance Certificate",
-        "registration": "Vehicle Registration",
-        "contract": "Rental Contract",
-        "payment_receipt": "Payment Receipt",
-        "other": "Other Document"
+        "document_types": [
+            "Car Contract",
+            "Red Book Inspection Report", 
+            "Car Registration",
+            "Car Insurance",
+            "CPV Registration",
+            "Driver License",
+            "Insurance Certificate",
+            "Registration Certificate"
+        ]
     }
 
-# Driver documents endpoint
-@app.get("/api/drivers/{driver_id}/documents")
-async def get_driver_documents(driver_id: int):
-    """Get documents for a specific driver"""
-    # For demo purposes, return empty array
-    return []
-
-@app.post("/api/drivers/{driver_id}/documents")
-async def upload_driver_document(driver_id: int, document_data: dict):
-    """Upload a document for a driver"""
-    # For demo purposes, return success
-    return {
-        "message": "Document uploaded successfully",
-        "document_id": 1,
-        "driver_id": driver_id
-    }
-
-# Rental endpoint for testing
+# Rental applications endpoints
 @app.post("/api/rentals")
-async def create_rental(rental_data: SimpleRental):
-    """Create rental application"""
+async def create_rental_application(rental_data: SimpleRental):
+    """Create a new rental application"""
     global application_id_counter
     
-    # Get vehicle details
+    # Find the vehicle
     vehicle = next((v for v in vehicles if v["id"] == rental_data.vehicle_id), None)
-    
     if not vehicle:
         raise HTTPException(status_code=404, detail="Vehicle not found")
     
-    # Create rental application
     application = {
         "id": application_id_counter,
         "vehicle_id": rental_data.vehicle_id,
@@ -380,11 +475,13 @@ async def create_rental(rental_data: SimpleRental):
         "address": rental_data.address,
         "emergency_contact": rental_data.emergency_contact,
         "emergency_phone": rental_data.emergency_phone,
-        "status": "pending",  # pending, approved, rejected
+        "status": "pending",
         "submitted_at": "2024-01-01T00:00:00.000Z",
         "admin_notes": "",
         "processed_at": None,
-        "processed_by": None
+        "processed_by": None,
+        "payment_receipt_url": "",
+        "payment_receipt_uploaded": False
     }
     
     rental_applications.append(application)
@@ -392,14 +489,27 @@ async def create_rental(rental_data: SimpleRental):
     
     return {
         "message": "Rental application submitted successfully",
-        "rental_id": application["id"],
-        "status": "pending"
+        "application": application
     }
 
-# Get all rental applications (admin only)
 @app.get("/api/rental-applications")
 async def get_rental_applications():
     """Get all rental applications for admin review"""
+    print(f"DEBUG: Current rental_applications: {rental_applications}")  # Debug log
+    
+    # When returning rental applications, ensure vehicle_details include documents
+    # This is already included if we return the full vehicle dict. If not, add:
+    for app in rental_applications:
+        # Ensure app has a proper status field
+        if not app.get("status") or app["status"] not in ["pending", "payment_received", "approved", "rejected"]:
+            print(f"DEBUG: Fixing status for app {app.get('id')}: {app.get('status')} -> pending")  # Debug log
+            app["status"] = "pending"
+        
+        vehicle = next((v for v in vehicles if v["id"] == app.get("vehicle_id")), None)
+        if vehicle:
+            app["vehicle_details"] = vehicle
+    
+    print(f"DEBUG: Returning rental_applications: {rental_applications}")  # Debug log
     return rental_applications
 
 # Get specific rental application
@@ -467,6 +577,99 @@ async def update_rental_payment_receipt(application_id: int, payment_data: dict)
         "application": application
     }
 
+# Document expiry management endpoints
+@app.get("/api/document-expiry-alerts")
+async def get_document_expiry_alerts():
+    """Get all documents that are expiring soon or have expired"""
+    from datetime import datetime, timedelta
+    
+    alerts = []
+    today = datetime.now()
+    
+    for vehicle in vehicles:
+        if vehicle.get("documents"):
+            for doc_index, doc in enumerate(vehicle["documents"]):
+                if doc.get("expiryDate"):
+                    try:
+                        expiry_date = datetime.fromisoformat(doc["expiryDate"].replace('Z', '+00:00'))
+                        days_until_expiry = (expiry_date - today).days
+                        
+                        alert = {
+                            "vehicle_id": vehicle["id"],
+                            "vehicle_name": f"{vehicle['make']} {vehicle['model']} ({vehicle['licensePlate']})",
+                            "document_type": doc["type"],
+                            "document_name": doc.get("name", ""),
+                            "document_index": doc_index,
+                            "expiry_date": doc["expiryDate"],
+                            "days_until_expiry": days_until_expiry,
+                            "status": "expired" if days_until_expiry < 0 else "expiring_soon" if days_until_expiry <= 30 else "valid",
+                            "alert_level": "critical" if days_until_expiry < 0 else "warning" if days_until_expiry <= 7 else "info" if days_until_expiry <= 30 else "normal"
+                        }
+                        alerts.append(alert)
+                    except Exception as e:
+                        print(f"Error parsing expiry date for document {doc.get('type')}: {e}")
+    
+    # Sort by urgency (expired first, then by days until expiry)
+    alerts.sort(key=lambda x: (x["days_until_expiry"], x["document_type"]))
+    return alerts
+
+@app.put("/api/vehicles/{vehicle_id}/documents/{document_index}/expiry")
+async def update_document_expiry(vehicle_id: int, document_index: int, expiry_data: dict):
+    """Update document expiry date"""
+    vehicle = next((v for v in vehicles if v["id"] == vehicle_id), None)
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+    
+    if not vehicle.get("documents") or document_index >= len(vehicle["documents"]):
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    # Update the document's expiry date
+    vehicle["documents"][document_index]["expiryDate"] = expiry_data.get("expiryDate")
+    vehicle["updatedAt"] = datetime.now().isoformat()
+    
+    return {
+        "message": "Document expiry date updated successfully",
+        "document": vehicle["documents"][document_index]
+    }
+
+@app.get("/api/dashboard/document-stats")
+async def get_document_stats():
+    """Get document statistics for admin dashboard"""
+    from datetime import datetime, timedelta
+    
+    total_documents = 0
+    expired_documents = 0
+    expiring_soon_documents = 0
+    valid_documents = 0
+    today = datetime.now()
+    
+    for vehicle in vehicles:
+        if vehicle.get("documents"):
+            for doc in vehicle["documents"]:
+                total_documents += 1
+                if doc.get("expiryDate"):
+                    try:
+                        expiry_date = datetime.fromisoformat(doc["expiryDate"].replace('Z', '+00:00'))
+                        days_until_expiry = (expiry_date - today).days
+                        
+                        if days_until_expiry < 0:
+                            expired_documents += 1
+                        elif days_until_expiry <= 30:
+                            expiring_soon_documents += 1
+                        else:
+                            valid_documents += 1
+                    except:
+                        valid_documents += 1
+                else:
+                    valid_documents += 1
+    
+    return {
+        "total_documents": total_documents,
+        "expired_documents": expired_documents,
+        "expiring_soon_documents": expiring_soon_documents,
+        "valid_documents": valid_documents
+    }
+
 # Health check endpoint
 @app.get("/")
 async def root():
@@ -482,4 +685,6 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    import os
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

@@ -84,3 +84,4 @@ class EmailService:
 
 # Create email service instance
 email_service = EmailService()
+

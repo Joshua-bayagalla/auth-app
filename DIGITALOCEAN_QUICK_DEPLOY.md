@@ -44,3 +44,4 @@
 Visit: `https://your-app-name.ondigitalocean.app/health`
 
 Should show: `{"message":"DriveNow Rentals API","version":"1.0.0","status":"running"}`
+
