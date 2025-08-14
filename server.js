@@ -7,19 +7,46 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import multer from 'multer';
+import { MongoClient } from 'mongodb';
 
-// In-memory storage for deployment (replaces JSON files)
-const inMemoryData = {
-  users: [],
-  vehicles: [],
-  drivers: [],
-  tokens: []
-};
+// MongoDB Collections (replaces in-memory storage)
+const getUsersCollection = () => db.collection('users');
+const getVehiclesCollection = () => db.collection('vehicles');
+const getDriversCollection = () => db.collection('drivers');
+const getTokensCollection = () => db.collection('tokens');
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// MongoDB Connection
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://joshbayagalla:YbQcUJqDNRHPNTRO@cluster0.mongodb.net/carrental?retryWrites=true&w=majority';
+let db;
+
+// Connect to MongoDB
+async function connectToMongoDB() {
+  try {
+    const client = new MongoClient(MONGODB_URI);
+    await client.connect();
+    db = client.db('carrental');
+    console.log('Connected to MongoDB successfully!');
+    
+    // Create collections if they don't exist
+    await db.createCollection('users');
+    await db.createCollection('vehicles');
+    await db.createCollection('drivers');
+    await db.createCollection('tokens');
+    
+    console.log('MongoDB collections ready!');
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    process.exit(1);
+  }
+}
+
+// Initialize MongoDB connection
+connectToMongoDB();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -174,61 +201,123 @@ const USERS_FILE = path.join(__dirname, 'users.json');
 const TOKENS_FILE = path.join(__dirname, 'tokens.json');
 const VEHICLES_FILE = path.join(__dirname, 'vehicles.json');
 
-// Load data from memory (for deployment)
-function loadData() {
+// Load data from MongoDB
+async function loadData() {
   try {
-    // Load from in-memory storage instead of files
-    const usersData = inMemoryData.users || [];
-    const tokensData = inMemoryData.verificationTokens || [];
-    const vehiclesData = inMemoryData.vehicles || [];
+    const usersCollection = getUsersCollection();
+    const tokensCollection = getTokensCollection();
+    const vehiclesCollection = getVehiclesCollection();
     
-    // Convert to Maps - handle empty arrays properly
+    // Load users
+    const usersData = await usersCollection.find({}).toArray();
     const users = new Map();
-    if (usersData.length > 0) {
-      usersData.forEach(user => {
-        if (user && user.email) {
-          users.set(user.email, user);
-        }
-      });
-    }
+    usersData.forEach(user => {
+      if (user && user.email) {
+        users.set(user.email, user);
+      }
+    });
     
+    // Load tokens
+    const tokensData = await tokensCollection.find({}).toArray();
     const verificationTokens = new Map();
-    if (tokensData.length > 0) {
-      tokensData.forEach(([key, value]) => {
-        if (key && value) {
-          verificationTokens.set(key, value);
-        }
-      });
-    }
+    tokensData.forEach(token => {
+      if (token && token.token) {
+        verificationTokens.set(token.token, token);
+      }
+    });
     
-    const vehicles = vehiclesData || [];
+    // Load vehicles
+    const vehicles = await vehiclesCollection.find({}).toArray();
     
     return { users, verificationTokens, vehicles };
   } catch (error) {
-    console.error('Error loading data from memory:', error);
+    console.error('Error loading data from MongoDB:', error);
     return { users: new Map(), verificationTokens: new Map(), vehicles: [] };
   }
 }
 
-// Save data to memory (for deployment)
-function saveData(users, verificationTokens, vehicles, driversData = []) {
+// Save data to MongoDB
+async function saveData(users, verificationTokens, vehicles, driversData = []) {
   try {
-    // Store in memory instead of files for deployment
-    inMemoryData.users = Array.from(users.values()).filter(user => user && user.email);
-    inMemoryData.verificationTokens = Array.from(verificationTokens.entries()).filter(([key, value]) => key && value);
-    inMemoryData.vehicles = vehicles || [];
-    inMemoryData.drivers = driversData || [];
-    console.log('Data saved to memory successfully');
+    const usersCollection = getUsersCollection();
+    const tokensCollection = getTokensCollection();
+    const vehiclesCollection = getVehiclesCollection();
+    const driversCollection = getDriversCollection();
+    
+    // Save users
+    const usersArray = Array.from(users.values()).filter(user => user && user.email);
+    for (const user of usersArray) {
+      await usersCollection.updateOne(
+        { email: user.email },
+        { $set: user },
+        { upsert: true }
+      );
+    }
+    
+    // Save tokens
+    const tokensArray = Array.from(verificationTokens.entries()).filter(([key, value]) => key && value);
+    for (const [token, data] of tokensArray) {
+      await tokensCollection.updateOne(
+        { token: token },
+        { $set: { token, ...data } },
+        { upsert: true }
+      );
+    }
+    
+    // Save vehicles
+    if (vehicles && vehicles.length > 0) {
+      for (const vehicle of vehicles) {
+        await vehiclesCollection.updateOne(
+          { id: vehicle.id },
+          { $set: vehicle },
+          { upsert: true }
+        );
+      }
+    }
+    
+    // Save drivers
+    if (driversData && driversData.length > 0) {
+      for (const driver of driversData) {
+        await driversCollection.updateOne(
+          { id: driver.id },
+          { $set: driver },
+          { upsert: true }
+        );
+      }
+    }
+    
+    console.log('Data saved to MongoDB successfully');
   } catch (error) {
-    console.error('Error saving data to memory:', error);
+    console.error('Error saving data to MongoDB:', error);
   }
 }
 
 // Initialize storage
-let { users, verificationTokens, vehicles } = loadData();
+let users = new Map();
+let verificationTokens = new Map();
+let vehicles = [];
+let drivers = [];
 
-// Add drivers array to storage
-let drivers = inMemoryData.drivers || [];
+// Initialize data from MongoDB
+async function initializeData() {
+  try {
+    const data = await loadData();
+    users = data.users;
+    verificationTokens = data.verificationTokens;
+    vehicles = data.vehicles;
+    
+    // Load drivers from MongoDB
+    const driversCollection = getDriversCollection();
+    drivers = await driversCollection.find({}).toArray();
+    
+    console.log('Data initialized from MongoDB successfully');
+  } catch (error) {
+    console.error('Error initializing data:', error);
+  }
+}
+
+// Initialize data
+initializeData();
 
 // Document types configuration
 const DOCUMENT_TYPES = {
@@ -305,8 +394,8 @@ app.post('/api/signup', async (req, res) => {
   users.set(email, { email, password, verified: false, role });
   verificationTokens.set(token, { email, expiresAt });
   
-  // Save data to files
-  saveData(users, verificationTokens, vehicles);
+  // Save data to MongoDB
+  await saveData(users, verificationTokens, vehicles);
 
   // Send verification email (optional for now)
   try {
@@ -451,7 +540,7 @@ app.post('/api/create-admin', async (req, res) => {
   
   // Create admin user directly (no email verification for admin)
   users.set(email, { email, password, verified: true, role: 'admin' });
-  saveData(users, verificationTokens, vehicles);
+  await saveData(users, verificationTokens, vehicles);
   
   res.json({ message: 'Admin user created successfully', user: { email, role: 'admin', verified: true } });
 });
@@ -574,8 +663,12 @@ app.post('/api/vehicles', (req, res, next) => {
       updatedAt: new Date().toISOString()
     };
 
+    // Save vehicle to MongoDB
+    const vehiclesCollection = getVehiclesCollection();
+    await vehiclesCollection.insertOne(newVehicle);
+    
+    // Update local array
     vehicles.push(newVehicle);
-    saveData(users, verificationTokens, vehicles, drivers);
     
     console.log('Vehicle added:', newVehicle);
     res.json({ message: 'Vehicle added successfully', vehicle: newVehicle });
@@ -660,8 +753,10 @@ app.put('/api/vehicles/:id', uploadVehiclePhoto.single('vehiclePhoto'), async (r
   }
 });
 
-app.get('/api/vehicles', (req, res) => {
+app.get('/api/vehicles', async (req, res) => {
   try {
+    const vehiclesCollection = getVehiclesCollection();
+    const vehicles = await vehiclesCollection.find({}).toArray();
     res.json(vehicles);
   } catch (error) {
     console.error('Error fetching vehicles:', error);
