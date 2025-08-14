@@ -85,6 +85,8 @@ const AdminDashboard = () => {
   const [rentalApplications, setRentalApplications] = useState([]);
   const [documentExpiryAlerts, setDocumentExpiryAlerts] = useState([]);
   const [activeTab, setActiveTab] = useState('vehicles');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showAddVehicleModal, setShowAddVehicleModal] = useState(false);
   const [showEditVehicleModal, setShowEditVehicleModal] = useState(false);
   const [showViewVehicleModal, setShowViewVehicleModal] = useState(false);
@@ -142,10 +144,25 @@ const AdminDashboard = () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
-    fetchVehicles();
-    fetchRentalApplications();
-    fetchDocumentExpiryAlerts();
-    fetchPayments();
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        await Promise.all([
+          fetchVehicles(),
+          fetchRentalApplications(),
+          fetchDocumentExpiryAlerts(),
+          fetchPayments()
+        ]);
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+        setError('Failed to load dashboard data. Please refresh the page.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadData();
   }, []);
 
   useEffect(() => {
@@ -155,10 +172,16 @@ const AdminDashboard = () => {
   const fetchVehicles = async () => {
     try {
       const response = await fetch(API_ENDPOINTS.VEHICLES);
-      const data = await response.json();
-      setVehicles(data);
+      if (response.ok) {
+        const data = await response.json();
+        setVehicles(data);
+      } else {
+        console.error('Error fetching vehicles:', response.status);
+        setVehicles([]);
+      }
     } catch (error) {
       console.error('Error fetching vehicles:', error);
+      setVehicles([]);
     }
   };
 
@@ -587,6 +610,38 @@ const AdminDashboard = () => {
       </span>
     );
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <p className="font-bold">Error</p>
+            <p>{error}</p>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
