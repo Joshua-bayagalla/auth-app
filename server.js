@@ -153,7 +153,8 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept', 'Content-Length'],
+  exposedHeaders: ['Content-Length', 'Content-Type'],
   optionsSuccessStatus: 200
 };
 
@@ -562,7 +563,10 @@ app.post('/api/create-admin', async (req, res) => {
 });
 
 // Vehicle management endpoints
-app.post('/api/vehicles', (req, res, next) => {
+// Handle OPTIONS for vehicles endpoint
+app.options('/api/vehicles', cors(corsOptions));
+
+app.post('/api/vehicles', cors(corsOptions), (req, res, next) => {
   // Custom multer configuration for vehicle creation (memory storage for deployment)
   const vehicleUpload = multer({
     storage: multer.memoryStorage(),
