@@ -1,5 +1,5 @@
 // API Configuration
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://auth-app-xw7c.onrender.com';
+export const API_BASE_URL = 'https://auth-app-xw7c.onrender.com';
 
 // API Endpoints
 export const API_ENDPOINTS = {

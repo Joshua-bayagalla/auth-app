@@ -1698,5 +1698,31 @@
     ],
     "createdAt": "2025-08-14T19:16:38.466Z",
     "updatedAt": "2025-08-14T19:16:38.466Z"
+  },
+  {
+    "id": 1755199400827,
+    "make": "Hyundai",
+    "model": "i20",
+    "year": "2015",
+    "licensePlate": "HELL2345",
+    "vin": "DN43HY4GFSKK",
+    "bondAmount": 4000,
+    "rentPerWeek": 700,
+    "currentMileage": 25,
+    "odoMeter": 80000,
+    "nextServiceDate": "2025-12-20",
+    "vehicleType": "hatchback",
+    "color": "WHITE",
+    "fuelType": "hybrid",
+    "transmission": "manual",
+    "status": "available",
+    "ownerName": "JOSHUA",
+    "photoUrl": null,
+    "photoPath": null,
+    "photoName": null,
+    "photoSize": null,
+    "documents": [],
+    "createdAt": "2025-08-14T19:23:20.828Z",
+    "updatedAt": "2025-08-14T19:23:20.828Z"
   }
 ]
