@@ -458,23 +458,9 @@ app.post('/api/create-admin', async (req, res) => {
 
 // Vehicle management endpoints
 app.post('/api/vehicles', (req, res, next) => {
-  // Custom multer configuration for vehicle creation
+  // Custom multer configuration for vehicle creation (memory storage for deployment)
   const vehicleUpload = multer({
-    storage: multer.diskStorage({
-      destination: (req, file, cb) => {
-        if (file.fieldname === 'vehiclePhoto') {
-          cb(null, 'uploads/vehicles/');
-        } else if (file.fieldname === 'documents') {
-          cb(null, 'uploads/documents/');
-        } else {
-          cb(null, 'uploads/');
-        }
-      },
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-      }
-    }),
+    storage: multer.memoryStorage(),
     limits: {
       fileSize: 10 * 1024 * 1024 // 10MB limit
     },
@@ -549,8 +535,8 @@ app.post('/api/vehicles', (req, res, next) => {
           id: Date.now() + index,
           documentType,
           fileName: file.originalname,
-          fileUrl: `/uploads/documents/${file.filename}`,
-          filePath: file.path,
+          fileUrl: `data:${file.mimetype};base64,${file.buffer.toString('base64')}`,
+          filePath: 'memory',
           fileSize: file.size,
           mimeType: file.mimetype,
           expiryDate,
@@ -579,8 +565,8 @@ app.post('/api/vehicles', (req, res, next) => {
       transmission: transmission || 'automatic',
       status: status || 'available',
       ownerName: ownerName || '',
-      photoUrl: req.files && req.files.vehiclePhoto ? `/uploads/vehicles/${req.files.vehiclePhoto[0].filename}` : null,
-      photoPath: req.files && req.files.vehiclePhoto ? req.files.vehiclePhoto[0].path : null,
+      photoUrl: req.files && req.files.vehiclePhoto ? `data:${req.files.vehiclePhoto[0].mimetype};base64,${req.files.vehiclePhoto[0].buffer.toString('base64')}` : null,
+      photoPath: req.files && req.files.vehiclePhoto ? 'memory' : null,
       photoName: req.files && req.files.vehiclePhoto ? req.files.vehiclePhoto[0].originalname : null,
       photoSize: req.files && req.files.vehiclePhoto ? req.files.vehiclePhoto[0].size : null,
       documents,
