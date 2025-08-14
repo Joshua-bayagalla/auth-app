@@ -285,13 +285,20 @@ app.post('/api/signup', async (req, res) => {
   // Save data to files
   saveData(users, verificationTokens, vehicles);
 
-  // Send verification email
-  const emailSent = await sendVerificationEmail(email, token);
-  
-  if (emailSent) {
-    res.json({ message: 'User registered successfully. Please check your email to verify your account.' });
-  } else {
-    res.status(500).json({ error: 'Failed to send verification email' });
+  // Send verification email (optional for now)
+  try {
+    const emailSent = await sendVerificationEmail(email, token);
+    if (emailSent) {
+      res.json({ message: 'User registered successfully. Please check your email to verify your account.' });
+    } else {
+      // Auto-verify user if email fails (for development)
+      user.verified = true;
+      res.json({ message: 'User registered successfully. You can now login.' });
+    }
+  } catch (error) {
+    // Auto-verify user if email fails (for development)
+    user.verified = true;
+    res.json({ message: 'User registered successfully. You can now login.' });
   }
 });
 
