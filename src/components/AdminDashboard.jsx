@@ -81,6 +81,8 @@ const exportToExcel = (payments, dateRange) => {
 };
 
 const AdminDashboard = () => {
+  console.log('AdminDashboard component rendering...');
+  
   const [vehicles, setVehicles] = useState([]);
   const [rentalApplications, setRentalApplications] = useState([]);
   const [documentExpiryAlerts, setDocumentExpiryAlerts] = useState([]);
@@ -627,6 +629,7 @@ const AdminDashboard = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading dashboard...</p>
+          <p className="text-sm text-gray-500 mt-2">Please wait while we fetch your data</p>
         </div>
       </div>
     );

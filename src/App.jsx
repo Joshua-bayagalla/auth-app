@@ -1,3 +1,4 @@
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import Login from './components/Login';
@@ -24,6 +25,21 @@ function FallbackComponent({ name }) {
 }
 
 function App() {
+  // Add error handling
+  React.useEffect(() => {
+    console.log('App component loaded successfully');
+    
+    // Global error handler
+    window.addEventListener('error', (event) => {
+      console.error('Global error:', event.error);
+    });
+    
+    // Unhandled promise rejection handler
+    window.addEventListener('unhandledrejection', (event) => {
+      console.error('Unhandled promise rejection:', event.reason);
+    });
+  }, []);
+
   return (
     <Router>
       <AuthProvider>
