@@ -270,6 +270,13 @@ const AdminDashboard = () => {
         formData.append(key, vehicleForm[key] || '');
       });
       
+      // Debug: Log what's being sent
+      console.log('Vehicle form data:', vehicleForm);
+      console.log('FormData entries:');
+      for (let [key, value] of formData.entries()) {
+        console.log(key, ':', value);
+      }
+      
       // Add vehicle photo if selected
       if (selectedVehiclePhotos.length > 0) {
         formData.append('vehiclePhoto', selectedVehiclePhotos[0]);
@@ -318,6 +325,8 @@ const AdminDashboard = () => {
       } else {
         const errorData = await response.json();
         console.error('Server error:', errorData);
+        console.error('Response status:', response.status);
+        console.error('Response headers:', response.headers);
         alert(`Error adding vehicle: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
