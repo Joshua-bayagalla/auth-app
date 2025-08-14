@@ -1,8 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { API_ENDPOINTS, API_BASE_URL } from '../config';
 import ImageSlider from './ImageSlider';
+import { useAuth } from '../contexts/AuthContext';
 
-const UserDashboard = ({ user }) => {
+const UserDashboard = () => {
+  const { currentUser } = useAuth();
+  // Fallback to localStorage if AuthContext is not working
+  const user = currentUser || JSON.parse(localStorage.getItem('user') || 'null');
+  
+  // Debug logging
+  console.log('=== USER DASHBOARD DEBUG ===');
+  console.log('currentUser from AuthContext:', currentUser);
+  console.log('user variable:', user);
+  console.log('localStorage user:', localStorage.getItem('user'));
   const [vehicles, setVehicles] = useState([]);
   const [userBookings, setUserBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -10,7 +20,10 @@ const UserDashboard = ({ user }) => {
   const [showVehicleModal, setShowVehicleModal] = useState(false);
   const [showRentalModal, setShowRentalModal] = useState(false);
   const [selectedPaymentReceipt, setSelectedPaymentReceipt] = useState(null);
+  const [selectedCarPhotos, setSelectedCarPhotos] = useState([]);
   const [activeTab, setActiveTab] = useState('vehicles');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchFilter, setSearchFilter] = useState('all'); // 'all', 'make', 'model', 'license'
   const [rentalForm, setRentalForm] = useState({
     contract_period: '',
     first_name: '',
@@ -21,7 +34,8 @@ const UserDashboard = ({ user }) => {
     license_expiry: '',
     address: '',
     emergency_contact: '',
-    emergency_phone: ''
+    emergency_phone: '',
+    payment_amount: ''
   });
 
   useEffect(() => {
@@ -45,62 +59,137 @@ const UserDashboard = ({ user }) => {
     try {
       const response = await fetch(API_ENDPOINTS.RENTAL_APPLICATIONS);
       const data = await response.json();
-      const userBookings = data.filter(booking => booking.email === user.email);
-      setUserBookings(userBookings);
+      
+      console.log('=== DEBUGGING USER BOOKINGS ===');
+      console.log('Current user object:', user);
+      console.log('User email:', user?.email);
+      console.log('All rental applications:', data.length);
+      console.log('All applications:', data.map(app => ({ email: app.email, status: app.status, vehicle: app.vehicle_details?.make + ' ' + app.vehicle_details?.model })));
+      
+      if (user && user.email) {
+        // Only show approved/active rentals in bookings
+        const userBookings = data.filter(booking => 
+          booking.email === user.email && booking.status === 'active'
+        );
+        console.log('Filtered bookings for user:', userBookings.length);
+        console.log('User bookings:', userBookings.map(booking => ({ email: booking.email, status: booking.status, vehicle: booking.vehicle_details?.make + ' ' + booking.vehicle_details?.model })));
+        setUserBookings(userBookings);
+      } else {
+        console.log('No user or user email found');
+        setUserBookings([]);
+      }
     } catch (error) {
       console.error('Error fetching user bookings:', error);
+      setUserBookings([]);
     }
+  };
+
+  // Search and filter functions
+  const filteredBookings = userBookings.filter(booking => {
+    if (!searchTerm) return true;
+    
+    const searchLower = searchTerm.toLowerCase();
+    const vehicle = booking.vehicle_details;
+    
+    switch (searchFilter) {
+      case 'make':
+        return vehicle?.make?.toLowerCase().includes(searchLower);
+      case 'model':
+        return vehicle?.model?.toLowerCase().includes(searchLower);
+      case 'license':
+        return vehicle?.licensePlate?.toLowerCase().includes(searchLower);
+      case 'all':
+      default:
+        return (
+          vehicle?.make?.toLowerCase().includes(searchLower) ||
+          vehicle?.model?.toLowerCase().includes(searchLower) ||
+          vehicle?.licensePlate?.toLowerCase().includes(searchLower) ||
+          vehicle?.color?.toLowerCase().includes(searchLower)
+        );
+    }
+  });
+
+  const getBookingStats = () => {
+    const totalBookings = userBookings.length;
+    const activeBookings = userBookings.filter(booking => booking.status === 'active').length;
+    const totalValue = userBookings.reduce((sum, booking) => sum + (booking.weeklyRent || 0), 0);
+    
+    return { totalBookings, activeBookings, totalValue };
   };
 
   const handleRentalSubmit = async (e) => {
     e.preventDefault();
     
+    // Validate required fields
+    const requiredFields = ['contract_period', 'first_name', 'last_name', 'email', 'phone', 'license_number', 'license_expiry', 'address', 'emergency_contact', 'emergency_phone', 'payment_amount'];
+    const missingFields = requiredFields.filter(field => !rentalForm[field] || rentalForm[field].trim() === '');
+    
+    if (missingFields.length > 0) {
+      alert(`Please fill in all required fields: ${missingFields.join(', ')}`);
+      return;
+    }
+    
+    if (selectedCarPhotos.length === 0) {
+      alert('Please upload at least one photo of your current car');
+      return;
+    }
+    
+    // Validate payment amount
+    const requiredAmount = (selectedVehicle?.bondAmount || 0) + (selectedVehicle?.rentPerWeek || 0);
+    const paidAmount = parseFloat(rentalForm.payment_amount);
+    
+    if (isNaN(paidAmount) || paidAmount < requiredAmount) {
+      alert(`Please enter a valid payment amount. Minimum required: $${requiredAmount}`);
+      return;
+    }
+    
+    if (!selectedPaymentReceipt) {
+      alert('Please select a payment receipt');
+      return;
+    }
+    
     try {
+      // Create FormData for rental application with file upload
+      const formData = new FormData();
+      
+      // Map frontend field names to backend field names
+      formData.append('vehicleId', selectedVehicle.id);
+      formData.append('contractPeriod', rentalForm.contract_period);
+      formData.append('firstName', rentalForm.first_name);
+      formData.append('lastName', rentalForm.last_name);
+      formData.append('email', rentalForm.email);
+      formData.append('phone', rentalForm.phone);
+      formData.append('licenseNumber', rentalForm.license_number);
+      formData.append('licenseExpiry', rentalForm.license_expiry);
+      formData.append('address', rentalForm.address);
+      formData.append('emergencyContact', rentalForm.emergency_contact);
+      formData.append('emergencyPhone', rentalForm.emergency_phone);
+      formData.append('contractSigned', 'true');
+      formData.append('bondAmount', selectedVehicle.bondAmount || 0);
+      formData.append('weeklyRent', selectedVehicle.rentPerWeek || 0);
+      formData.append('paymentAmount', rentalForm.payment_amount);
+      
+      // Add car photos
+      selectedCarPhotos.forEach((photo, index) => {
+        formData.append('carPhotos', photo);
+      });
+      
+      // Add payment receipt file
+      formData.append('paymentReceipt', selectedPaymentReceipt);
+      
       // Submit rental application
-      const rentalResponse = await fetch(API_ENDPOINTS.RENTAL_APPLICATIONS, {
+      const rentalResponse = await fetch(API_ENDPOINTS.RENTALS, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          vehicle_id: selectedVehicle.id,
-          ...rentalForm
-        }),
+        body: formData, // Send as FormData, not JSON
       });
 
       if (rentalResponse.ok) {
         const rentalData = await rentalResponse.json();
-        
-        // Upload payment receipt if selected
-        if (selectedPaymentReceipt) {
-          const formData = new FormData();
-          formData.append('payment_receipt', selectedPaymentReceipt);
-          formData.append('application_id', rentalData.id);
-
-          const receiptResponse = await fetch(API_ENDPOINTS.UPLOAD_PAYMENT_RECEIPT, {
-            method: 'POST',
-            body: formData,
-          });
-
-          if (receiptResponse.ok) {
-            const receiptData = await receiptResponse.json();
-            
-            // Update rental application with payment receipt
-            await fetch(`${API_ENDPOINTS.RENTAL_APPLICATIONS}/${rentalData.id}/payment-receipt`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                payment_receipt_url: receiptData.url
-              }),
-            });
-          }
-        }
 
         setShowRentalModal(false);
         setSelectedVehicle(null);
         setSelectedPaymentReceipt(null);
+        setSelectedCarPhotos([]);
         setRentalForm({
           contract_period: '',
           first_name: '',
@@ -111,29 +200,35 @@ const UserDashboard = ({ user }) => {
           license_expiry: '',
           address: '',
           emergency_contact: '',
-          emergency_phone: ''
+          emergency_phone: '',
+          payment_amount: ''
         });
         
         // Refresh data
         fetchVehicles();
         fetchUserBookings();
         alert('Rental application submitted successfully!');
+      } else {
+        const errorData = await rentalResponse.json();
+        console.error('Server error:', errorData);
+        alert(`Error submitting rental application: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error submitting rental:', error);
-      alert('Error submitting rental application');
+      alert('Error submitting rental application: ' + error.message);
     }
   };
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      pending: { color: 'bg-yellow-100 text-yellow-800', text: 'Pending' },
+      pending_approval: { color: 'bg-yellow-100 text-yellow-800', text: 'Pending Approval' },
       payment_received: { color: 'bg-blue-100 text-blue-800', text: 'Payment Received' },
+      active: { color: 'bg-green-100 text-green-800', text: 'Active' },
       approved: { color: 'bg-green-100 text-green-800', text: 'Approved' },
       rejected: { color: 'bg-red-100 text-red-800', text: 'Rejected' }
     };
     
-    const config = statusConfig[status] || statusConfig.pending;
+    const config = statusConfig[status] || statusConfig.pending_approval;
     return (
       <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
         {config.text}
@@ -157,6 +252,11 @@ const UserDashboard = ({ user }) => {
     }
   };
 
+  const handleDownloadDocument = (document) => {
+    const url = `${API_BASE_URL}${document.fileUrl}`;
+    window.open(url, '_blank');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -171,36 +271,55 @@ const UserDashboard = ({ user }) => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Welcome, {user.firstName}!</h1>
-          <p className="mt-2 text-gray-600">Browse available vehicles and manage your bookings</p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Welcome, {user?.firstName || user?.email || 'User'}!</h1>
+              <p className="mt-2 text-gray-600">Find cars to rent and manage your bookings</p>
+            </div>
+            <button
+              onClick={() => {
+                localStorage.removeItem('user');
+                window.location.href = '/';
+              }}
+              className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Sign Out
+            </button>
+          </div>
         </div>
 
-        {/* Tab Navigation */}
+        {/* Simple Navigation */}
         <div className="mb-6">
-          <nav className="flex space-x-8">
+          <div className="flex space-x-4">
             <button
               onClick={() => setActiveTab('vehicles')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`px-6 py-3 rounded-lg font-medium transition-colors ${
                 activeTab === 'vehicles'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
               }`}
             >
-              Available Vehicles
+              🚗 Find Cars to Rent
             </button>
             <button
               onClick={() => setActiveTab('bookings')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`px-6 py-3 rounded-lg font-medium transition-colors ${
                 activeTab === 'bookings'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
               }`}
             >
-              My Bookings
+              📋 My Bookings ({userBookings.length})
             </button>
-          </nav>
+          </div>
         </div>
+
+
 
         {/* Available Vehicles Tab */}
         {activeTab === 'vehicles' && (
@@ -208,8 +327,18 @@ const UserDashboard = ({ user }) => {
             {vehicles.map((vehicle) => (
               <div key={vehicle.id} className="bg-white rounded-lg shadow-md overflow-hidden">
                 <div className="h-48 bg-gray-200">
-                  {vehicle.photoUrls && vehicle.photoUrls.length > 0 ? (
-                    <ImageSlider images={vehicle.photoUrls} />
+                  {vehicle.photoUrl ? (
+                    <img 
+                      src={`${API_BASE_URL}${vehicle.photoUrl}`} 
+                      alt={`${vehicle.make} ${vehicle.model}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : vehicle.photoUrls && vehicle.photoUrls.length > 0 ? (
+                    <ImageSlider images={vehicle.photoUrls.map(url => url.startsWith('http') ? url : `${API_BASE_URL}${url}`)} />
                   ) : (
                     <div className="flex items-center justify-center h-full">
                       <span className="text-gray-400">No image available</span>
@@ -257,23 +386,65 @@ const UserDashboard = ({ user }) => {
         {/* My Bookings Tab */}
         {activeTab === 'bookings' && (
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-gray-900">My Bookings</h2>
-              <button
-                onClick={fetchUserBookings}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Refresh
-              </button>
+            {/* Simple Header */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">My Bookings</h2>
+                  <p className="text-sm text-gray-600 mt-1">Your rented vehicles</p>
+                </div>
+                <button
+                  onClick={fetchUserBookings}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Refresh
+                </button>
+              </div>
+              
+              {/* Simple Search */}
+              <div className="mt-4">
+                <div className="relative">
+                  <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Search by car make, model, or license plate..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
             </div>
             
             {userBookings.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-500">No bookings found</p>
+              <div className="text-center py-12 bg-white rounded-lg shadow-md">
+                <div className="text-6xl mb-4">🚗</div>
+                <p className="text-gray-500 text-lg font-medium">No rented cars yet</p>
+                <p className="text-sm text-gray-400 mt-2">Find a car to rent from the available vehicles</p>
+                <button 
+                  onClick={() => setActiveTab('vehicles')}
+                  className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Find Cars to Rent
+                </button>
+              </div>
+            ) : filteredBookings.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-lg shadow-md">
+                <div className="text-6xl mb-4">🔍</div>
+                <p className="text-gray-500 text-lg font-medium">No cars match your search</p>
+                <p className="text-sm text-gray-400 mt-2">Try different search terms</p>
+                <button 
+                  onClick={() => setSearchTerm('')}
+                  className="mt-4 px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Clear Search
+                </button>
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {userBookings.map((booking) => (
+                {filteredBookings.map((booking) => (
                   <div key={booking.id} className="bg-white rounded-lg shadow-md p-6">
                     <div className="flex justify-between items-start mb-4">
                       <div>
@@ -282,52 +453,43 @@ const UserDashboard = ({ user }) => {
                         </h3>
                         <p className="text-sm text-gray-600">License: {booking.vehicle_details?.licensePlate}</p>
                       </div>
-                      {getStatusBadge(booking.status)}
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Active
+                      </span>
                     </div>
                     
                     <div className="space-y-2 text-sm text-gray-600 mb-4">
-                      <p><span className="font-medium">Contract Period:</span> {booking.contract_period}</p>
-                      <p><span className="font-medium">Submitted:</span> {new Date(booking.submitted_at).toLocaleDateString()}</p>
-                      {booking.processed_at && (
-                        <p><span className="font-medium">Processed:</span> {new Date(booking.processed_at).toLocaleDateString()}</p>
-                      )}
+                      <p><span className="font-medium">Rent:</span> ${booking.weeklyRent}/week</p>
+                      <p><span className="font-medium">Bond:</span> ${booking.bondAmount}</p>
+                      <p><span className="font-medium">Period:</span> {booking.contractPeriod}</p>
+                      <p><span className="font-medium">Start Date:</span> {new Date(booking.contractStartDate).toLocaleDateString()}</p>
                     </div>
 
-                    {/* Documents Section for Approved Bookings */}
-                    {booking.status === 'approved' && booking.vehicle_details?.documents && (
-                      <div className="mt-4 p-4 bg-green-50 rounded-lg">
-                        <h4 className="font-medium text-green-800 mb-3 flex items-center">
-                          <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                          </svg>
-                          Your Vehicle Documents
+                    {/* Documents Section */}
+                    {booking.vehicle_details && booking.vehicle_details.documents && booking.vehicle_details.documents.length > 0 && (
+                      <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                        <h4 className="font-medium text-blue-800 mb-2 flex items-center">
+                          📄 Vehicle Documents ({booking.vehicle_details.documents.length})
                         </h4>
-                        <div className="space-y-2">
-                          {booking.vehicle_details.documents.map((doc, index) => {
-                            const expiryStatus = getExpiryStatus(doc.expiryDate);
-                            return (
-                              <div key={index} className="flex items-center justify-between p-2 bg-white rounded border">
-                                <div className="flex items-center">
-                                  <svg className="w-4 h-4 mr-2 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                                  </svg>
-                                  <span className="text-sm font-medium">{doc.type}</span>
-                                  {doc.expiryDate && (
-                                    <span className={`ml-2 text-xs ${expiryStatus.color}`}>
-                                      (Expires: {new Date(doc.expiryDate).toLocaleDateString()})
-                                    </span>
-                                  )}
-                                </div>
-                                <a
-                                  href={`${API_BASE_URL}${doc.url}`}
-                                  download
-                                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                                >
-                                  Download
-                                </a>
-                              </div>
-                            );
-                          })}
+                        <div className="space-y-1">
+                          {booking.vehicle_details.documents.slice(0, 3).map((doc, index) => (
+                            <div key={index} className="flex items-center justify-between p-2 bg-white rounded border">
+                              <span className="text-sm text-gray-700">
+                                {doc.documentType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                              </span>
+                              <button
+                                onClick={() => handleDownloadDocument(doc)}
+                                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                              >
+                                Download
+                              </button>
+                            </div>
+                          ))}
+                          {booking.vehicle_details.documents.length > 3 && (
+                            <p className="text-xs text-gray-500 text-center">
+                              +{booking.vehicle_details.documents.length - 3} more documents
+                            </p>
+                          )}
                         </div>
                       </div>
                     )}
@@ -370,8 +532,18 @@ const UserDashboard = ({ user }) => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div>
                     <div className="h-64 bg-gray-200 rounded-lg mb-4">
-                      {selectedVehicle.photoUrls && selectedVehicle.photoUrls.length > 0 ? (
-                        <ImageSlider images={selectedVehicle.photoUrls} />
+                      {selectedVehicle.photoUrl ? (
+                        <img 
+                          src={`${API_BASE_URL}${selectedVehicle.photoUrl}`} 
+                          alt={`${selectedVehicle.make} ${selectedVehicle.model}`}
+                          className="w-full h-full object-cover rounded-lg"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : selectedVehicle.photoUrls && selectedVehicle.photoUrls.length > 0 ? (
+                        <ImageSlider images={selectedVehicle.photoUrls.map(url => url.startsWith('http') ? url : `${API_BASE_URL}${url}`)} />
                       ) : (
                         <div className="flex items-center justify-center h-full">
                           <span className="text-gray-400">No image available</span>
@@ -473,21 +645,12 @@ const UserDashboard = ({ user }) => {
                   </div>
                 </div>
 
-                <div className="mt-6 flex justify-end space-x-3">
+                <div className="mt-6 flex justify-end">
                   <button
                     onClick={() => setShowVehicleModal(false)}
                     className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
                   >
                     Close
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowVehicleModal(false);
-                      setShowRentalModal(true);
-                    }}
-                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-                  >
-                    Rent This Vehicle
                   </button>
                 </div>
               </div>
@@ -651,6 +814,80 @@ const UserDashboard = ({ user }) => {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Current Car Photos *
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => setSelectedCarPhotos(Array.from(e.target.files))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Upload photos of your current car (required). You can select multiple photos.
+                    </p>
+                    {selectedCarPhotos.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-xs text-green-600">
+                          {selectedCarPhotos.length} photo(s) selected
+                        </p>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {selectedCarPhotos.map((photo, index) => (
+                            <div key={index} className="text-xs text-gray-600">
+                              {photo.name}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Bank Details Section */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h3 className="text-lg font-medium text-blue-900 mb-3">Payment Information</h3>
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="text-sm font-medium text-blue-800 mb-2">Bank Account Details:</h4>
+                        <div className="bg-white rounded-lg p-3 border border-blue-200">
+                          <p className="text-sm text-gray-700"><span className="font-medium">Bank Name:</span> Commonwealth Bank</p>
+                          <p className="text-sm text-gray-700"><span className="font-medium">Account Name:</span> Car Rental Services Pty Ltd</p>
+                          <p className="text-sm text-gray-700"><span className="font-medium">BSB:</span> 062-000</p>
+                          <p className="text-sm text-gray-700"><span className="font-medium">Account Number:</span> 1234 5678 9012</p>
+                          <p className="text-sm text-gray-700"><span className="font-medium">Reference:</span> Your Name + Vehicle</p>
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-blue-800 mb-2">Required Payment:</h4>
+                        <div className="bg-white rounded-lg p-3 border border-blue-200">
+                          <p className="text-sm text-gray-700"><span className="font-medium">Bond Amount:</span> ${selectedVehicle?.bondAmount || 0}</p>
+                          <p className="text-sm text-gray-700"><span className="font-medium">1 Week Advance Rent:</span> ${selectedVehicle?.rentPerWeek || 0}</p>
+                          <p className="text-sm text-gray-700"><span className="font-medium">Total Required:</span> ${(selectedVehicle?.bondAmount || 0) + (selectedVehicle?.rentPerWeek || 0)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Payment Amount Input */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Amount Paid ($) *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      value={rentalForm.payment_amount}
+                      onChange={(e) => setRentalForm({...rentalForm, payment_amount: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder={`${(selectedVehicle?.bondAmount || 0) + (selectedVehicle?.rentPerWeek || 0)}`}
+                      min={(selectedVehicle?.bondAmount || 0) + (selectedVehicle?.rentPerWeek || 0)}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Enter the total amount you paid (Bond + 1 Week Rent)
+                    </p>
                   </div>
 
                   <div>

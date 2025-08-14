@@ -1,10 +1,10 @@
 // API Configuration
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
 
 // API Endpoints
 export const API_ENDPOINTS = {
   // Auth endpoints
-  LOGIN: `${API_BASE_URL}/login`,
+  LOGIN: `${API_BASE_URL}/api/login`,
   SIGNUP: `${API_BASE_URL}/api/signup`,
   VERIFY_EMAIL: `${API_BASE_URL}/api/verify-email`,
   RESEND_VERIFICATION: `${API_BASE_URL}/api/resend-verification`,
@@ -43,4 +43,11 @@ export const API_ENDPOINTS = {
   UPLOADS: `${API_BASE_URL}/uploads`,
   UPLOAD: `${API_BASE_URL}/api/upload`, // General file upload
   UPLOAD_PAYMENT_RECEIPT: `${API_BASE_URL}/api/upload-payment-receipt`,
+  
+  // Payment endpoints
+  PAYMENTS: `${API_BASE_URL}/api/payments`,
+  PAYMENT_BY_ID: (id) => `${API_BASE_URL}/api/payments/${id}`,
+  CREATE_PAYMENT: `${API_BASE_URL}/api/payments`,
+  UPDATE_PAYMENT: (id) => `${API_BASE_URL}/api/payments/${id}`,
+  DELETE_PAYMENT: (id) => `${API_BASE_URL}/api/payments/${id}`,
 };

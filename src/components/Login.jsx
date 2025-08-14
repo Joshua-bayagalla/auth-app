@@ -33,44 +33,23 @@ function Login() {
       setSuccess('');
       setLoading(true);
       
-      // Call backend API for login
-      const response = await fetch('http://localhost:8000/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setSuccess('Login successful! Redirecting...');
-        // Store user data in localStorage for now (in production, use proper auth tokens)
-        const userData = {
-          email: data.user_email,
-          token: data.token,
-          role: data.role || 'user', // Use role from backend or default to 'user'
-          verified: true // Mark as verified for demo
-        };
-        localStorage.setItem('user', JSON.stringify(userData));
-        // Redirect to appropriate dashboard based on role
-        setTimeout(() => {
-          if (userData.role === 'admin') {
-            navigate('/admin-dashboard');
-          } else {
-            navigate('/dashboard');
-          }
-        }, 1000);
-      } else {
-        if (data.needsVerification) {
-          setError('Please verify your email before logging in. Check your inbox for the verification link.');
+      // Use the login function from AuthContext
+      const userData = await login(email, password);
+      console.log('Login successful, user data:', userData); // Debug log
+      
+      setSuccess('Login successful! Redirecting...');
+      
+      // Redirect to appropriate dashboard based on role
+      setTimeout(() => {
+        console.log('Redirecting to:', userData.role === 'admin' ? '/admin-dashboard' : '/dashboard'); // Debug log
+        if (userData.role === 'admin') {
+          navigate('/admin-dashboard');
         } else {
-          setError(data.error);
+          navigate('/dashboard');
         }
-      }
+      }, 1000);
     } catch (error) {
-      setError('Failed to log in. Please try again.');
+      setError(error.message || 'Failed to log in. Please try again.');
       console.error('Login error:', error);
     } finally {
       setLoading(false);

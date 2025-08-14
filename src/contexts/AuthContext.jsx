@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:3001';
 
 const AuthContext = createContext();
 
@@ -30,7 +30,7 @@ export function AuthProvider({ children }) {
   async function login(email, password) {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/login`, {
+      const response = await fetch(`${API_BASE_URL}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -45,13 +45,15 @@ export function AuthProvider({ children }) {
       }
 
       const user = {
-        email: data.user_email,
-        token: data.token,
-        uid: data.user_email, // Using email as uid for now
+        email: data.user.email,
+        token: data.token || 'demo-token', // Backend doesn't return token yet
+        role: data.user.role,
+        verified: data.user.verified,
+        uid: data.user.email, // Using email as uid for now
       };
 
       setCurrentUser(user);
-      localStorage.setItem('authToken', data.token);
+      localStorage.setItem('authToken', user.token);
       localStorage.setItem('user', JSON.stringify(user));
       
       return user;

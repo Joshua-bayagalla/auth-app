@@ -46,7 +46,7 @@ function Signup() {
       setLoading(true);
       
       // Call backend API for signup
-      const response = await fetch('http://localhost:8000/api/signup', {
+      const response = await fetch('http://localhost:3001/api/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -88,31 +88,62 @@ const uploadVehiclePhoto = multer({
   }
 });
 
-// Multer configuration for payment receipt uploads
-const uploadPaymentReceipt = multer({
+// Multer configuration for rental application uploads (payment receipts and car photos)
+const uploadRentalApplication = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
-      cb(null, 'uploads/payments/');
+      // Route files to different directories based on field name
+      if (file.fieldname === 'paymentReceipt') {
+        cb(null, 'uploads/payments/');
+      } else if (file.fieldname === 'carPhotos') {
+        cb(null, 'uploads/car-photos/');
+      } else {
+        cb(null, 'uploads/');
+      }
     },
     filename: (req, file, cb) => {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      cb(null, 'payment-receipt-' + uniqueSuffix + path.extname(file.originalname));
+      if (file.fieldname === 'paymentReceipt') {
+        cb(null, 'payment-receipt-' + uniqueSuffix + path.extname(file.originalname));
+      } else if (file.fieldname === 'carPhotos') {
+        cb(null, 'car-photo-' + uniqueSuffix + path.extname(file.originalname));
+      } else {
+        cb(null, 'file-' + uniqueSuffix + path.extname(file.originalname));
+      }
     }
   }),
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB limit
+    fileSize: 10 * 1024 * 1024 // 10MB limit per file
   },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
-      cb(null, true);
+    if (file.fieldname === 'paymentReceipt') {
+      // Payment receipts can be images or PDFs
+      if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
+        cb(null, true);
+      } else {
+        cb(new Error('Only image and PDF files are allowed for payment receipts'));
+      }
+    } else if (file.fieldname === 'carPhotos') {
+      // Car photos must be images only
+      if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only image files are allowed for car photos'));
+      }
     } else {
-      cb(new Error('Only image and PDF files are allowed for payment receipts'));
+      cb(null, true);
     }
   }
 });
 
+// Keep the old uploadPaymentReceipt for backward compatibility
+const uploadPaymentReceipt = uploadRentalApplication;
+
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:5178', 'http://localhost:3000'],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'dist')));
 
@@ -422,7 +453,67 @@ app.post('/api/create-admin', async (req, res) => {
 });
 
 // Vehicle management endpoints
-app.post('/api/vehicles', uploadVehiclePhoto.single('vehiclePhoto'), async (req, res) => {
+app.post('/api/vehicles', (req, res, next) => {
+  // Custom multer configuration for vehicle creation
+  const vehicleUpload = multer({
+    storage: multer.diskStorage({
+      destination: (req, file, cb) => {
+        if (file.fieldname === 'vehiclePhoto') {
+          cb(null, 'uploads/vehicles/');
+        } else if (file.fieldname === 'documents') {
+          cb(null, 'uploads/documents/');
+        } else {
+          cb(null, 'uploads/');
+        }
+      },
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+      }
+    }),
+    limits: {
+      fileSize: 10 * 1024 * 1024 // 10MB limit
+    },
+    fileFilter: function (req, file, cb) {
+      if (file.fieldname === 'vehiclePhoto') {
+        // Allow only image files for vehicle photos
+        const allowedTypes = /jpeg|jpg|png|webp/;
+        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+        const mimetype = allowedTypes.test(file.mimetype);
+        
+        if (mimetype && extname) {
+          return cb(null, true);
+        } else {
+          cb(new Error('Only JPG, PNG, WEBP image files are allowed for vehicle photos!'));
+        }
+      } else if (file.fieldname === 'documents') {
+        // Allow PDF, DOC, DOCX, JPG, PNG for documents
+        const allowedTypes = /jpeg|jpg|png|pdf|doc|docx/;
+        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+        const mimetype = allowedTypes.test(file.mimetype);
+        
+        if (mimetype && extname) {
+          return cb(null, true);
+        } else {
+          cb(new Error('Only PDF, DOC, DOCX, JPG, PNG files are allowed for documents!'));
+        }
+      } else {
+        cb(null, true);
+      }
+    }
+  }).fields([
+    { name: 'vehiclePhoto', maxCount: 1 },
+    { name: 'documents', maxCount: 10 }
+  ]);
+
+  vehicleUpload(req, res, (err) => {
+    if (err) {
+      console.error('File upload error:', err);
+      return res.status(400).json({ error: err.message });
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
     const {
       make, model, year, licensePlate, vin, bondAmount, rentPerWeek,
@@ -443,6 +534,29 @@ app.post('/api/vehicles', uploadVehiclePhoto.single('vehiclePhoto'), async (req,
       return res.status(400).json({ error: 'Vehicle with this license plate or VIN already exists' });
     }
 
+    // Process uploaded documents
+    const documents = [];
+    if (req.files && req.files.documents) {
+      req.files.documents.forEach((file, index) => {
+        const documentType = req.body[`documentType_${index}`] || 'other';
+        const expiryDate = req.body[`expiryDate_${index}`] || null;
+        
+        documents.push({
+          id: Date.now() + index,
+          documentType,
+          fileName: file.originalname,
+          fileUrl: `/uploads/documents/${file.filename}`,
+          filePath: file.path,
+          fileSize: file.size,
+          mimeType: file.mimetype,
+          expiryDate,
+          uploadedBy: 'admin',
+          uploadedAt: new Date().toISOString(),
+          status: 'active'
+        });
+      });
+    }
+
     const newVehicle = {
       id: Date.now(),
       make,
@@ -461,10 +575,11 @@ app.post('/api/vehicles', uploadVehiclePhoto.single('vehiclePhoto'), async (req,
       transmission: transmission || 'automatic',
       status: status || 'available',
       ownerName: ownerName || '',
-      photoUrl: req.file ? `/uploads/vehicles/${req.file.filename}` : null,
-      photoPath: req.file ? req.file.path : null,
-      photoName: req.file ? req.file.originalname : null,
-      photoSize: req.file ? req.file.size : null,
+      photoUrl: req.files && req.files.vehiclePhoto ? `/uploads/vehicles/${req.files.vehiclePhoto[0].filename}` : null,
+      photoPath: req.files && req.files.vehiclePhoto ? req.files.vehiclePhoto[0].path : null,
+      photoName: req.files && req.files.vehiclePhoto ? req.files.vehiclePhoto[0].originalname : null,
+      photoSize: req.files && req.files.vehiclePhoto ? req.files.vehiclePhoto[0].size : null,
+      documents,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -981,8 +1096,257 @@ app.get('/api/document-types', (req, res) => {
   }
 });
 
+// Get rental applications endpoint
+app.get('/api/rental-applications', async (req, res) => {
+  try {
+    // Return all drivers (rental applications) with vehicle details
+    const applicationsWithVehicles = drivers.map(driver => {
+      const vehicle = vehicles.find(v => v.id === driver.selectedVehicleId);
+      return {
+        ...driver,
+        vehicle_details: vehicle || null
+      };
+    });
+    
+    res.json(applicationsWithVehicles);
+  } catch (error) {
+    console.error('Error fetching rental applications:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update document expiry date endpoint
+app.put('/api/vehicles/:vehicleId/documents/:docIndex/expiry', async (req, res) => {
+  try {
+    const vehicleId = parseInt(req.params.vehicleId);
+    const docIndex = parseInt(req.params.docIndex);
+    const { expiryDate } = req.body;
+    
+    const vehicleIndex = vehicles.findIndex(v => v.id === vehicleId);
+    if (vehicleIndex === -1) {
+      return res.status(404).json({ error: 'Vehicle not found' });
+    }
+    
+    if (!vehicles[vehicleIndex].documents || !vehicles[vehicleIndex].documents[docIndex]) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+    
+    vehicles[vehicleIndex].documents[docIndex].expiryDate = expiryDate;
+    vehicles[vehicleIndex].updatedAt = new Date().toISOString();
+    
+    // Save data
+    saveData(users, verificationTokens, vehicles, drivers);
+    
+    res.json({ 
+      message: 'Document expiry date updated successfully',
+      document: vehicles[vehicleIndex].documents[docIndex]
+    });
+    
+  } catch (error) {
+    console.error('Error updating document expiry:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get document expiry alerts endpoint
+app.get('/api/document-expiry-alerts', async (req, res) => {
+  try {
+    const alerts = [];
+    
+    // Check all vehicles for document expiry
+    vehicles.forEach(vehicle => {
+      if (vehicle.documents) {
+        vehicle.documents.forEach((doc, index) => {
+          if (doc.expiryDate) {
+            const today = new Date();
+            const expiryDate = new Date(doc.expiryDate);
+            const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+            
+            let alertLevel = 'normal';
+            if (daysUntilExpiry < 0) {
+              alertLevel = 'critical';
+            } else if (daysUntilExpiry <= 30) {
+              alertLevel = 'warning';
+            } else if (daysUntilExpiry <= 90) {
+              alertLevel = 'info';
+            }
+            
+            alerts.push({
+              vehicle_id: vehicle.id,
+              vehicle_name: `${vehicle.make} ${vehicle.model}`,
+              document_type: doc.documentType,
+              document_index: index,
+              expiry_date: doc.expiryDate,
+              days_until_expiry: daysUntilExpiry,
+              alert_level: alertLevel
+            });
+          }
+        });
+      }
+    });
+    
+    // Check all rental applications for document expiry
+    drivers.forEach(driver => {
+      if (driver.documents) {
+        // Find the vehicle details for this driver
+        const vehicle = vehicles.find(v => v.id === driver.selectedVehicleId);
+        const vehicleName = vehicle ? `${vehicle.make} ${vehicle.model}` : 'Unknown Vehicle';
+        
+        driver.documents.forEach((doc, index) => {
+          if (doc.expiryDate) {
+            const today = new Date();
+            const expiryDate = new Date(doc.expiryDate);
+            const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+            
+            let alertLevel = 'normal';
+            if (daysUntilExpiry < 0) {
+              alertLevel = 'critical';
+            } else if (daysUntilExpiry <= 30) {
+              alertLevel = 'warning';
+            } else if (daysUntilExpiry <= 90) {
+              alertLevel = 'info';
+            }
+            
+            alerts.push({
+              vehicle_id: driver.selectedVehicleId,
+              vehicle_name: `${driver.firstName} ${driver.lastName} - ${vehicleName}`,
+              document_type: doc.documentType,
+              document_index: index,
+              expiry_date: doc.expiryDate,
+              days_until_expiry: daysUntilExpiry,
+              alert_level: alertLevel
+            });
+          }
+        });
+      }
+    });
+    
+    // Filter to show only alerts that need attention (critical, warning, info)
+    const relevantAlerts = alerts.filter(alert => alert.alert_level !== 'normal');
+    
+    res.json(relevantAlerts);
+  } catch (error) {
+    console.error('Error fetching document expiry alerts:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Upload documents for rental application endpoint
+app.post('/api/rental-applications/:id/documents', upload.single('document'), async (req, res) => {
+  try {
+    const applicationId = parseInt(req.params.id);
+    const { documentType, expiryDate } = req.body;
+    
+    const applicationIndex = drivers.findIndex(driver => driver.id === applicationId);
+    if (applicationIndex === -1) {
+      return res.status(404).json({ error: 'Rental application not found' });
+    }
+    
+    if (!req.file) {
+      return res.status(400).json({ error: 'Document file is required' });
+    }
+    
+    const newDocument = {
+      id: Date.now(),
+      documentType,
+      fileName: req.file.originalname,
+      fileUrl: `/uploads/documents/${req.file.filename}`,
+      filePath: req.file.path,
+      fileSize: req.file.size,
+      mimeType: req.file.mimetype,
+      expiryDate,
+      uploadedBy: 'admin',
+      uploadedAt: new Date().toISOString(),
+      status: 'active'
+    };
+    
+    // Add document to application
+    drivers[applicationIndex].documents.push(newDocument);
+    drivers[applicationIndex].updatedAt = new Date().toISOString();
+    
+    // Save data
+    saveData(users, verificationTokens, vehicles, drivers);
+    
+    console.log(`Document uploaded for rental application ${applicationId}: ${documentType}`);
+    
+    res.json({ 
+      message: 'Document uploaded successfully',
+      document: newDocument
+    });
+    
+  } catch (error) {
+    console.error('Error uploading document:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Approve/Reject rental application endpoint
+app.put('/api/rental-applications/:id', async (req, res) => {
+  try {
+    const applicationId = parseInt(req.params.id);
+    const { action } = req.body; // 'approved' or 'rejected'
+    
+    const applicationIndex = drivers.findIndex(driver => driver.id === applicationId);
+    if (applicationIndex === -1) {
+      return res.status(404).json({ error: 'Rental application not found' });
+    }
+    
+    const application = drivers[applicationIndex];
+    const vehicle = vehicles.find(v => v.id === application.selectedVehicleId);
+    
+    if (action === 'approved') {
+      // Update application status
+      drivers[applicationIndex].status = 'active';
+      drivers[applicationIndex].updatedAt = new Date().toISOString();
+      
+      // Update vehicle status to rented
+      if (vehicle) {
+        vehicle.status = 'rented';
+        vehicle.updatedAt = new Date().toISOString();
+      }
+      
+      console.log(`Rental application ${applicationId} approved for ${application.firstName} ${application.lastName}`);
+      
+    } else if (action === 'rejected') {
+      // Update application status
+      drivers[applicationIndex].status = 'rejected';
+      drivers[applicationIndex].updatedAt = new Date().toISOString();
+      
+      // Update vehicle status back to available
+      if (vehicle) {
+        vehicle.status = 'available';
+        vehicle.updatedAt = new Date().toISOString();
+      }
+      
+      console.log(`Rental application ${applicationId} rejected for ${application.firstName} ${application.lastName}`);
+    }
+    
+    // Save data
+    saveData(users, verificationTokens, vehicles, drivers);
+    
+    res.json({ 
+      message: `Rental application ${action} successfully`,
+      application: drivers[applicationIndex]
+    });
+    
+  } catch (error) {
+    console.error('Error processing rental application:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Rental application endpoint
-app.post('/api/rentals', uploadPaymentReceipt.single('paymentReceipt'), async (req, res) => {
+app.post('/api/rentals', uploadRentalApplication.fields([
+  { name: 'paymentReceipt', maxCount: 1 },
+  { name: 'carPhotos', maxCount: 10 }
+]), (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({ error: `File upload error: ${err.message}` });
+  } else if (err) {
+    return res.status(400).json({ error: err.message });
+  }
+  next();
+}, async (req, res) => {
   try {
     const {
       vehicleId,
@@ -998,7 +1362,8 @@ app.post('/api/rentals', uploadPaymentReceipt.single('paymentReceipt'), async (r
       emergencyPhone,
       contractSigned,
       bondAmount,
-      weeklyRent
+      weeklyRent,
+      paymentAmount
     } = req.body;
 
     // Validate required fields
@@ -1021,8 +1386,13 @@ app.post('/api/rentals', uploadPaymentReceipt.single('paymentReceipt'), async (r
       return res.status(400).json({ error: 'Vehicle is not available for rent' });
     }
 
+    // Check if car photos were uploaded
+    if (!req.files || !req.files.carPhotos || req.files.carPhotos.length === 0) {
+      return res.status(400).json({ error: 'Car photos are required' });
+    }
+
     // Check if payment receipt was uploaded
-    if (!req.file) {
+    if (!req.files || !req.files.paymentReceipt || req.files.paymentReceipt.length === 0) {
       return res.status(400).json({ error: 'Payment receipt is required' });
     }
 
@@ -1046,7 +1416,10 @@ app.post('/api/rentals', uploadPaymentReceipt.single('paymentReceipt'), async (r
       weeklyRent: parseInt(weeklyRent),
       contractSigned: true,
       paymentReceiptUploaded: true,
-      paymentReceiptUrl: `/uploads/payments/${req.file.filename}`,
+      paymentReceiptUrl: `/uploads/payments/${req.files.paymentReceipt[0].filename}`,
+      paymentAmount: parseFloat(paymentAmount) || 0,
+      carPhotosUploaded: true,
+      carPhotosUrls: req.files.carPhotos.map(file => `/uploads/car-photos/${file.filename}`),
       status: 'pending_approval',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -1106,9 +1479,113 @@ app.post('/api/rentals', uploadPaymentReceipt.single('paymentReceipt'), async (r
   }
 });
 
-// Serve React app for all other routes
+// Payment tracking endpoints
+app.get('/api/payments', (req, res) => {
+  try {
+    // Extract payment data from rental applications
+    const payments = [];
+    
+    drivers.forEach(driver => {
+      if (driver.paymentReceiptUploaded && driver.paymentReceiptUrl) {
+        // Create single payment record for total amount (bond + rent)
+        const totalAmount = (driver.bondAmount || 0) + (driver.weeklyRent || 0);
+        const actualPaidAmount = driver.paymentAmount || totalAmount;
+        
+        payments.push({
+          id: driver.id,
+          customerName: `${driver.firstName} ${driver.lastName}`,
+          customerEmail: driver.email,
+          customerPhone: driver.phone,
+          customerLicenseNumber: driver.licenseNumber,
+          customerAddress: driver.address,
+          emergencyContact: driver.emergencyContact,
+          emergencyPhone: driver.emergencyPhone,
+          contractPeriod: driver.contractPeriod,
+          vehicleId: driver.selectedVehicleId,
+          vehicleMake: vehicles.find(v => v.id === driver.selectedVehicleId)?.make || 'Unknown',
+          vehicleModel: vehicles.find(v => v.id === driver.selectedVehicleId)?.model || 'Unknown',
+          vehicleLicensePlate: vehicles.find(v => v.id === driver.selectedVehicleId)?.licensePlate || 'Unknown',
+          paymentType: 'rental_payment',
+          amount: actualPaidAmount,
+          bondAmount: driver.bondAmount || 0,
+          weeklyRent: driver.weeklyRent || 0,
+          paymentDate: driver.createdAt,
+          receiptUrl: driver.paymentReceiptUrl,
+          status: driver.status,
+          createdAt: driver.createdAt,
+          updatedAt: driver.updatedAt
+        });
+      }
+    });
+
+    res.json(payments);
+  } catch (error) {
+    console.error('Error fetching payments:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/payments', (req, res) => {
+  try {
+    const {
+      customerName,
+      customerEmail,
+      vehicleId,
+      paymentType,
+      amount,
+      paymentDate,
+      receiptUrl
+    } = req.body;
+
+    const vehicle = vehicles.find(v => v.id === parseInt(vehicleId));
+    if (!vehicle) {
+      return res.status(404).json({ error: 'Vehicle not found' });
+    }
+
+    const newPayment = {
+      id: Date.now(),
+      customerName,
+      customerEmail,
+      vehicleId: parseInt(vehicleId),
+      vehicleMake: vehicle.make,
+      vehicleModel: vehicle.model,
+      vehicleLicensePlate: vehicle.licensePlate,
+      paymentType,
+      amount: parseFloat(amount),
+      paymentDate: paymentDate || new Date().toISOString(),
+      receiptUrl,
+      status: 'completed',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    // Add to payments array (you might want to create a separate payments.json file)
+    // For now, we'll store it in memory and it will be lost on server restart
+    // In a real application, you'd want to persist this to a database or file
+
+    res.status(201).json({
+      message: 'Payment recorded successfully',
+      payment: newPayment
+    });
+  } catch (error) {
+    console.error('Error creating payment:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: 'Server is running' });
+});
+
+// 404 handler for API routes
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ error: 'API endpoint not found' });
+});
+
+// Serve React app for all other GET routes
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.listen(PORT, () => {
