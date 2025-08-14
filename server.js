@@ -155,38 +155,37 @@ const USERS_FILE = path.join(__dirname, 'users.json');
 const TOKENS_FILE = path.join(__dirname, 'tokens.json');
 const VEHICLES_FILE = path.join(__dirname, 'vehicles.json');
 
-// Load data from files
+// Load data from memory (for deployment)
 function loadData() {
   try {
-    const usersData = fs.existsSync(USERS_FILE) ? JSON.parse(fs.readFileSync(USERS_FILE, 'utf8')) : {};
-    const tokensData = fs.existsSync(TOKENS_FILE) ? JSON.parse(fs.readFileSync(TOKENS_FILE, 'utf8')) : {};
-    const vehiclesData = fs.existsSync(VEHICLES_FILE) ? JSON.parse(fs.readFileSync(VEHICLES_FILE, 'utf8')) : [];
+    // Load from in-memory storage instead of files
+    const usersData = inMemoryData.users || [];
+    const tokensData = inMemoryData.verificationTokens || [];
+    const vehiclesData = inMemoryData.vehicles || [];
     
-    // Convert back to Maps
-    const users = new Map(Object.entries(usersData));
-    const verificationTokens = new Map(Object.entries(tokensData));
-    const vehicles = vehiclesData; // Assuming vehicles are stored directly in the file
+    // Convert to Maps
+    const users = new Map(usersData.map(user => [user.email, user]));
+    const verificationTokens = new Map(tokensData);
+    const vehicles = vehiclesData;
     
     return { users, verificationTokens, vehicles };
   } catch (error) {
-    console.error('Error loading data:', error);
+    console.error('Error loading data from memory:', error);
     return { users: new Map(), verificationTokens: new Map(), vehicles: [] };
   }
 }
 
-// Save data to files
+// Save data to memory (for deployment)
 function saveData(users, verificationTokens, vehicles, driversData = []) {
   try {
-    // Convert Maps to objects for JSON serialization
-    const usersData = Object.fromEntries(users);
-    const tokensData = Object.fromEntries(verificationTokens);
-    
-    fs.writeFileSync(USERS_FILE, JSON.stringify(usersData, null, 2));
-    fs.writeFileSync(TOKENS_FILE, JSON.stringify(tokensData, null, 2));
-    fs.writeFileSync(VEHICLES_FILE, JSON.stringify(vehicles, null, 2));
-    fs.writeFileSync('drivers.json', JSON.stringify(driversData, null, 2));
+    // Store in memory instead of files for deployment
+    inMemoryData.users = Array.from(users.values());
+    inMemoryData.verificationTokens = Array.from(verificationTokens.entries());
+    inMemoryData.vehicles = vehicles;
+    inMemoryData.drivers = driversData;
+    console.log('Data saved to memory successfully');
   } catch (error) {
-    console.error('Error saving data:', error);
+    console.error('Error saving data to memory:', error);
   }
 }
 
@@ -194,18 +193,7 @@ function saveData(users, verificationTokens, vehicles, driversData = []) {
 let { users, verificationTokens, vehicles } = loadData();
 
 // Add drivers array to storage
-let drivers = [];
-
-// Load drivers from file if exists
-try {
-  if (fs.existsSync('drivers.json')) {
-    const driversData = fs.readFileSync('drivers.json', 'utf8');
-    drivers = JSON.parse(driversData);
-  }
-} catch (error) {
-  console.error('Error loading drivers:', error);
-  drivers = [];
-}
+let drivers = inMemoryData.drivers || [];
 
 // Document types configuration
 const DOCUMENT_TYPES = {
