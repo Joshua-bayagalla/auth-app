@@ -1534,6 +1534,129 @@ app.put('/api/rental-applications/:id', async (req, res) => {
   }
 });
 
+// Test rental application endpoint (for testing without file uploads)
+app.post('/api/test-rentals', async (req, res) => {
+  try {
+    const {
+      vehicleId,
+      contractPeriod,
+      firstName,
+      lastName,
+      email,
+      phone,
+      licenseNumber,
+      licenseExpiry,
+      address,
+      emergencyContact,
+      emergencyPhone,
+      contractSigned,
+      bondAmount,
+      weeklyRent,
+      paymentAmount
+    } = req.body;
+
+    // Validate required fields
+    if (!vehicleId || !contractPeriod || !firstName || !lastName || !email || !phone || 
+        !licenseNumber || !licenseExpiry || !address || !emergencyContact || !emergencyPhone) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    if (!contractSigned) {
+      return res.status(400).json({ error: 'Contract must be signed' });
+    }
+
+    // Find the vehicle
+    const vehicle = vehicles.find(v => v.id === parseInt(vehicleId));
+    if (!vehicle) {
+      return res.status(404).json({ error: 'Vehicle not found' });
+    }
+
+    if (vehicle.status !== 'available') {
+      return res.status(400).json({ error: 'Vehicle is not available for rent' });
+    }
+
+    // Create new driver entry for testing
+    const newDriver = {
+      id: Date.now(),
+      firstName,
+      lastName,
+      email,
+      phone,
+      licenseNumber,
+      licenseExpiry,
+      address,
+      emergencyContact,
+      emergencyPhone,
+      selectedVehicleId: parseInt(vehicleId),
+      contractStartDate: new Date().toISOString().split('T')[0],
+      contractEndDate: null,
+      contractPeriod,
+      bondAmount: parseInt(bondAmount),
+      weeklyRent: parseInt(weeklyRent),
+      contractSigned: true,
+      paymentReceiptUploaded: true,
+      paymentReceiptUrl: '/uploads/payments/test-receipt.png',
+      paymentAmount: parseFloat(paymentAmount) || 0,
+      carPhotosUploaded: true,
+      carPhotosUrls: ['/uploads/car-photos/test-car.jpg'],
+      status: 'pending_approval',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      documents: []
+    };
+
+    // Calculate contract end date based on period
+    const startDate = new Date();
+    let endDate = new Date();
+    
+    switch (contractPeriod) {
+      case '1 month':
+        endDate.setMonth(endDate.getMonth() + 1);
+        break;
+      case '3 months':
+        endDate.setMonth(endDate.getMonth() + 3);
+        break;
+      case '6 months':
+        endDate.setMonth(endDate.getMonth() + 6);
+        break;
+      case '12 months':
+        endDate.setFullYear(endDate.getFullYear() + 1);
+        break;
+      default:
+        endDate.setMonth(endDate.getMonth() + 1);
+    }
+    
+    newDriver.contractEndDate = endDate.toISOString().split('T')[0];
+
+    // Add to drivers array
+    drivers.push(newDriver);
+
+    // Don't update vehicle status yet - wait for admin approval
+    // Vehicle status will be updated when admin approves/rejects the application
+
+    // Save data
+    saveData(users, verificationTokens, vehicles, drivers);
+
+    console.log('Test rental application submitted:', {
+      id: newDriver.id,
+      vehicle: `${vehicle.make} ${vehicle.model}`,
+      customer: `${firstName} ${lastName}`,
+      contractPeriod,
+      bondAmount,
+      weeklyRent
+    });
+
+    res.status(201).json({
+      message: 'Test rental application submitted successfully',
+      rentalId: newDriver.id
+    });
+
+  } catch (error) {
+    console.error('Error submitting test rental application:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Rental application endpoint
 app.post('/api/rentals', uploadRentalApplication.fields([
   { name: 'paymentReceipt', maxCount: 1 },
@@ -1651,9 +1774,8 @@ app.post('/api/rentals', uploadRentalApplication.fields([
     // Add to drivers array
     drivers.push(newDriver);
 
-    // Update vehicle status to rented
-    vehicle.status = 'rented';
-    vehicle.updatedAt = new Date().toISOString();
+    // Don't update vehicle status yet - wait for admin approval
+    // Vehicle status will be updated when admin approves/rejects the application
 
     // Save data
     saveData(users, verificationTokens, vehicles, drivers);
