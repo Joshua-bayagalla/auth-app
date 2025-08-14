@@ -182,10 +182,26 @@ function loadData() {
     const tokensData = inMemoryData.verificationTokens || [];
     const vehiclesData = inMemoryData.vehicles || [];
     
-    // Convert to Maps
-    const users = new Map(usersData.map(user => [user.email, user]));
-    const verificationTokens = new Map(tokensData);
-    const vehicles = vehiclesData;
+    // Convert to Maps - handle empty arrays properly
+    const users = new Map();
+    if (usersData.length > 0) {
+      usersData.forEach(user => {
+        if (user && user.email) {
+          users.set(user.email, user);
+        }
+      });
+    }
+    
+    const verificationTokens = new Map();
+    if (tokensData.length > 0) {
+      tokensData.forEach(([key, value]) => {
+        if (key && value) {
+          verificationTokens.set(key, value);
+        }
+      });
+    }
+    
+    const vehicles = vehiclesData || [];
     
     return { users, verificationTokens, vehicles };
   } catch (error) {
@@ -198,10 +214,10 @@ function loadData() {
 function saveData(users, verificationTokens, vehicles, driversData = []) {
   try {
     // Store in memory instead of files for deployment
-    inMemoryData.users = Array.from(users.values());
-    inMemoryData.verificationTokens = Array.from(verificationTokens.entries());
-    inMemoryData.vehicles = vehicles;
-    inMemoryData.drivers = driversData;
+    inMemoryData.users = Array.from(users.values()).filter(user => user && user.email);
+    inMemoryData.verificationTokens = Array.from(verificationTokens.entries()).filter(([key, value]) => key && value);
+    inMemoryData.vehicles = vehicles || [];
+    inMemoryData.drivers = driversData || [];
     console.log('Data saved to memory successfully');
   } catch (error) {
     console.error('Error saving data to memory:', error);
