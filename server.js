@@ -100,7 +100,14 @@ const uploadPaymentReceipt = uploadRentalApplication;
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5178', 'http://localhost:3000'],
+  origin: [
+    'http://localhost:5173', 
+    'http://localhost:5178', 
+    'http://localhost:3000',
+    'https://auth-app-xw7c.onrender.com',
+    'https://auth-app-xw7c.onrender.com/login',
+    'https://auth-app-xw7c.onrender.com/signup'
+  ],
   credentials: true
 }));
 app.use(express.json());
