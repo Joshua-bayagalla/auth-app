@@ -325,11 +325,20 @@ async function initializeData() {
     
     // Load drivers from MongoDB
     const driversCollection = getDriversCollection();
-    drivers = await driversCollection.find({}).toArray();
+    if (driversCollection) {
+      drivers = await driversCollection.find({}).toArray();
+    } else {
+      drivers = [];
+    }
     
-    console.log('Data initialized from MongoDB successfully');
+    console.log('Data initialized successfully');
   } catch (error) {
     console.error('Error initializing data:', error);
+    // Initialize with empty data as fallback
+    users = new Map();
+    verificationTokens = new Map();
+    vehicles = [];
+    drivers = [];
   }
 }
 
@@ -686,7 +695,11 @@ app.post('/api/vehicles', cors(corsOptions), (req, res, next) => {
     // Save vehicle to MongoDB or local array
     const vehiclesCollection = getVehiclesCollection();
     if (vehiclesCollection) {
-      await vehiclesCollection.insertOne(newVehicle);
+      try {
+        await vehiclesCollection.insertOne(newVehicle);
+      } catch (error) {
+        console.error('Error saving vehicle to MongoDB:', error);
+      }
     }
     
     // Update local array
@@ -783,11 +796,12 @@ app.get('/api/vehicles', async (req, res) => {
       res.json(vehicles);
       return;
     }
-    const vehicles = await vehiclesCollection.find({}).toArray();
-    res.json(vehicles);
+    const vehiclesFromDB = await vehiclesCollection.find({}).toArray();
+    res.json(vehiclesFromDB);
   } catch (error) {
     console.error('Error fetching vehicles:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    // Fallback to in-memory storage
+    res.json(vehicles);
   }
 });
 
