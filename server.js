@@ -106,10 +106,18 @@ app.use(cors({
     'http://localhost:3000',
     'https://auth-app-xw7c.onrender.com',
     'https://auth-app-xw7c.onrender.com/login',
-    'https://auth-app-xw7c.onrender.com/signup'
+    'https://auth-app-xw7c.onrender.com/signup',
+    'https://auth-app-xw7c.onrender.com/dashboard',
+    'https://auth-app-xw7c.onrender.com/admin'
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
+
+// Handle preflight requests
+app.options('*', cors());
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'dist')));
 
