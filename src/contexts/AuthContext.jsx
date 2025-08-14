@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = 'https://auth-app-xw7c.onrender.com';
 
 const AuthContext = createContext();
 

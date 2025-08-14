@@ -24,7 +24,7 @@ function EmailVerification() {
   const verifyEmail = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3001/api/verify-email', {
+      const response = await fetch('https://auth-app-xw7c.onrender.com/api/verify-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -61,7 +61,7 @@ function EmailVerification() {
   const resendVerification = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3001/api/resend-verification', {
+      const response = await fetch('https://auth-app-xw7c.onrender.com/api/resend-verification', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
