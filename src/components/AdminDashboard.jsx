@@ -1566,6 +1566,27 @@ const AdminDashboard = () => {
                       />
                     </div>
                     <div>
+                      <label className="block text-sm font-medium text-gray-700">Odometer</label>
+                      <input
+                        type="number"
+                        value={vehicleForm.odoMeter}
+                        onChange={(e) => setVehicleForm({...vehicleForm, odoMeter: e.target.value})}
+                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="e.g., 50000"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Next Service Date</label>
+                      <input
+                        type="date"
+                        value={vehicleForm.nextServiceDate}
+                        onChange={(e) => setVehicleForm({...vehicleForm, nextServiceDate: e.target.value})}
+                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      />
+                    </div>
+                    <div>
                       <label className="block text-sm font-medium text-gray-700">Vehicle Type</label>
                       <select
                         value={vehicleForm.vehicleType}
@@ -1607,6 +1628,17 @@ const AdminDashboard = () => {
                         <option value="automatic">Automatic</option>
                         <option value="manual">Manual</option>
                       </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Owner Name</label>
+                      <input
+                        type="text"
+                        value={vehicleForm.ownerName}
+                        onChange={(e) => setVehicleForm({...vehicleForm, ownerName: e.target.value})}
+                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="e.g., John Doe"
+                        required
+                      />
                     </div>
                   </div>
 
