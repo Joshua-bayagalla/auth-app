@@ -331,6 +331,83 @@ async function initializeData() {
       drivers = [];
     }
     
+    // Add dummy cars if no vehicles exist
+    if (vehicles.length === 0) {
+      const dummyCars = [
+        {
+          id: 1,
+          make: "BMW",
+          model: "X5 M",
+          year: "2024",
+          licensePlate: "BMW2024",
+          vin: "WBA5A7C50FD123456",
+          bondAmount: 3000,
+          rentPerWeek: 350,
+          currentMileage: 5000,
+          odoMeter: 5000,
+          nextServiceDate: "2025-12-31",
+          vehicleType: "suv",
+          color: "Alpine White",
+          fuelType: "petrol",
+          transmission: "automatic",
+          status: "available",
+          ownerName: "SK Car Rental",
+          photoUrls: [
+            "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop",
+            "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop",
+            "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=800&h=600&fit=crop",
+            "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop"
+          ],
+          documents: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: 2,
+          make: "Audi",
+          model: "RS Q8",
+          year: "2024",
+          licensePlate: "AUDI2024",
+          vin: "WAUZZZ4K8BN123456",
+          bondAmount: 4000,
+          rentPerWeek: 450,
+          currentMileage: 3000,
+          odoMeter: 3000,
+          nextServiceDate: "2025-12-31",
+          vehicleType: "suv",
+          color: "Daytona Gray",
+          fuelType: "petrol",
+          transmission: "automatic",
+          status: "available",
+          ownerName: "SK Car Rental",
+          photoUrls: [
+            "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=800&h=600&fit=crop",
+            "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=800&h=600&fit=crop",
+            "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=800&h=600&fit=crop",
+            "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=800&h=600&fit=crop"
+          ],
+          documents: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ];
+      
+      vehicles = dummyCars;
+      
+      // Save dummy cars to MongoDB
+      const vehiclesCollection = getVehiclesCollection();
+      if (vehiclesCollection) {
+        for (const car of dummyCars) {
+          await vehiclesCollection.updateOne(
+            { id: car.id },
+            { $set: car },
+            { upsert: true }
+          );
+        }
+        console.log('Dummy cars saved to MongoDB');
+      }
+    }
+    
     console.log('Data initialized successfully');
   } catch (error) {
     console.error('Error initializing data:', error);
