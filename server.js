@@ -8,6 +8,14 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import multer from 'multer';
 
+// In-memory storage for deployment (replaces JSON files)
+const inMemoryData = {
+  users: [],
+  vehicles: [],
+  drivers: [],
+  tokens: []
+};
+
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -16,39 +24,11 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, 'uploads', 'documents');
-    // Create directory if it doesn't exist
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    // Generate unique filename with timestamp
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Configure multer for file uploads (memory storage for deployment)
+const storage = multer.memoryStorage();
 
-// Configure multer for vehicle photos
-const vehiclePhotoStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, 'uploads', 'vehicles');
-    // Create directory if it doesn't exist
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    // Generate unique filename with timestamp
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'vehicle-photo-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Configure multer for vehicle photos (memory storage for deployment)
+const vehiclePhotoStorage = multer.memoryStorage();
 
 const upload = multer({ 
   storage: storage,
@@ -88,30 +68,9 @@ const uploadVehiclePhoto = multer({
   }
 });
 
-// Multer configuration for rental application uploads (payment receipts and car photos)
+// Multer configuration for rental application uploads (memory storage for deployment)
 const uploadRentalApplication = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      // Route files to different directories based on field name
-      if (file.fieldname === 'paymentReceipt') {
-        cb(null, 'uploads/payments/');
-      } else if (file.fieldname === 'carPhotos') {
-        cb(null, 'uploads/car-photos/');
-      } else {
-        cb(null, 'uploads/');
-      }
-    },
-    filename: (req, file, cb) => {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      if (file.fieldname === 'paymentReceipt') {
-        cb(null, 'payment-receipt-' + uniqueSuffix + path.extname(file.originalname));
-      } else if (file.fieldname === 'carPhotos') {
-        cb(null, 'car-photo-' + uniqueSuffix + path.extname(file.originalname));
-      } else {
-        cb(null, 'file-' + uniqueSuffix + path.extname(file.originalname));
-      }
-    }
-  }),
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB limit per file
   },
