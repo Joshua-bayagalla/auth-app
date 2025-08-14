@@ -576,6 +576,19 @@ app.post('/api/create-admin', async (req, res) => {
 app.options('/api/vehicles', cors(corsOptions));
 
 app.post('/api/vehicles', cors(corsOptions), (req, res, next) => {
+  // Set CORS headers explicitly
+  res.header('Access-Control-Allow-Origin', 'https://auth-app-xw7c.onrender.com');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Origin, Accept, Content-Length');
+  
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    return;
+  }
+  
+  next();
+}, (req, res, next) => {
   // Custom multer configuration for vehicle creation (memory storage for deployment)
   const vehicleUpload = multer({
     storage: multer.memoryStorage(),
