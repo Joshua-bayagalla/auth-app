@@ -329,7 +329,7 @@ const UserDashboard = () => {
                 <div className="h-48 bg-gray-200">
                   {vehicle.photoUrl ? (
                     <img 
-                      src={`${API_BASE_URL}${vehicle.photoUrl}`} 
+                      src={vehicle.photoUrl.startsWith('data:') ? vehicle.photoUrl : `${API_BASE_URL}${vehicle.photoUrl}`} 
                       alt={`${vehicle.make} ${vehicle.model}`}
                       className="w-full h-full object-cover"
                       onError={(e) => {
@@ -338,7 +338,7 @@ const UserDashboard = () => {
                       }}
                     />
                   ) : vehicle.photoUrls && vehicle.photoUrls.length > 0 ? (
-                    <ImageSlider images={vehicle.photoUrls.map(url => url.startsWith('http') ? url : `${API_BASE_URL}${url}`)} />
+                    <ImageSlider images={vehicle.photoUrls.map(url => url.startsWith('http') || url.startsWith('data:') ? url : `${API_BASE_URL}${url}`)} />
                   ) : (
                     <div className="flex items-center justify-center h-full">
                       <span className="text-gray-400">No image available</span>
@@ -534,7 +534,7 @@ const UserDashboard = () => {
                     <div className="h-64 bg-gray-200 rounded-lg mb-4">
                       {selectedVehicle.photoUrl ? (
                         <img 
-                          src={`${API_BASE_URL}${selectedVehicle.photoUrl}`} 
+                          src={selectedVehicle.photoUrl.startsWith('data:') ? selectedVehicle.photoUrl : `${API_BASE_URL}${selectedVehicle.photoUrl}`} 
                           alt={`${selectedVehicle.make} ${selectedVehicle.model}`}
                           className="w-full h-full object-cover rounded-lg"
                           onError={(e) => {
@@ -543,7 +543,7 @@ const UserDashboard = () => {
                           }}
                         />
                       ) : selectedVehicle.photoUrls && selectedVehicle.photoUrls.length > 0 ? (
-                        <ImageSlider images={selectedVehicle.photoUrls.map(url => url.startsWith('http') ? url : `${API_BASE_URL}${url}`)} />
+                        <ImageSlider images={selectedVehicle.photoUrls.map(url => url.startsWith('http') || url.startsWith('data:') ? url : `${API_BASE_URL}${url}`)} />
                       ) : (
                         <div className="flex items-center justify-center h-full">
                           <span className="text-gray-400">No image available</span>
