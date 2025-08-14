@@ -618,13 +618,28 @@ app.post('/api/create-admin', async (req, res) => {
 // Handle OPTIONS for vehicles endpoint
 app.options('/api/vehicles', cors(corsOptions));
 
-app.post('/api/vehicles', cors(corsOptions), (req, res, next) => {
-  // Set CORS headers explicitly
+// Global CORS handler for all API routes
+app.use('/api/*', (req, res, next) => {
   res.header('Access-Control-Allow-Origin', 'https://auth-app-xw7c.onrender.com');
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Origin, Accept, Content-Length');
   
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    return;
+  }
+  next();
+});
+
+app.post('/api/vehicles', (req, res, next) => {
+  // Set CORS headers explicitly for all requests
+  res.header('Access-Control-Allow-Origin', 'https://auth-app-xw7c.onrender.com');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Origin, Accept, Content-Length');
+  
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);
     return;
