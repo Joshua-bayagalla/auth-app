@@ -342,8 +342,51 @@ async function initializeData() {
   }
 }
 
-// Initialize data
-initializeData();
+// Ensure admin user exists
+async function ensureAdminUser() {
+  try {
+    const adminEmail = 'admin@example.com';
+    const adminPassword = 'admin123';
+    
+    // Check if admin user exists
+    if (!users.has(adminEmail)) {
+      console.log('Creating admin user...');
+      
+      // Create admin user
+      users.set(adminEmail, { 
+        email: adminEmail, 
+        password: adminPassword, 
+        verified: true, 
+        role: 'admin' 
+      });
+      
+      // Save to MongoDB
+      const usersCollection = getUsersCollection();
+      if (usersCollection) {
+        await usersCollection.updateOne(
+          { email: adminEmail },
+          { $set: { email: adminEmail, password: adminPassword, verified: true, role: 'admin' } },
+          { upsert: true }
+        );
+        console.log('Admin user saved to MongoDB');
+      }
+      
+      console.log('Admin user created successfully');
+    } else {
+      console.log('Admin user already exists');
+    }
+  } catch (error) {
+    console.error('Error ensuring admin user:', error);
+  }
+}
+
+// Initialize data and ensure admin user
+async function initializeApp() {
+  await initializeData();
+  await ensureAdminUser();
+}
+
+initializeApp();
 
 // Document types configuration
 const DOCUMENT_TYPES = {
@@ -1714,7 +1757,15 @@ app.post('/api/payments', (req, res) => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Server is running' });
+  const adminExists = users.has('admin@example.com');
+  res.json({ 
+    status: 'ok', 
+    message: 'Server is running',
+    adminUserExists: adminExists,
+    totalUsers: users.size,
+    totalVehicles: vehicles.length,
+    mongodbConnected: db !== null
+  });
 });
 
 // 404 handler for API routes
