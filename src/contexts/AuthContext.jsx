@@ -10,6 +10,7 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [initializing, setInitializing] = useState(true);
 
   // Sign up function (using simple endpoint for now)
   async function signup(email, password) {
@@ -29,6 +30,9 @@ export function AuthProvider({ children }) {
   async function login(email, password) {
     setLoading(true);
     try {
+      console.log('Attempting login to:', `${API_BASE_URL}/api/login`);
+      console.log('Login data:', { email, password });
+      
       const response = await fetch(`${API_BASE_URL}/api/login`, {
         method: 'POST',
         headers: {
@@ -37,10 +41,14 @@ export function AuthProvider({ children }) {
         body: JSON.stringify({ email, password }),
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+      
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (!response.ok) {
-        throw new Error(data.detail || 'Login failed');
+        throw new Error(data.detail || data.error || 'Login failed');
       }
 
       const user = {
@@ -84,6 +92,7 @@ export function AuthProvider({ children }) {
     if (token && savedUser) {
       setCurrentUser(JSON.parse(savedUser));
     }
+    setInitializing(false);
   }, []);
 
   const value = {
@@ -91,7 +100,8 @@ export function AuthProvider({ children }) {
     signup,
     login,
     logout,
-    loading
+    loading,
+    initializing
   };
 
   return (

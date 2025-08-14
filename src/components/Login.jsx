@@ -41,11 +41,11 @@ function Login() {
       
       // Redirect to appropriate dashboard based on role
       setTimeout(() => {
-        console.log('Redirecting to:', userData.role === 'admin' ? '/admin-dashboard' : '/dashboard'); // Debug log
+        console.log('Redirecting to:', userData.role === 'admin' ? '/admin-dashboard' : '/user-dashboard'); // Debug log
         if (userData.role === 'admin') {
           navigate('/admin-dashboard');
         } else {
-          navigate('/dashboard');
+          navigate('/user-dashboard');
         }
       }, 1000);
     } catch (error) {

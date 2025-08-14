@@ -443,6 +443,8 @@ async function sendVerificationEmail(email, token) {
   }
 }
 
+
+
 // Signup endpoint
 app.post('/api/signup', async (req, res) => {
   const { email, password, role = 'user' } = req.body;
