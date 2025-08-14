@@ -10,10 +10,10 @@ import multer from 'multer';
 import { MongoClient } from 'mongodb';
 
 // MongoDB Collections (replaces in-memory storage)
-const getUsersCollection = () => db.collection('users');
-const getVehiclesCollection = () => db.collection('vehicles');
-const getDriversCollection = () => db.collection('drivers');
-const getTokensCollection = () => db.collection('tokens');
+const getUsersCollection = () => db ? db.collection('users') : null;
+const getVehiclesCollection = () => db ? db.collection('vehicles') : null;
+const getDriversCollection = () => db ? db.collection('drivers') : null;
+const getTokensCollection = () => db ? db.collection('tokens') : null;
 
 dotenv.config();
 
@@ -21,11 +21,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://joshbayagalla:YbQcUJqDNRHPNTRO@cluster0.mongodb.net/carrental?retryWrites=true&w=majority';
+const MONGODB_URI = process.env.MONGODB_URI;
 let db;
 
 // Connect to MongoDB
 async function connectToMongoDB() {
+  if (!MONGODB_URI) {
+    console.log('MongoDB URI not found, using in-memory storage as fallback');
+    return;
+  }
+  
   try {
     const client = new MongoClient(MONGODB_URI);
     await client.connect();
@@ -41,7 +46,8 @@ async function connectToMongoDB() {
     console.log('MongoDB collections ready!');
   } catch (error) {
     console.error('MongoDB connection error:', error);
-    process.exit(1);
+    console.log('Falling back to in-memory storage');
+    db = null;
   }
 }
 
@@ -201,12 +207,17 @@ const USERS_FILE = path.join(__dirname, 'users.json');
 const TOKENS_FILE = path.join(__dirname, 'tokens.json');
 const VEHICLES_FILE = path.join(__dirname, 'vehicles.json');
 
-// Load data from MongoDB
+// Load data from MongoDB or fallback to in-memory
 async function loadData() {
   try {
     const usersCollection = getUsersCollection();
     const tokensCollection = getTokensCollection();
     const vehiclesCollection = getVehiclesCollection();
+    
+    if (!usersCollection || !tokensCollection || !vehiclesCollection) {
+      console.log('MongoDB not available, using in-memory storage');
+      return { users: new Map(), verificationTokens: new Map(), vehicles: [] };
+    }
     
     // Load users
     const usersData = await usersCollection.find({}).toArray();
@@ -236,13 +247,18 @@ async function loadData() {
   }
 }
 
-// Save data to MongoDB
+// Save data to MongoDB or fallback to in-memory
 async function saveData(users, verificationTokens, vehicles, driversData = []) {
   try {
     const usersCollection = getUsersCollection();
     const tokensCollection = getTokensCollection();
     const vehiclesCollection = getVehiclesCollection();
     const driversCollection = getDriversCollection();
+    
+    if (!usersCollection || !tokensCollection || !vehiclesCollection || !driversCollection) {
+      console.log('MongoDB not available, skipping save operation');
+      return;
+    }
     
     // Save users
     const usersArray = Array.from(users.values()).filter(user => user && user.email);
@@ -663,9 +679,11 @@ app.post('/api/vehicles', (req, res, next) => {
       updatedAt: new Date().toISOString()
     };
 
-    // Save vehicle to MongoDB
+    // Save vehicle to MongoDB or local array
     const vehiclesCollection = getVehiclesCollection();
-    await vehiclesCollection.insertOne(newVehicle);
+    if (vehiclesCollection) {
+      await vehiclesCollection.insertOne(newVehicle);
+    }
     
     // Update local array
     vehicles.push(newVehicle);
@@ -756,6 +774,11 @@ app.put('/api/vehicles/:id', uploadVehiclePhoto.single('vehiclePhoto'), async (r
 app.get('/api/vehicles', async (req, res) => {
   try {
     const vehiclesCollection = getVehiclesCollection();
+    if (!vehiclesCollection) {
+      // Fallback to in-memory storage
+      res.json(vehicles);
+      return;
+    }
     const vehicles = await vehiclesCollection.find({}).toArray();
     res.json(vehicles);
   } catch (error) {
