@@ -315,12 +315,20 @@ app.post('/api/signup', async (req, res) => {
       res.json({ message: 'User registered successfully. Please check your email to verify your account.' });
     } else {
       // Auto-verify user if email fails (for development)
-      user.verified = true;
+      const user = users.get(email);
+      if (user) {
+        user.verified = true;
+        saveData(users, verificationTokens, vehicles);
+      }
       res.json({ message: 'User registered successfully. You can now login.' });
     }
   } catch (error) {
     // Auto-verify user if email fails (for development)
-    user.verified = true;
+    const user = users.get(email);
+    if (user) {
+      user.verified = true;
+      saveData(users, verificationTokens, vehicles);
+    }
     res.json({ message: 'User registered successfully. You can now login.' });
   }
 });
