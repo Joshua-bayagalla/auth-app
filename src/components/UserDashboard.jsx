@@ -100,6 +100,8 @@ const UserDashboard = () => {
   const [activeTab, setActiveTab] = useState('available');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
+  const PLACEHOLDER = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22150%22 viewBox=%220 0 200 150%22%3E%3Crect width=%22200%22 height=%22150%22 fill=%22%23e5e7eb%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2212%22 fill=%22%236b7280%22%3ENo image%3C/text%3E%3C/svg%3E';
+
   useEffect(() => {
     if (!currentUser) {
       navigate('/login');
@@ -400,7 +402,7 @@ const UserDashboard = () => {
                             alt={`${vehicle.make} ${vehicle.model}`}
                             className="w-full h-full object-cover"
                             onClick={() => openImageSlider(images)}
-                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            onError={(e) => { e.currentTarget.src = PLACEHOLDER; }}
                           />
                           <button
                             onClick={() => openImageSlider(images)}
@@ -479,13 +481,14 @@ const UserDashboard = () => {
                   {booking.vehicle_details?.photoUrls && booking.vehicle_details.photoUrls.length > 0 ? (
                     <div className="relative h-full">
                       <img
-                        src={booking.vehicle_details.photoUrls[0]}
+                        src={(booking.vehicle_details.photoUrls[0].startsWith('http') || booking.vehicle_details.photoUrls[0].startsWith('data:')) ? booking.vehicle_details.photoUrls[0] : `${API_BASE_URL}${booking.vehicle_details.photoUrls[0]}`}
                         alt={`${booking.vehicle_details.make} ${booking.vehicle_details.model}`}
                         className="w-full h-full object-cover"
-                        onClick={() => openImageSlider(booking.vehicle_details.photoUrls)}
+                        onClick={() => openImageSlider(booking.vehicle_details.photoUrls.map((u) => (u.startsWith('http') || u.startsWith('data:')) ? u : `${API_BASE_URL}${u}`))}
+                        onError={(e) => { e.currentTarget.src = PLACEHOLDER; }}
                       />
                       <button
-                        onClick={() => openImageSlider(booking.vehicle_details.photoUrls)}
+                        onClick={() => openImageSlider(booking.vehicle_details.photoUrls.map((u) => (u.startsWith('http') || u.startsWith('data:')) ? u : `${API_BASE_URL}${u}`))}
                         className="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all duration-200"
                       >
                         <Eye className="w-4 h-4" />
