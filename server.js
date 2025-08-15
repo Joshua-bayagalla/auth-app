@@ -1995,10 +1995,37 @@ app.post('/api/seed-vehicles', async (req, res) => {
         bondAmount: 2000, rentPerWeek: 320, currentMileage: 8000, odoMeter: 8000, nextServiceDate: '2026-06-01',
         vehicleType: 'sedan', color: 'Red', fuelType: 'electric', transmission: 'automatic', status: 'available', ownerName: 'SK Car Rental',
         photoUrls: ['https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop'], documents: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+      },
+      {
+        id: now + 4,
+        make: 'Kia', model: 'Sportage', year: '2021', licensePlate: 'KIA21SP', vin: 'KNDPB3AC0M7123456',
+        bondAmount: 1100, rentPerWeek: 210, currentMileage: 30000, odoMeter: 30000, nextServiceDate: '2026-04-01',
+        vehicleType: 'suv', color: 'Gray', fuelType: 'petrol', transmission: 'automatic', status: 'available', ownerName: 'SK Car Rental',
+        photoUrls: ['https://images.unsplash.com/photo-1593424486241-2465e5b3cf21?w=800&h=600&fit=crop'], documents: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+      },
+      {
+        id: now + 5,
+        make: 'Mazda', model: 'CX-5', year: '2022', licensePlate: 'MZD22CX5', vin: 'JM3KFADL1N0123456',
+        bondAmount: 1300, rentPerWeek: 230, currentMileage: 18000, odoMeter: 18000, nextServiceDate: '2026-02-15',
+        vehicleType: 'suv', color: 'Black', fuelType: 'petrol', transmission: 'automatic', status: 'available', ownerName: 'SK Car Rental',
+        photoUrls: ['https://images.unsplash.com/photo-1627454824996-9a674d5bfb76?w=800&h=600&fit=crop'], documents: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+      },
+      {
+        id: now + 6,
+        make: 'Ford', model: 'Ranger', year: '2023', licensePlate: 'FORD23RG', vin: 'MPBUMFF80PX123456',
+        bondAmount: 1500, rentPerWeek: 280, currentMileage: 9000, odoMeter: 9000, nextServiceDate: '2026-07-20',
+        vehicleType: 'ute', color: 'Orange', fuelType: 'diesel', transmission: 'automatic', status: 'available', ownerName: 'SK Car Rental',
+        photoUrls: ['https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=800&h=600&fit=crop'], documents: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+      },
+      {
+        id: now + 7,
+        make: 'BMW', model: '3 Series', year: '2020', licensePlate: 'BMW20S3', vin: 'WBA8E9G55GNU12345',
+        bondAmount: 1800, rentPerWeek: 300, currentMileage: 42000, odoMeter: 42000, nextServiceDate: '2026-09-01',
+        vehicleType: 'sedan', color: 'Silver', fuelType: 'petrol', transmission: 'automatic', status: 'available', ownerName: 'SK Car Rental',
+        photoUrls: ['https://images.unsplash.com/photo-1511919884226-fd3cad34687c?w=800&h=600&fit=crop'], documents: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
       }
     ];
 
-    // Filter out any with duplicate licensePlate/VIN
     const existingPlates = new Set(vehicles.map(v => v.licensePlate));
     const existingVins = new Set(vehicles.map(v => v.vin));
 
@@ -2008,7 +2035,6 @@ app.post('/api/seed-vehicles', async (req, res) => {
       return res.json({ message: 'No new vehicles to seed', added: 0, total: vehicles.length });
     }
 
-    // Save to Mongo if available
     const vehiclesCollection = getVehiclesCollection();
     if (vehiclesCollection) {
       for (const car of toInsert) {
