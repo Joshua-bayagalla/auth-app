@@ -199,7 +199,7 @@ const UserDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
-      {/* Header */}
+        {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-white/20 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -208,17 +208,17 @@ const UserDashboard = () => {
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-green-600 rounded-full flex items-center justify-center">
                 <Car className="w-6 h-6 text-white" />
               </div>
-              <div>
+            <div>
                 <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
                   SK Car Rental
                 </h1>
                 <p className="text-xs text-gray-500">Australia</p>
               </div>
-            </div>
+        </div>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-6">
-              <button
+            <button
                 onClick={() => setActiveTab('available')}
                 className={`px-4 py-2 rounded-lg transition-all duration-200 ${
                   activeTab === 'available'
@@ -227,25 +227,25 @@ const UserDashboard = () => {
                 }`}
               >
                 Available Cars
-              </button>
-              <button
-                onClick={() => setActiveTab('bookings')}
+            </button>
+            <button
+              onClick={() => setActiveTab('bookings')}
                 className={`px-4 py-2 rounded-lg transition-all duration-200 ${
-                  activeTab === 'bookings'
+                activeTab === 'bookings'
                     ? 'bg-blue-600 text-white shadow-lg'
                     : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-                }`}
-              >
+              }`}
+            >
                 My Bookings ({stats.activeBookings})
-              </button>
-            </div>
+            </button>
+        </div>
 
             {/* User Menu */}
             <div className="flex items-center space-x-4">
               <div className="hidden md:flex items-center space-x-2 text-sm text-gray-600">
                 <User className="w-4 h-4" />
                 <span>{currentUser?.email}</span>
-              </div>
+                    </div>
               <button
                 onClick={handleLogout}
                 className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
@@ -261,15 +261,15 @@ const UserDashboard = () => {
               >
                 {showMobileMenu ? <Close className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
-            </div>
-          </div>
+                </div>
+                  </div>
 
           {/* Mobile Navigation */}
           {showMobileMenu && (
             <div className="md:hidden py-4 border-t border-gray-200">
               <div className="flex flex-col space-y-2">
-                <button
-                  onClick={() => {
+                    <button
+                      onClick={() => {
                     setActiveTab('available');
                     setShowMobileMenu(false);
                   }}
@@ -280,9 +280,9 @@ const UserDashboard = () => {
                   }`}
                 >
                   Available Cars
-                </button>
-                <button
-                  onClick={() => {
+                    </button>
+                    <button
+                      onClick={() => {
                     setActiveTab('bookings');
                     setShowMobileMenu(false);
                   }}
@@ -293,14 +293,14 @@ const UserDashboard = () => {
                   }`}
                 >
                   My Bookings ({stats.activeBookings})
-                </button>
+                    </button>
                 <div className="px-4 py-2 text-sm text-gray-600 border-t border-gray-200 pt-2">
                   <User className="w-4 h-4 inline mr-2" />
                   {currentUser?.email}
                 </div>
               </div>
-            </div>
-          )}
+          </div>
+        )}
         </div>
       </header>
 
@@ -318,8 +318,8 @@ const UserDashboard = () => {
                 <p className="text-2xl font-bold text-gray-900">{vehicles.length}</p>
               </div>
             </div>
-          </div>
-
+            </div>
+            
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20 transform hover:scale-105 transition-all duration-300">
             <div className="flex items-center">
               <div className="p-3 bg-green-100 rounded-full">
@@ -328,22 +328,22 @@ const UserDashboard = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Active Bookings</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.activeBookings}</p>
-              </div>
-            </div>
-          </div>
+                      </div>
+                    </div>
+                    </div>
 
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20 transform hover:scale-105 transition-all duration-300">
-            <div className="flex items-center">
+                                <div className="flex items-center">
               <div className="p-3 bg-yellow-100 rounded-full">
                 <DollarSign className="w-6 h-6 text-yellow-600" />
-              </div>
+                                </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Value</p>
                 <p className="text-2xl font-bold text-gray-900">${stats.totalValue}</p>
-              </div>
-            </div>
-          </div>
-        </div>
+                              </div>
+                        </div>
+                      </div>
+                  </div>
 
         {/* Search and Filter */}
         {activeTab === 'available' && (
@@ -383,37 +383,51 @@ const UserDashboard = () => {
               >
                 {/* Car Images */}
                 <div className="relative h-48 overflow-hidden">
-                  {vehicle.photoUrls && vehicle.photoUrls.length > 0 ? (
-                    <div className="relative h-full">
-                      <img
-                        src={vehicle.photoUrls[0]}
-                        alt={`${vehicle.make} ${vehicle.model}`}
-                        className="w-full h-full object-cover"
-                        onClick={() => openImageSlider(vehicle.photoUrls)}
-                      />
-                      <button
-                        onClick={() => openImageSlider(vehicle.photoUrls)}
-                        className="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all duration-200"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      {vehicle.photoUrls.length > 1 && (
-                        <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded-full text-xs">
-                          +{vehicle.photoUrls.length - 1} more
+                  {(() => {
+                    const images = (
+                      (vehicle.photoUrls && vehicle.photoUrls.length > 0)
+                        ? vehicle.photoUrls.map((u) => (u.startsWith('http') || u.startsWith('data:') ? u : `${API_BASE_URL}${u}`))
+                        : (vehicle.photoUrl
+                            ? [vehicle.photoUrl.startsWith('http') || vehicle.photoUrl.startsWith('data:') ? vehicle.photoUrl : `${API_BASE_URL}${vehicle.photoUrl}`]
+                            : []
+                          )
+                    );
+                    if (images.length > 0) {
+                      return (
+                        <div className="relative h-full">
+                          <img
+                            src={images[0]}
+                            alt={`${vehicle.make} ${vehicle.model}`}
+                            className="w-full h-full object-cover"
+                            onClick={() => openImageSlider(images)}
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                          <button
+                            onClick={() => openImageSlider(images)}
+                            className="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all duration-200"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          {images.length > 1 && (
+                            <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded-full text-xs">
+                              +{images.length - 1} more
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                      <Car className="w-12 h-12 text-gray-400" />
-                    </div>
-                  )}
+                      );
+                    }
+                    return (
+                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                        <Car className="w-12 h-12 text-gray-400" />
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Car Details */}
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
-                    <div>
+                      <div>
                       <h3 className="text-xl font-bold text-gray-900 mb-1">
                         {vehicle.make} {vehicle.model}
                       </h3>
@@ -422,8 +436,8 @@ const UserDashboard = () => {
                     <div className="text-right">
                       <p className="text-2xl font-bold text-blue-600">${vehicle.rentPerWeek}</p>
                       <p className="text-sm text-gray-500">per week</p>
-                    </div>
-                  </div>
+                        </div>
+                      </div>
 
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center text-sm text-gray-600">
@@ -433,12 +447,12 @@ const UserDashboard = () => {
                     <div className="flex items-center text-sm text-gray-600">
                       <Car className="w-4 h-4 mr-2" />
                       {vehicle.transmission} • {vehicle.fuelType}
-                    </div>
+                                </div>
                     <div className="flex items-center text-sm text-gray-600">
                       <DollarSign className="w-4 h-4 mr-2" />
                       Bond: ${vehicle.bondAmount}
-                    </div>
                   </div>
+                </div>
 
                   <button
                     onClick={() => {
@@ -484,8 +498,8 @@ const UserDashboard = () => {
                   )}
                   <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
                     Active
-                  </div>
-                </div>
+                    </div>
+                    </div>
 
                 {/* Booking Details */}
                 <div className="p-6">
@@ -506,7 +520,7 @@ const UserDashboard = () => {
                     <div className="flex items-center text-sm text-gray-600">
                       <Calendar className="w-4 h-4 mr-2" />
                       {booking.contractStartDate} - {booking.contractEndDate}
-                    </div>
+                  </div>
                     <div className="flex items-center text-sm text-gray-600">
                       <DollarSign className="w-4 h-4 mr-2" />
                       Bond Paid: ${booking.bondAmount}
@@ -528,7 +542,7 @@ const UserDashboard = () => {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
         )}
 
         {/* Empty State */}
@@ -551,7 +565,7 @@ const UserDashboard = () => {
             >
               Browse Cars
             </button>
-          </div>
+      </div>
         )}
       </main>
 
