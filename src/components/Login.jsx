@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, Car, MapPin, Clock } from 'lucide-react';
@@ -14,6 +14,14 @@ const Login = () => {
   
   const { login, currentUser } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (currentUser) {
+      // Redirect based on role if already logged in
+      const target = currentUser.role === 'admin' ? '/admin-dashboard' : '/user-dashboard';
+      navigate(target, { replace: true });
+    }
+  }, [currentUser, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -53,9 +61,16 @@ const Login = () => {
     }
   };
 
-  // Don't render if user is already logged in
+  // Show quick loader while redirecting if already logged in
   if (currentUser) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

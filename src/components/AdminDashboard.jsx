@@ -175,8 +175,8 @@ const AdminDashboard = () => {
     try {
       const response = await fetch(API_ENDPOINTS.VEHICLES);
       if (response.ok) {
-        const data = await response.json();
-        setVehicles(data);
+      const data = await response.json();
+      setVehicles(data);
       } else {
         console.error('Error fetching vehicles:', response.status);
         setVehicles([]);
@@ -191,8 +191,8 @@ const AdminDashboard = () => {
     try {
       const response = await fetch(API_ENDPOINTS.RENTAL_APPLICATIONS);
       if (response.ok) {
-        const data = await response.json();
-        setRentalApplications(data);
+      const data = await response.json();
+      setRentalApplications(data);
       } else {
         console.error('Error fetching rental applications:', response.status);
         setRentalApplications([]);
@@ -207,8 +207,8 @@ const AdminDashboard = () => {
     try {
       const response = await fetch(API_ENDPOINTS.DOCUMENT_EXPIRY_ALERTS);
       if (response.ok) {
-        const data = await response.json();
-        setDocumentExpiryAlerts(data);
+      const data = await response.json();
+      setDocumentExpiryAlerts(data);
       } else {
         console.error('Error fetching document expiry alerts:', response.status);
         setDocumentExpiryAlerts([]);
@@ -222,8 +222,8 @@ const AdminDashboard = () => {
   const fetchPayments = async () => {
     try {
       const response = await fetch(API_ENDPOINTS.PAYMENTS);
-      if (response.ok) {
-        const data = await response.json();
+          if (response.ok) {
+            const data = await response.json();
         setPayments(data);
       } else {
         console.error('Error fetching payments:', response.status);
@@ -464,18 +464,18 @@ const AdminDashboard = () => {
 
     try {
       const response = await fetch(`${API_ENDPOINTS.VEHICLES}/${vehicle.id}`, {
-        method: 'DELETE',
-      });
+          method: 'DELETE',
+        });
 
-      if (response.ok) {
+        if (response.ok) {
         setVehicles(vehicles.filter(v => v.id !== vehicle.id));
-        alert('Vehicle deleted successfully!');
+          alert('Vehicle deleted successfully!');
       } else {
         const error = await response.json();
         alert(`Error deleting vehicle: ${error.error}`);
-      }
-    } catch (error) {
-      console.error('Error deleting vehicle:', error);
+        }
+      } catch (error) {
+        console.error('Error deleting vehicle:', error);
       alert('Failed to delete vehicle');
     }
   };
@@ -519,8 +519,8 @@ const AdminDashboard = () => {
 
   const handleMarkAsAvailable = async (vehicle) => {
     if (!confirm(`Are you sure you want to mark ${vehicle.make} ${vehicle.model} as available?`)) {
-      return;
-    }
+        return;
+      }
 
     try {
       const formData = new FormData();
@@ -682,21 +682,21 @@ const AdminDashboard = () => {
           <div className="bg-white rounded-lg p-4 shadow-sm border">
             <p className="text-sm text-gray-600">Total Vehicles</p>
             <p className="text-2xl font-bold text-gray-900">{vehicles.length}</p>
-          </div>
+                </div>
                       <div className="bg-white rounded-lg p-4 shadow-sm border">
               <p className="text-sm text-gray-600">Available</p>
               <p className="text-2xl font-bold text-green-600">{vehicles.filter(v => {
                 const status = Array.isArray(v.status) ? v.status[0] : v.status;
                 return status === 'available';
               }).length}</p>
-            </div>
+                </div>
             <div className="bg-white rounded-lg p-4 shadow-sm border">
               <p className="text-sm text-gray-600">Rented</p>
               <p className="text-2xl font-bold text-blue-600">{vehicles.filter(v => {
                 const status = Array.isArray(v.status) ? v.status[0] : v.status;
                 return status === 'rented';
               }).length}</p>
-            </div>
+              </div>
                       <div className="bg-white rounded-lg p-4 shadow-sm border">
               <p className="text-sm text-gray-600">Maintenance</p>
               <p className="text-2xl font-bold text-orange-600">{vehicles.filter(v => {
@@ -794,7 +794,7 @@ const AdminDashboard = () => {
                 Add Vehicle
               </button>
             </div>
-            
+
             <div className="bg-white rounded-lg shadow-sm border">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -809,13 +809,13 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {vehicles.map((vehicle) => (
+              {vehicles.map((vehicle) => (
                       <tr key={vehicle.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
                             <div className="text-sm font-medium text-gray-900">{vehicle.make} {vehicle.model}</div>
                             <div className="text-sm text-gray-500">{vehicle.year} • {vehicle.color}</div>
-                          </div>
+                      </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vehicle.licensePlate}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -832,8 +832,8 @@ const AdminDashboard = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${vehicle.bondAmount}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${vehicle.rentPerWeek}/week</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          <div className="flex space-x-2">
-                            <button
+                    <div className="flex space-x-2">
+                      <button
                               onClick={() => handleViewVehicle(vehicle)}
                               className="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-xs"
                             >
@@ -842,11 +842,11 @@ const AdminDashboard = () => {
                             <button
                               onClick={() => handleEditVehicle(vehicle)}
                               className="px-3 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors text-xs"
-                            >
-                              Edit
-                            </button>
+                      >
+                        Edit
+                      </button>
                             {(Array.isArray(vehicle.status) ? vehicle.status[0] : vehicle.status) !== 'maintenance' && (
-                              <button
+                      <button
                                 onClick={() => handleMarkAsMaintenance(vehicle)}
                                 className="px-3 py-1 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors text-xs"
                               >
@@ -856,17 +856,17 @@ const AdminDashboard = () => {
                             <button
                               onClick={() => handleDeleteVehicle(vehicle)}
                               className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors text-xs"
-                            >
-                              Delete
-                            </button>
-                          </div>
+                      >
+                        Delete
+                      </button>
+                    </div>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
-            </div>
+                  </div>
+                </div>
           </div>
         )}
 
@@ -1031,7 +1031,7 @@ const AdminDashboard = () => {
                       ))}
                     </tbody>
                   </table>
-                </div>
+            </div>
               </div>
             )}
           </div>
@@ -1041,7 +1041,7 @@ const AdminDashboard = () => {
         {activeTab === 'applications' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-gray-900">Rental Applications</h2>
+            <h2 className="text-xl font-semibold text-gray-900">Rental Applications</h2>
               <button
                 onClick={fetchRentalApplications}
                 className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
@@ -1056,26 +1056,26 @@ const AdminDashboard = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {rentalApplications.map((application) => (
+              {rentalApplications.map((application) => (
                   <div key={application.id} className="bg-white rounded-lg shadow-sm border p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">
                           {application.firstName} {application.lastName}
-                        </h3>
-                        <p className="text-sm text-gray-600">{application.email}</p>
+                      </h3>
+                      <p className="text-sm text-gray-600">{application.email}</p>
                         <p className="text-sm text-gray-600">Phone: {application.phone}</p>
-                      </div>
+                    </div>
                       <div className="flex items-center space-x-2">
-                        {getStatusBadge(application.status)}
+                    {getStatusBadge(application.status)}
                         {application.vehicle_details && (
                           <span className="text-sm text-gray-600">
                             {application.vehicle_details.make} {application.vehicle_details.model}
                           </span>
                         )}
                       </div>
-                    </div>
-                    
+                  </div>
+                  
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-4">
                       <div>
                         <span className="font-medium">Contract Period:</span> {application.contractPeriod}
@@ -1089,7 +1089,7 @@ const AdminDashboard = () => {
                       <div>
                         <span className="font-medium">Submitted:</span> {new Date(application.createdAt).toLocaleDateString()}
                       </div>
-                    </div>
+                  </div>
 
                     {/* Car Photos Display */}
                     {application.carPhotosUrls && application.carPhotosUrls.length > 0 && (
@@ -1136,21 +1136,21 @@ const AdminDashboard = () => {
                           <button
                             onClick={() => handleApproveRental(application.id)}
                             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                          >
-                            Approve
-                          </button>
-                          <button
+                      >
+                        Approve
+                      </button>
+                      <button
                             onClick={() => handleRejectRental(application.id)}
                             className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                          >
-                            Reject
-                          </button>
+                      >
+                        Reject
+                      </button>
                         </>
                       )}
                     </div>
-                  </div>
-                ))}
-              </div>
+                </div>
+              ))}
+            </div>
             )}
           </div>
         )}
@@ -1160,7 +1160,7 @@ const AdminDashboard = () => {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">Document Expiry Alerts</h2>
+            <h2 className="text-xl font-semibold text-gray-900">Document Expiry Alerts</h2>
                 <p className="text-sm text-gray-600 mt-1">Monitor vehicle documents that are expiring soon</p>
               </div>
               <button
@@ -1216,8 +1216,8 @@ const AdminDashboard = () => {
                             <h3 className={`text-xl font-semibold text-${overallColor}-900`}>{vehicleName}</h3>
                             <p className={`text-sm text-${overallColor}-700 mt-1`}>
                               {alerts.length} document{alerts.length > 1 ? 's' : ''} requiring attention
-                            </p>
-                          </div>
+                        </p>
+                      </div>
                           <div className="flex items-center space-x-2">
                             {criticalCount > 0 && (
                               <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium">
@@ -1318,13 +1318,13 @@ const AdminDashboard = () => {
               <div className="flex flex-wrap gap-4 items-end">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                  <input
-                    type="date"
+                        <input
+                          type="date"
                     value={paymentDateRange.startDate}
                     onChange={(e) => setPaymentDateRange({...paymentDateRange, startDate: e.target.value})}
                     className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
+                        />
+                      </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
                   <input
@@ -1333,7 +1333,7 @@ const AdminDashboard = () => {
                     onChange={(e) => setPaymentDateRange({...paymentDateRange, endDate: e.target.value})}
                     className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
-                </div>
+                    </div>
                 <button
                   onClick={() => setPaymentDateRange({
                     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -1352,8 +1352,8 @@ const AdminDashboard = () => {
                 >
                   Last 7 Days
                 </button>
+                  </div>
               </div>
-            </div>
 
             {/* Payment Statistics */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -1475,7 +1475,7 @@ const AdminDashboard = () => {
                     </svg>
                   </button>
                 </div>
-                
+
                 <form onSubmit={handleSubmitVehicle} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -1726,7 +1726,7 @@ const AdminDashboard = () => {
                     </svg>
                   </button>
                 </div>
-                
+
                 <form onSubmit={handleUpdateVehicle} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -1817,39 +1817,39 @@ const AdminDashboard = () => {
                         required
                       />
                     </div>
-                                         <div>
+                    <div>
                        <label className="block text-sm font-medium text-gray-700">Current Mileage</label>
-                       <input
-                         type="number"
+                      <input
+                        type="number"
                          value={editVehicleForm.currentMileage}
                          onChange={(e) => setEditVehicleForm({...editVehicleForm, currentMileage: e.target.value})}
                          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                          placeholder="e.g., 50000"
                          required
-                       />
-                     </div>
-                     <div>
+                      />
+                    </div>
+                    <div>
                        <label className="block text-sm font-medium text-gray-700">Odometer</label>
-                       <input
-                         type="number"
+                      <input
+                        type="number"
                          value={editVehicleForm.odoMeter}
                          onChange={(e) => setEditVehicleForm({...editVehicleForm, odoMeter: e.target.value})}
                          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                          placeholder="e.g., 50000"
-                       />
-                     </div>
-                     <div>
+                      />
+                    </div>
+                    <div>
                        <label className="block text-sm font-medium text-gray-700">Next Service Date</label>
-                       <input
-                         type="date"
+                      <input
+                        type="date"
                          value={editVehicleForm.nextServiceDate}
                          onChange={(e) => setEditVehicleForm({...editVehicleForm, nextServiceDate: e.target.value})}
                          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                       />
-                     </div>
-                     <div>
+                      />
+                    </div>
+                    <div>
                        <label className="block text-sm font-medium text-gray-700">Status</label>
-                       <select
+                      <select
                          value={editVehicleForm.status}
                          onChange={(e) => setEditVehicleForm({...editVehicleForm, status: e.target.value})}
                          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -1858,24 +1858,24 @@ const AdminDashboard = () => {
                          <option value="available">Available</option>
                          <option value="rented">Rented</option>
                          <option value="maintenance">Maintenance</option>
-                       </select>
+                      </select>
                        <p className="mt-1 text-xs text-gray-500">
                          Available: Can be rented | Rented: Currently rented | Maintenance: Under repair/service
                        </p>
-                     </div>
-                     <div>
+                    </div>
+                    <div>
                        <label className="block text-sm font-medium text-gray-700">Owner Name</label>
-                       <input
-                         type="text"
+                      <input
+                        type="text"
                          value={editVehicleForm.ownerName}
                          onChange={(e) => setEditVehicleForm({...editVehicleForm, ownerName: e.target.value})}
                          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                          placeholder="e.g., John Doe"
-                       />
-                     </div>
-                     <div>
+                      />
+                    </div>
+                    <div>
                        <label className="block text-sm font-medium text-gray-700">Vehicle Type</label>
-                       <select
+                      <select
                          value={editVehicleForm.vehicleType}
                          onChange={(e) => setEditVehicleForm({...editVehicleForm, vehicleType: e.target.value})}
                          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -1887,8 +1887,8 @@ const AdminDashboard = () => {
                          <option value="wagon">Wagon</option>
                          <option value="convertible">Convertible</option>
                          <option value="minivan">Minivan</option>
-                       </select>
-                     </div>
+                      </select>
+                    </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Fuel Type</label>
                       <select
@@ -1954,8 +1954,8 @@ const AdminDashboard = () => {
                   </div>
 
                   <div className="flex justify-end space-x-3 pt-4">
-                    <button
-                      type="button"
+                              <button
+                                type="button"
                       onClick={() => setShowEditVehicleModal(false)}
                       className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
                     >
@@ -1966,13 +1966,13 @@ const AdminDashboard = () => {
                       className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                     >
                       Update Vehicle
-                    </button>
-                  </div>
+                              </button>
+                            </div>
                 </form>
               </div>
-            </div>
-                     </div>
-         )}
+                        </div>
+                      </div>
+                    )}
 
          {/* View Vehicle Modal */}
          {showViewVehicleModal && viewingVehicle && (
@@ -1993,16 +1993,27 @@ const AdminDashboard = () => {
                  
                  <div className="space-y-4">
                    {/* Vehicle Photo */}
-                   {viewingVehicle.photoUrl && (
+                   {viewingVehicle.photoUrl || (viewingVehicle.photoUrls && viewingVehicle.photoUrls.length > 0) ? (
                      <div>
                        <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Photo</label>
                        <img 
-                         src={viewingVehicle.photoUrl} 
+                         src={
+                           viewingVehicle.photoUrl
+                             ? (viewingVehicle.photoUrl.startsWith('data:') || viewingVehicle.photoUrl.startsWith('http')
+                                 ? viewingVehicle.photoUrl
+                                 : `${API_BASE_URL}${viewingVehicle.photoUrl}`)
+                             : (
+                                 viewingVehicle.photoUrls[0].startsWith('http') || viewingVehicle.photoUrls[0].startsWith('data:')
+                                   ? viewingVehicle.photoUrls[0]
+                                   : `${API_BASE_URL}${viewingVehicle.photoUrls[0]}`
+                               )
+                         }
                          alt={`${viewingVehicle.make} ${viewingVehicle.model}`}
                          className="w-full h-48 object-cover rounded-lg border"
+                         onError={(e) => { e.currentTarget.style.display='none'; }}
                        />
                      </div>
-                   )}
+                   ) : null}
 
                    {/* Basic Information */}
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2075,16 +2086,16 @@ const AdminDashboard = () => {
                          <p className="mt-1 text-sm text-gray-900">{viewingVehicle.currentMileage} km</p>
                        </div>
                      </div>
-                   </div>
+                  </div>
 
-                   {/* Documents */}
+                  {/* Documents */}
                    {viewingVehicle.documents && viewingVehicle.documents.length > 0 && (
                      <div className="border-t pt-4">
                        <h4 className="text-md font-medium text-gray-900 mb-3">Vehicle Documents</h4>
                        <div className="space-y-2">
                          {viewingVehicle.documents.map((doc, index) => (
                            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                             <div>
+                  <div>
                                <p className="text-sm font-medium text-gray-900">
                                  {doc.documentType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                                </p>
@@ -2151,10 +2162,10 @@ const AdminDashboard = () => {
                 </div>
                 
                 <form onSubmit={handleUpdateRental} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700">First Name</label>
-                      <input
+                          <input
                         type="text"
                         value={editRentalForm.firstName}
                         onChange={(e) => setEditRentalForm({...editRentalForm, firstName: e.target.value})}
@@ -2164,14 +2175,14 @@ const AdminDashboard = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Last Name</label>
-                      <input
+                          <input
                         type="text"
                         value={editRentalForm.lastName}
                         onChange={(e) => setEditRentalForm({...editRentalForm, lastName: e.target.value})}
                         className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         required
-                      />
-                    </div>
+                          />
+                        </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Email</label>
                       <input
@@ -2270,8 +2281,8 @@ const AdminDashboard = () => {
             </div>
           </div>
         )}
-        </div>
       </div>
+    </div>
   );
 };
 
