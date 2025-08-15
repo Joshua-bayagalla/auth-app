@@ -44,11 +44,29 @@ export function AuthProvider({ children }) {
       console.log('Response status:', response.status);
       console.log('Response headers:', response.headers);
       
-      const data = await response.json();
+      const contentType = response.headers.get('content-type') || '';
+      let data;
+      if (contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        console.warn('Non-JSON response:', text?.slice(0, 200));
+        if (!response.ok) {
+          // Handle common HTML error pages (e.g., 502/504/cold start)
+          throw new Error(
+            response.status >= 500
+              ? 'Server is starting or temporarily unavailable. Please try again in a few seconds.'
+              : 'Unexpected server response. Please try again.'
+          );
+        }
+        // If somehow success without JSON
+        data = {};
+      }
+
       console.log('Response data:', data);
 
       if (!response.ok) {
-        throw new Error(data.detail || data.error || 'Login failed');
+        throw new Error(data?.detail || data?.error || 'Login failed');
       }
 
       const user = {
