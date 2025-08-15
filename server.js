@@ -526,48 +526,24 @@ async function sendVerificationEmail(email, token) {
 app.post('/api/signup', async (req, res) => {
   const { email, password, role = 'user' } = req.body;
   
-  if (!email || !password) {
+  const normalizedEmail = (email || '').trim().toLowerCase();
+  const normalizedPassword = (password || '').trim();
+
+  if (!normalizedEmail || !normalizedPassword) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
   
-  if (users.has(email)) {
+  if (users.has(normalizedEmail)) {
     return res.status(400).json({ error: 'User already exists' });
   }
   
-  // Generate verification token
-  const token = generateVerificationToken();
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+  // Store user as verified for now to enable smooth testing
+  users.set(normalizedEmail, { email: normalizedEmail, password: normalizedPassword, verified: true, role });
   
-  // Store user and verification token
-  users.set(email, { email, password, verified: false, role });
-  verificationTokens.set(token, { email, expiresAt });
-  
-  // Save data to MongoDB
+  // Persist
   await saveData(users, verificationTokens, vehicles);
-
-  // Send verification email (optional for now)
-  try {
-  const emailSent = await sendVerificationEmail(email, token);
-  if (emailSent) {
-    res.json({ message: 'User registered successfully. Please check your email to verify your account.' });
-  } else {
-      // Auto-verify user if email fails (for development)
-      const user = users.get(email);
-      if (user) {
-        user.verified = true;
-        saveData(users, verificationTokens, vehicles);
-      }
-      res.json({ message: 'User registered successfully. You can now login.' });
-    }
-  } catch (error) {
-    // Auto-verify user if email fails (for development)
-    const user = users.get(email);
-    if (user) {
-      user.verified = true;
-      saveData(users, verificationTokens, vehicles);
-    }
-    res.json({ message: 'User registered successfully. You can now login.' });
-  }
+  
+  res.json({ message: 'User registered successfully. You can now login.' });
 });
 
 // Verify email endpoint
@@ -619,17 +595,16 @@ app.post('/api/verify-email', async (req, res) => {
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   
-  if (!email || !password) {
+  const normalizedEmail = (email || '').trim().toLowerCase();
+  const normalizedPassword = (password || '').trim();
+
+  if (!normalizedEmail || !normalizedPassword) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
   
-  const user = users.get(email);
+  const user = users.get(normalizedEmail);
   
-  if (!user) {
-    return res.status(401).json({ error: 'Invalid credentials' });
-  }
-  
-  if (user.password !== password) {
+  if (!user || user.password !== normalizedPassword) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
   
@@ -1992,6 +1967,60 @@ app.post('/api/payments', (req, res) => {
   } catch (error) {
     console.error('Error creating payment:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Seed multiple vehicles for testing
+app.post('/api/seed-vehicles', async (req, res) => {
+  try {
+    const now = Date.now();
+    const samples = [
+      {
+        id: now + 1,
+        make: 'Toyota', model: 'Corolla', year: '2022', licensePlate: 'TOY22', vin: 'JTDBR32E220123456',
+        bondAmount: 1000, rentPerWeek: 180, currentMileage: 25000, odoMeter: 25000, nextServiceDate: '2026-01-10',
+        vehicleType: 'sedan', color: 'White', fuelType: 'petrol', transmission: 'automatic', status: 'available', ownerName: 'SK Car Rental',
+        photoUrls: ['https://images.unsplash.com/photo-1619767886558-efdc259cde1a?w=800&h=600&fit=crop'], documents: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+      },
+      {
+        id: now + 2,
+        make: 'Hyundai', model: 'i30', year: '2023', licensePlate: 'HY23I30', vin: 'KMHDH41EXPU123456',
+        bondAmount: 1200, rentPerWeek: 190, currentMileage: 12000, odoMeter: 12000, nextServiceDate: '2026-03-01',
+        vehicleType: 'hatchback', color: 'Blue', fuelType: 'petrol', transmission: 'automatic', status: 'available', ownerName: 'SK Car Rental',
+        photoUrls: ['https://images.unsplash.com/photo-1549923746-c502d488b3ea?w=800&h=600&fit=crop'], documents: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+      },
+      {
+        id: now + 3,
+        make: 'Tesla', model: 'Model 3', year: '2024', licensePlate: 'TESL3', vin: '5YJ3E1EA7KF123456',
+        bondAmount: 2000, rentPerWeek: 320, currentMileage: 8000, odoMeter: 8000, nextServiceDate: '2026-06-01',
+        vehicleType: 'sedan', color: 'Red', fuelType: 'electric', transmission: 'automatic', status: 'available', ownerName: 'SK Car Rental',
+        photoUrls: ['https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop'], documents: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+      }
+    ];
+
+    // Filter out any with duplicate licensePlate/VIN
+    const existingPlates = new Set(vehicles.map(v => v.licensePlate));
+    const existingVins = new Set(vehicles.map(v => v.vin));
+
+    const toInsert = samples.filter(v => !existingPlates.has(v.licensePlate) && !existingVins.has(v.vin));
+
+    if (toInsert.length === 0) {
+      return res.json({ message: 'No new vehicles to seed', added: 0, total: vehicles.length });
+    }
+
+    // Save to Mongo if available
+    const vehiclesCollection = getVehiclesCollection();
+    if (vehiclesCollection) {
+      for (const car of toInsert) {
+        await vehiclesCollection.updateOne({ id: car.id }, { $set: car }, { upsert: true });
+      }
+    }
+
+    vehicles.push(...toInsert);
+    res.json({ message: 'Vehicles seeded', added: toInsert.length, total: vehicles.length });
+  } catch (e) {
+    console.error('Seeding error:', e);
+    res.status(500).json({ error: 'Failed to seed vehicles' });
   }
 });
 
