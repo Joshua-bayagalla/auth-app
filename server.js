@@ -110,10 +110,10 @@ const uploadRentalApplication = multer({
   fileFilter: (req, file, cb) => {
     if (file.fieldname === 'paymentReceipt') {
       // Payment receipts can be images or PDFs
-      if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
-        cb(null, true);
-      } else {
-        cb(new Error('Only image and PDF files are allowed for payment receipts'));
+    if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image and PDF files are allowed for payment receipts'));
       }
     } else if (file.fieldname === 'carPhotos') {
       // Car photos must be images only
@@ -409,13 +409,13 @@ async function initializeData() {
     }
     
     console.log('Data initialized successfully');
-  } catch (error) {
+} catch (error) {
     console.error('Error initializing data:', error);
     // Initialize with empty data as fallback
     users = new Map();
     verificationTokens = new Map();
     vehicles = [];
-    drivers = [];
+  drivers = [];
   }
 }
 
@@ -547,10 +547,10 @@ app.post('/api/signup', async (req, res) => {
 
   // Send verification email (optional for now)
   try {
-    const emailSent = await sendVerificationEmail(email, token);
-    if (emailSent) {
-      res.json({ message: 'User registered successfully. Please check your email to verify your account.' });
-    } else {
+  const emailSent = await sendVerificationEmail(email, token);
+  if (emailSent) {
+    res.json({ message: 'User registered successfully. Please check your email to verify your account.' });
+  } else {
       // Auto-verify user if email fails (for development)
       const user = users.get(email);
       if (user) {
@@ -638,6 +638,30 @@ app.post('/api/login', async (req, res) => {
   }
   
   res.json({ message: 'Login successful', user: { email: user.email, verified: user.verified, role: user.role } });
+});
+
+// Temporary password reset endpoint (for development/testing)
+app.post('/api/reset-password', async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+    if (!email || !newPassword) {
+      return res.status(400).json({ error: 'Email and newPassword are required' });
+    }
+
+    const user = users.get(email);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    user.password = newPassword;
+    users.set(email, user);
+    await saveData(users, verificationTokens, vehicles);
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Resend verification email
@@ -943,7 +967,7 @@ app.get('/api/vehicles', async (req, res) => {
     const vehiclesCollection = getVehiclesCollection();
     if (!vehiclesCollection) {
       // Fallback to in-memory storage
-      res.json(vehicles);
+    res.json(vehicles);
       return;
     }
     const vehiclesFromDB = await vehiclesCollection.find({}).toArray();
