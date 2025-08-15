@@ -344,15 +344,16 @@ const AdminDashboard = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ status: 'active' }),
+        body: JSON.stringify({ action: 'approved' }),
       });
 
       if (response.ok) {
-        fetchRentalApplications();
-        fetchVehicles();
+        await fetchRentalApplications();
+        await fetchVehicles();
         alert('Rental application approved successfully!');
       } else {
-        alert('Error approving rental application');
+        const err = await response.json().catch(() => ({}));
+        alert(`Error approving rental application: ${err.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error approving rental:', error);
@@ -367,14 +368,16 @@ const AdminDashboard = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ status: 'rejected' }),
+        body: JSON.stringify({ action: 'rejected' }),
       });
 
       if (response.ok) {
-        fetchRentalApplications();
+        await fetchRentalApplications();
+        await fetchVehicles();
         alert('Rental application rejected successfully!');
       } else {
-        alert('Error rejecting rental application');
+        const err = await response.json().catch(() => ({}));
+        alert(`Error rejecting rental application: ${err.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error rejecting rental:', error);
