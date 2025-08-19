@@ -10,6 +10,7 @@ import EmailVerification from './components/EmailVerification';
 import ProtectedRoute from './components/ProtectedRoute';
 import RentalApplication from './components/RentalApplication';
 import Profile from './components/Profile';
+import Landing from './components/Landing';
 
 // Fallback component for any missing components
        function FallbackComponent({ name }) {
@@ -55,7 +56,7 @@ function App() {
       <AuthProvider>
         <div className="App">
           <Routes>
-            <Route path="/" element={<Navigate to="/login" />} />
+            <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             {/* Protected Routes */}

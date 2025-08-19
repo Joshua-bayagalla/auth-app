@@ -250,22 +250,18 @@ const UserDashboard = () => {
 
             {/* User Menu */}
             <div className="flex items-center space-x-4">
-              <div className="hidden md:flex items-center space-x-2 text-sm text-gray-600">
-                <User className="w-4 h-4" />
-                <span>{currentUser?.email}</span>
-                    </div>
-              <button
-                onClick={handleLogout}
-                className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden md:inline">Logout</span>
-              </button>
-              <button
-                onClick={() => navigate('/profile')}
-                className="px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-              >Profile</button>
-              
+              {/* Compact profile menu */}
+              <div className="relative group">
+                <button className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100">
+                  <User className="w-4 h-4 text-gray-600" />
+                  <span className="text-sm text-gray-700 hidden md:inline">{currentUser?.email}</span>
+                </button>
+                <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition">
+                  <button onClick={() => navigate('/profile')} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50">Profile</button>
+                  <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Logout</button>
+                </div>
+              </div>
+
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setShowMobileMenu(!showMobileMenu)}
