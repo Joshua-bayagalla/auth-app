@@ -100,6 +100,7 @@ const UserDashboard = () => {
   const [activeTab, setActiveTab] = useState('available');
   const [detailsBooking, setDetailsBooking] = useState(null);
   const [applications, setApplications] = useState([]);
+  const [detailsVehicle, setDetailsVehicle] = useState(null);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const PLACEHOLDER = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22150%22 viewBox=%220 0 200 150%22%3E%3Crect width=%22200%22 height=%22150%22 fill=%22%23e5e7eb%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2212%22 fill=%22%236b7280%22%3ENo image%3C/text%3E%3C/svg%3E';
@@ -194,6 +195,11 @@ const UserDashboard = () => {
     setCurrentImages(images);
     setShowImageSlider(true);
   };
+
+  const openVehicleDetails = (vehicle) => {
+    setDetailsVehicle(vehicle);
+  };
+  const closeVehicleDetails = () => setDetailsVehicle(null);
 
   const openBookingDetails = (booking) => {
     setDetailsBooking(booking);
@@ -341,6 +347,30 @@ const UserDashboard = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome Banner */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900">Welcome, {currentUser?.email?.split('@')[0] || 'driver'} 👋</h2>
+          <p className="text-sm text-gray-600">Browse available cars, track your applications, and view payment reminders.</p>
+        </div>
+
+        {/* Tabs */}
+        <div className="mb-6 border-b border-gray-200">
+          <nav className="flex space-x-6">
+            <button
+              onClick={() => setActiveTab('available')}
+              className={`py-2 text-sm font-medium border-b-2 ${activeTab === 'available' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'}`}
+            >
+              Available
+            </button>
+            <button
+              onClick={() => setActiveTab('applications')}
+              className={`py-2 text-sm font-medium border-b-2 ${activeTab === 'applications' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'}`}
+            >
+              Applications ({applications.length})
+            </button>
+          </nav>
+        </div>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20 transform hover:scale-105 transition-all duration-300">
@@ -502,7 +532,8 @@ const UserDashboard = () => {
 
                   <div className="grid grid-cols-2 gap-2">
                     <button
-                      onClick={() => openImageSlider((vehicle.photoUrls && vehicle.photoUrls.length > 0) ? vehicle.photoUrls : (vehicle.photoUrl ? [vehicle.photoUrl] : []))}
+                      onClick={() => openVehicleDetails(vehicle)
+                      }
                       className="w-full border text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-50"
                     >
                       View Details
@@ -635,6 +666,42 @@ const UserDashboard = () => {
           images={currentImages}
           onClose={() => setShowImageSlider(false)}
         />
+      )}
+
+      {detailsVehicle && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-bold">{detailsVehicle.make} {detailsVehicle.model}</h3>
+              <button onClick={closeVehicleDetails} className="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                {(() => {
+                  const images = (detailsVehicle.photoUrls && detailsVehicle.photoUrls.length > 0) ? detailsVehicle.photoUrls : (detailsVehicle.photoUrl ? [detailsVehicle.photoUrl] : []);
+                  const img = images[0];
+                  return img ? (
+                    <img src={img.startsWith('http') || img.startsWith('data:') ? img : `${API_BASE_URL}${img}`} alt="car" className="w-full h-48 object-cover rounded-lg" />
+                  ) : (
+                    <div className="w-full h-48 bg-gray-100 rounded-lg flex items-center justify-center"><Car className="w-10 h-10 text-gray-400" /></div>
+                  );
+                })()}
+              </div>
+              <div className="text-sm text-gray-700 space-y-1">
+                <p><span className="font-medium">Year:</span> {detailsVehicle.year}</p>
+                <p><span className="font-medium">Color:</span> {detailsVehicle.color}</p>
+                <p><span className="font-medium">Type:</span> {detailsVehicle.vehicleType}</p>
+                <p><span className="font-medium">Transmission:</span> {detailsVehicle.transmission}</p>
+                <p><span className="font-medium">Fuel:</span> {detailsVehicle.fuelType}</p>
+                <p><span className="font-medium">Bond:</span> ${detailsVehicle.bondAmount}</p>
+                <p><span className="font-medium">Weekly Rent:</span> ${detailsVehicle.rentPerWeek}</p>
+              </div>
+            </div>
+            <div className="mt-6 text-right">
+              <button onClick={() => { closeVehicleDetails(); navigate('/rental-application', { state: { vehicle: detailsVehicle } }); }} className="px-4 py-2 bg-blue-600 text-white rounded-lg">Proceed to Rent</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {detailsBooking && (
