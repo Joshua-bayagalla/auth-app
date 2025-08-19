@@ -27,8 +27,8 @@ let db;
 // Connect to MongoDB
 async function connectToMongoDB() {
   if (!MONGODB_URI) {
-    console.log('MongoDB URI not found, using in-memory storage as fallback');
-    return;
+    console.error('MONGODB_URI is not set. Refusing to start to avoid losing users in memory.');
+    process.exit(1);
   }
   
   try {
