@@ -99,6 +99,7 @@ const UserDashboard = () => {
   const [currentImages, setCurrentImages] = useState([]);
   const [activeTab, setActiveTab] = useState('available');
   const [detailsBooking, setDetailsBooking] = useState(null);
+  const [applications, setApplications] = useState([]);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const PLACEHOLDER = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22150%22 viewBox=%220 0 200 150%22%3E%3Crect width=%22200%22 height=%22150%22 fill=%22%23e5e7eb%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2212%22 fill=%22%236b7280%22%3ENo image%3C/text%3E%3C/svg%3E';
@@ -111,6 +112,7 @@ const UserDashboard = () => {
     
     fetchVehicles();
     fetchUserBookings();
+    fetchApplications();
   }, [currentUser, navigate]);
 
   const fetchVehicles = async () => {
@@ -122,6 +124,20 @@ const UserDashboard = () => {
       console.error('Error fetching vehicles:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchApplications = async () => {
+    try {
+      const response = await fetch(API_ENDPOINTS.RENTAL_APPLICATIONS);
+      const data = await response.json();
+      if (currentUser && currentUser.email) {
+        const ownApps = data.filter(a => a.email === currentUser.email && a.status !== 'active');
+        setApplications(ownApps);
+      }
+    } catch (error) {
+      console.error('Error fetching applications:', error);
+      setApplications([]);
     }
   };
 
@@ -226,7 +242,7 @@ const UserDashboard = () => {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-6">
-            <button
+              <button
                 onClick={() => setActiveTab('available')}
                 className={`px-4 py-2 rounded-lg transition-all duration-200 ${
                   activeTab === 'available'
@@ -235,18 +251,18 @@ const UserDashboard = () => {
                 }`}
               >
                 Available Cars
-            </button>
-            <button
-              onClick={() => setActiveTab('bookings')}
+              </button>
+              <button
+                onClick={() => setActiveTab('applications')}
                 className={`px-4 py-2 rounded-lg transition-all duration-200 ${
-                activeTab === 'bookings'
+                  activeTab === 'applications'
                     ? 'bg-blue-600 text-white shadow-lg'
                     : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-              }`}
-            >
-                My Bookings ({stats.activeBookings})
-            </button>
-        </div>
+                }`}
+              >
+                Applications ({applications.length})
+              </button>
+            </div>
 
             {/* User Menu */}
             <div className="flex items-center space-x-4">
@@ -291,16 +307,16 @@ const UserDashboard = () => {
                     </button>
                     <button
                       onClick={() => {
-                    setActiveTab('bookings');
+                    setActiveTab('applications');
                     setShowMobileMenu(false);
                   }}
                   className={`px-4 py-2 rounded-lg text-left transition-all duration-200 ${
-                    activeTab === 'bookings'
+                    activeTab === 'applications'
                       ? 'bg-blue-600 text-white'
                       : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
                   }`}
                 >
-                  My Bookings ({stats.activeBookings})
+                  Applications ({applications.length})
                     </button>
                 <div className="px-4 py-2 text-sm text-gray-600 border-t border-gray-200 pt-2">
                   <User className="w-4 h-4 inline mr-2" />
@@ -477,7 +493,7 @@ const UserDashboard = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {userBookings.map((booking) => (
+            {applications.map((booking) => (
               <div
                 key={booking.id}
                 className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 overflow-hidden transform hover:scale-105 transition-all duration-300"
@@ -505,10 +521,10 @@ const UserDashboard = () => {
                       <Car className="w-12 h-12 text-gray-400" />
                     </div>
                   )}
-                  <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                    Active
-                    </div>
-                    </div>
+                  <div className="absolute top-2 left-2 bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                    {booking.status || 'pending'}
+                  </div>
+                </div>
 
                 {/* Booking Details */}
                 <div className="p-6">
@@ -517,7 +533,7 @@ const UserDashboard = () => {
                       <h3 className="text-xl font-bold text-gray-900 mb-1">
                         {booking.vehicle_details?.make} {booking.vehicle_details?.model}
                       </h3>
-                      <p className="text-gray-600">Booking #{booking.id}</p>
+                      <p className="text-gray-600">Application #{booking.id}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-bold text-green-600">${booking.weeklyRent}</p>
@@ -529,10 +545,10 @@ const UserDashboard = () => {
                     <div className="flex items-center text-sm text-gray-600">
                       <Calendar className="w-4 h-4 mr-2" />
                       {booking.contractStartDate} - {booking.contractEndDate}
-                  </div>
+                    </div>
                     <div className="flex items-center text-sm text-gray-600">
                       <DollarSign className="w-4 h-4 mr-2" />
-                      Bond Paid: ${booking.bondAmount}
+                      Bond: ${booking.bondAmount}
                     </div>
                     <div className="flex items-center text-sm text-gray-600">
                       <MapPin className="w-4 h-4 mr-2" />
@@ -544,12 +560,14 @@ const UserDashboard = () => {
                     <button onClick={() => openBookingDetails(booking)} className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-all duration-200">
                       View Details
                     </button>
-                    <a
-                      href={`${API_BASE_URL}/api/documents/${booking.id}/${(booking.documents?.[0]?.id)||0}/download`}
-                      className="flex-1 text-center bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-all duration-200"
-                    >
-                      Download Docs
-                    </a>
+                    {booking.documents?.length > 0 && (
+                      <a
+                        href={`${API_BASE_URL}/api/documents/${booking.id}/${(booking.documents?.[0]?.id)||0}/download`}
+                        className="flex-1 text-center bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-all duration-200"
+                      >
+                        Download Docs
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>
@@ -566,10 +584,10 @@ const UserDashboard = () => {
           </div>
         )}
 
-        {activeTab === 'bookings' && userBookings.length === 0 && (
+        {activeTab === 'applications' && applications.length === 0 && (
           <div className="text-center py-12">
             <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No active bookings</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No applications yet</h3>
             <p className="text-gray-600">Start by renting a car from our available selection</p>
             <button
               onClick={() => setActiveTab('available')}

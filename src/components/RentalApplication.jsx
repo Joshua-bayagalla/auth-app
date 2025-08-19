@@ -28,6 +28,7 @@ const RentalApplication = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showSubmittedModal, setShowSubmittedModal] = useState(false);
 
   useEffect(() => {
     if (!vehicle) {
@@ -113,7 +114,7 @@ const RentalApplication = () => {
       }
 
       setSuccess('Application submitted! Await admin approval.');
-      setTimeout(() => navigate('/user-dashboard'), 1200);
+      setShowSubmittedModal(true);
     } catch (e) {
       setError(e.message || 'Something went wrong.');
     } finally {
@@ -390,6 +391,18 @@ const RentalApplication = () => {
           </div>
         </form>
       </div>
+
+      {showSubmittedModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold mb-2">Application submitted</h3>
+            <p className="text-sm text-gray-700">We received your application for {vehicle.make} {vehicle.model}. You can track its status in your dashboard under Applications.</p>
+            <div className="mt-6 text-right">
+              <button onClick={() => navigate('/user-dashboard')} className="px-4 py-2 bg-blue-600 text-white rounded-lg">Go to Dashboard</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
