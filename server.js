@@ -36,13 +36,20 @@ async function connectToMongoDB() {
     await client.connect();
     db = client.db('carrental');
     console.log('Connected to MongoDB successfully!');
-    
-    // Create collections if they don't exist
-    await db.createCollection('users');
-    await db.createCollection('vehicles');
-    await db.createCollection('drivers');
-    await db.createCollection('tokens');
-    
+
+    // Ensure collections exist without failing if they already do
+    const requiredCollections = ['users', 'vehicles', 'drivers', 'tokens'];
+    const existing = new Set((await db.listCollections().toArray()).map(c => c.name));
+    for (const name of requiredCollections) {
+      if (!existing.has(name)) {
+        try {
+          await db.createCollection(name);
+          console.log(`Created collection: ${name}`);
+        } catch (e) {
+          console.warn(`Could not create collection ${name}:`, e?.message || e);
+        }
+      }
+    }
     console.log('MongoDB collections ready!');
   } catch (error) {
     console.error('MongoDB connection error:', error);
