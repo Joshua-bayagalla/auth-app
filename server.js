@@ -115,6 +115,13 @@ const uploadRentalApplication = multer({
     } else {
       cb(new Error('Only image and PDF files are allowed for payment receipts'));
       }
+    } else if (file.fieldname === 'licenseCard') {
+      // License card can be an image or PDF
+      if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
+        cb(null, true);
+      } else {
+        cb(new Error('Only image and PDF files are allowed for license card'));
+      }
     } else if (file.fieldname === 'carPhotos') {
       // Car photos must be images only
       if (file.mimetype.startsWith('image/')) {
@@ -1736,7 +1743,8 @@ app.post('/api/test-rentals', async (req, res) => {
 // Rental application endpoint
 app.post('/api/rentals', uploadRentalApplication.fields([
   { name: 'paymentReceipt', maxCount: 1 },
-  { name: 'carPhotos', maxCount: 10 }
+  { name: 'carPhotos', maxCount: 10 },
+  { name: 'licenseCard', maxCount: 1 }
 ]), (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     return res.status(400).json({ error: `File upload error: ${err.message}` });
@@ -1766,7 +1774,7 @@ app.post('/api/rentals', uploadRentalApplication.fields([
 
     // Validate required fields
     if (!vehicleId || !contractPeriod || !firstName || !lastName || !email || !phone || 
-        !licenseNumber || !licenseExpiry || !address || !emergencyContact || !emergencyPhone) {
+        !licenseExpiry || !address || !emergencyContact || !emergencyPhone) {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
@@ -1789,6 +1797,11 @@ app.post('/api/rentals', uploadRentalApplication.fields([
       return res.status(400).json({ error: 'Car photos are required' });
     }
 
+    // Check if license card was uploaded
+    if (!req.files || !req.files.licenseCard || req.files.licenseCard.length === 0) {
+      return res.status(400).json({ error: 'License card is required' });
+    }
+
     // Check if payment receipt was uploaded
     if (!req.files || !req.files.paymentReceipt || req.files.paymentReceipt.length === 0) {
       return res.status(400).json({ error: 'Payment receipt is required' });
@@ -1801,7 +1814,7 @@ app.post('/api/rentals', uploadRentalApplication.fields([
       lastName,
       email,
       phone,
-      licenseNumber,
+      // licenseNumber is replaced by licenseCard upload
       licenseExpiry,
       address,
       emergencyContact,
@@ -1815,6 +1828,7 @@ app.post('/api/rentals', uploadRentalApplication.fields([
       contractSigned: true,
       paymentReceiptUploaded: true,
       paymentReceiptUrl: `/uploads/payments/${req.files.paymentReceipt[0].filename}`,
+      licenseCardUrl: `data:${req.files.licenseCard[0].mimetype};base64,${req.files.licenseCard[0].buffer.toString('base64')}`,
       paymentAmount: parseFloat(paymentAmount) || 0,
       carPhotosUploaded: true,
       carPhotosUrls: req.files.carPhotos.map(file => `/uploads/car-photos/${file.filename}`),

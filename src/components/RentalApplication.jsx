@@ -16,7 +16,6 @@ const RentalApplication = () => {
     lastName: '',
     email: currentUser?.email || '',
     phone: '',
-    licenseNumber: '',
     licenseExpiry: '',
     address: '',
     emergencyContact: '',
@@ -25,6 +24,7 @@ const RentalApplication = () => {
   });
   const [carPhotos, setCarPhotos] = useState([]);
   const [paymentReceipt, setPaymentReceipt] = useState(null);
+  const [licenseCard, setLicenseCard] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -52,7 +52,7 @@ const RentalApplication = () => {
     setSuccess('');
 
     // Basic validation
-    const required = ['contractPeriod','firstName','lastName','email','phone','licenseNumber','licenseExpiry','address','emergencyContact','emergencyPhone','paymentAmount'];
+    const required = ['contractPeriod','firstName','lastName','email','phone','licenseExpiry','address','emergencyContact','emergencyPhone','paymentAmount'];
     const missing = required.filter((k) => !form[k] || String(form[k]).trim() === '');
     if (missing.length) {
       setError('Please fill all required fields.');
@@ -70,6 +70,11 @@ const RentalApplication = () => {
       return;
     }
 
+    if (!licenseCard) {
+      setError('Please upload your driver license card.');
+      return;
+    }
+
     try {
       setSubmitting(true);
       const fd = new FormData();
@@ -79,7 +84,6 @@ const RentalApplication = () => {
       fd.append('lastName', form.lastName);
       fd.append('email', form.email);
       fd.append('phone', form.phone);
-      fd.append('licenseNumber', form.licenseNumber);
       fd.append('licenseExpiry', form.licenseExpiry);
       fd.append('address', form.address);
       fd.append('emergencyContact', form.emergencyContact);
@@ -90,6 +94,7 @@ const RentalApplication = () => {
       fd.append('paymentAmount', amount);
 
       carPhotos.forEach((file) => fd.append('carPhotos', file));
+      if (licenseCard) fd.append('licenseCard', licenseCard);
       if (paymentReceipt) fd.append('paymentReceipt', paymentReceipt);
 
       const res = await fetch(`${API_BASE_URL}/api/rentals`, {
@@ -251,15 +256,17 @@ const RentalApplication = () => {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">License Number *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Upload License Card *</label>
               <input
-                name="licenseNumber"
-                type="text"
+                type="file"
+                accept="image/*,.pdf"
                 required
-                value={form.licenseNumber}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => setLicenseCard((e.target.files || [])[0] || null)}
+                className="w-full"
               />
+              {licenseCard && (
+                <p className="text-xs text-green-700 mt-1">{licenseCard.name} selected</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">License Expiry *</label>
