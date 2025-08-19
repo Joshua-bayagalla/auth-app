@@ -53,8 +53,8 @@ async function connectToMongoDB() {
     console.log('MongoDB collections ready!');
   } catch (error) {
     console.error('MongoDB connection error:', error);
-    console.log('Falling back to in-memory storage');
-    db = null;
+    // Hard exit to avoid in-memory fallback (prevents user data loss)
+    process.exit(1);
   }
 }
 
