@@ -248,7 +248,7 @@ const UserDashboard = () => {
                 <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
                   SK Car Rental
                 </h1>
-                <p className="text-xs text-gray-500">Australia</p>
+                <p className="text-xs text-gray-500">Welcome {currentUser?.email?.split('@')[0] || 'User'}</p>
               </div>
         </div>
 
@@ -279,12 +279,15 @@ const UserDashboard = () => {
             {/* User Menu */}
             <div className="flex items-center space-x-4">
               {/* Compact profile menu */}
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 border border-red-200 text-sm"
-              >
-                Logout
-              </button>
+              <div className="flex items-center space-x-2">
+                <button onClick={() => navigate('/profile')} className="px-3 py-2 text-sm rounded-lg border hover:bg-gray-50">Profile</button>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 border border-red-200 text-sm"
+                >
+                  Logout
+                </button>
+              </div>
 
               {/* Mobile Menu Button */}
               <button
@@ -497,15 +500,23 @@ const UserDashboard = () => {
                   </div>
                 </div>
 
-                  <button
-                    onClick={() => {
-                      setSelectedVehicle(vehicle);
-                      navigate('/rental-application', { state: { vehicle } });
-                    }}
-                    className="w-full bg-gradient-to-r from-blue-600 to-green-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-green-700 transform hover:scale-105 transition-all duration-200 shadow-lg"
-                  >
-                    Rent This Car
-                  </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => openImageSlider((vehicle.photoUrls && vehicle.photoUrls.length > 0) ? vehicle.photoUrls : (vehicle.photoUrl ? [vehicle.photoUrl] : []))}
+                      className="w-full border text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-50"
+                    >
+                      View Details
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedVehicle(vehicle);
+                        navigate('/rental-application', { state: { vehicle } });
+                      }}
+                      className="w-full bg-gradient-to-r from-blue-600 to-green-600 text-white py-2 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-green-700 shadow-lg"
+                    >
+                      Rent
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
