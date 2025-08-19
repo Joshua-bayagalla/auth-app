@@ -237,12 +237,14 @@ async function loadData() {
       return { users: new Map(), verificationTokens: new Map(), vehicles: [] };
     }
     
-    // Load users
+    // Load users (normalize email keys to lowercase for reliable login)
     const usersData = await usersCollection.find({}).toArray();
     const users = new Map();
     usersData.forEach(user => {
-      if (user && user.email) {
-        users.set(user.email, user);
+      const emailKey = (user?.email || '').trim().toLowerCase();
+      if (emailKey) {
+        // Ensure stored email is normalized as well
+        users.set(emailKey, { ...user, email: emailKey });
       }
     });
     
@@ -692,7 +694,10 @@ app.post('/api/resend-verification', async (req, res) => {
 
 // Create admin user endpoint (for testing)
 app.post('/api/create-admin', async (req, res) => {
-  const { email, password } = req.body;
+  const rawEmail = req.body?.email || '';
+  const rawPassword = req.body?.password || '';
+  const email = rawEmail.trim().toLowerCase();
+  const password = rawPassword.trim();
   
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
