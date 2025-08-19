@@ -15,7 +15,10 @@ const getVehiclesCollection = () => db ? db.collection('vehicles') : null;
 const getDriversCollection = () => db ? db.collection('drivers') : null;
 const getTokensCollection = () => db ? db.collection('tokens') : null;
 
-dotenv.config();
+// Load .env only in local development to avoid overriding Render env vars
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config();
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
