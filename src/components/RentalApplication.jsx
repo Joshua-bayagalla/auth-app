@@ -29,6 +29,7 @@ const RentalApplication = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showSubmittedModal, setShowSubmittedModal] = useState(false);
+  const [contractSigned, setContractSigned] = useState(false);
 
   useEffect(() => {
     if (!vehicle) {
@@ -76,6 +77,11 @@ const RentalApplication = () => {
       return;
     }
 
+    if (!contractSigned) {
+      setError('Please review and agree to the contract to proceed.');
+      return;
+    }
+
     try {
       setSubmitting(true);
       const fd = new FormData();
@@ -89,7 +95,7 @@ const RentalApplication = () => {
       fd.append('address', form.address);
       fd.append('emergencyContact', form.emergencyContact);
       fd.append('emergencyPhone', form.emergencyPhone);
-      fd.append('contractSigned', 'true');
+      fd.append('contractSigned', String(contractSigned));
       fd.append('bondAmount', vehicle.bondAmount || 0);
       fd.append('weeklyRent', vehicle.rentPerWeek || 0);
       fd.append('paymentAmount', amount);
@@ -378,6 +384,14 @@ const RentalApplication = () => {
                 className="w-full"
               />
             </div>
+          </div>
+
+          {/* Contract Agreement */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
+            <label className="flex items-start space-x-3">
+              <input type="checkbox" checked={contractSigned} onChange={(e)=>setContractSigned(e.target.checked)} className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded" />
+              <span className="text-sm text-gray-700">I have read and agree to the rental contract, weekly payments, and bond terms for the selected vehicle.</span>
+            </label>
           </div>
 
           <div className="flex justify-end">

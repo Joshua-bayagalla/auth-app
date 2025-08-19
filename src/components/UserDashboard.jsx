@@ -208,6 +208,18 @@ const UserDashboard = () => {
     return { totalBookings, activeBookings, totalValue };
   };
 
+  const nextPaymentDate = () => {
+    // Assume weekly payments from contractStartDate
+    const first = userBookings[0];
+    if (!first) return null;
+    const start = new Date(first.contractStartDate || new Date());
+    const now = new Date();
+    const msInWeek = 7 * 24 * 60 * 60 * 1000;
+    const weeksPassed = Math.floor((now - start) / msInWeek);
+    const next = new Date(start.getTime() + (weeksPassed + 1) * msInWeek);
+    return next.toLocaleDateString();
+  };
+
   const stats = getBookingStats();
 
   if (loading) {
@@ -369,6 +381,17 @@ const UserDashboard = () => {
                               </div>
                         </div>
                       </div>
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20 transform hover:scale-105 transition-all duration-300">
+            <div className="flex items-center">
+              <div className="p-3 bg-purple-100 rounded-full">
+                <Calendar className="w-6 h-6 text-purple-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Next Payment</p>
+                <p className="text-2xl font-bold text-gray-900">{nextPaymentDate() || '—'}</p>
+              </div>
+            </div>
+          </div>
                   </div>
 
         {/* Search and Filter */}
