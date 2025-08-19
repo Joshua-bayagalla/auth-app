@@ -118,7 +118,7 @@ export default function Landing() {
           <button onClick={() => navigate('/user-dashboard')} className="text-sm text-blue-600 hover:underline">Browse all</button>
         </div>
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="h-64 rounded-2xl bg-white/70 border border-white/30 backdrop-blur-sm animate-pulse" />
             ))}
