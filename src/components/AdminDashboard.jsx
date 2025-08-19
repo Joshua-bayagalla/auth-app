@@ -665,8 +665,12 @@ const AdminDashboard = () => {
         <div className="mb-8">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-              <p className="mt-2 text-gray-600">Manage vehicles, rental applications, and monitor document expiry</p>
+              <h1 className="text-3xl font-bold text-gray-900">Welcome, Admin</h1>
+              <p className="mt-2 text-gray-600">Manage vehicles, applications, documents and payments from one place.</p>
+              <div className="mt-3 bg-blue-50 border border-blue-200 text-blue-800 text-sm rounded-xl px-4 py-2 inline-flex items-center">
+                <span className="w-2 h-2 bg-blue-500 rounded-full mr-2" />
+                Tip: Use the tabs below to switch between sections quickly.
+              </div>
             </div>
             <button
               onClick={() => {
@@ -715,10 +719,10 @@ const AdminDashboard = () => {
 
         {/* Tab Navigation */}
         <div className="mb-6">
-          <nav className="flex space-x-8 border-b border-gray-200">
+          <nav className="flex flex-wrap gap-4 md:space-x-6 border-b border-gray-200">
             <button
               onClick={() => setActiveTab('vehicles')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`py-2 px-3 border-b-2 font-medium text-sm rounded-t ${
                 activeTab === 'vehicles'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -728,7 +732,7 @@ const AdminDashboard = () => {
             </button>
             <button
               onClick={() => setActiveTab('maintenance')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`py-2 px-3 border-b-2 font-medium text-sm rounded-t ${
                 activeTab === 'maintenance'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'

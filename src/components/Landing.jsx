@@ -170,7 +170,45 @@ export default function Landing() {
         )}
       </section>
 
-      <footer className="relative z-10 text-center text-xs text-gray-500 pb-8">© {new Date().getFullYear()} SK Car Rental</footer>
+      {/* Footer */}
+      <footer className="relative z-10 bg-white/70 backdrop-blur border-t border-gray-200">
+        <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-2 sm:grid-cols-4 gap-8 text-sm">
+          <div>
+            <div className="flex items-center space-x-2 mb-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-green-600 flex items-center justify-center">
+                <Car className="w-4 h-4 text-white" />
+              </div>
+              <span className="font-semibold">SK Car Rental</span>
+            </div>
+            <p className="text-gray-600">Premium cars, flexible plans, and hassle‑free rentals.</p>
+          </div>
+          <div>
+            <p className="font-semibold text-gray-900 mb-3">Company</p>
+            <ul className="space-y-2 text-gray-600">
+              <li><button onClick={() => navigate('/')} className="hover:text-gray-900">About</button></li>
+              <li><button onClick={() => navigate('/user-dashboard')} className="hover:text-gray-900">Fleet</button></li>
+              <li><button onClick={() => navigate('/signup')} className="hover:text-gray-900">Careers</button></li>
+            </ul>
+          </div>
+          <div>
+            <p className="font-semibold text-gray-900 mb-3">Support</p>
+            <ul className="space-y-2 text-gray-600">
+              <li><a className="hover:text-gray-900" href="#">Help Center</a></li>
+              <li><a className="hover:text-gray-900" href="#">Terms</a></li>
+              <li><a className="hover:text-gray-900" href="#">Privacy</a></li>
+            </ul>
+          </div>
+          <div>
+            <p className="font-semibold text-gray-900 mb-3">Contact</p>
+            <ul className="space-y-2 text-gray-600">
+              <li>support@skcarrental.com</li>
+              <li>+61 400 000 000</li>
+              <li>Australia</li>
+            </ul>
+          </div>
+        </div>
+        <div className="text-center text-xs text-gray-500 pb-6">© {new Date().getFullYear()} SK Car Rental. All rights reserved.</div>
+      </footer>
     </div>
   );
 }
