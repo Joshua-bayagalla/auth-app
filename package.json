@@ -9,6 +9,7 @@
     "start": "node server.js",
     "dev:full": "concurrently \"npm run dev\" \"npm run server\"",
     "build": "vite build",
+    "migrate": "node scripts/migrate.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },

@@ -98,6 +98,7 @@ const UserDashboard = () => {
   const [showImageSlider, setShowImageSlider] = useState(false);
   const [currentImages, setCurrentImages] = useState([]);
   const [activeTab, setActiveTab] = useState('available');
+  const [detailsBooking, setDetailsBooking] = useState(null);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const PLACEHOLDER = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22150%22 viewBox=%220 0 200 150%22%3E%3Crect width=%22200%22 height=%22150%22 fill=%22%23e5e7eb%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2212%22 fill=%22%236b7280%22%3ENo image%3C/text%3E%3C/svg%3E';
@@ -178,6 +179,11 @@ const UserDashboard = () => {
     setShowImageSlider(true);
   };
 
+  const openBookingDetails = (booking) => {
+    setDetailsBooking(booking);
+  };
+  const closeBookingDetails = () => setDetailsBooking(null);
+
   const getBookingStats = () => {
     const totalBookings = userBookings.length;
     const activeBookings = userBookings.filter(booking => booking.status === 'active').length;
@@ -255,6 +261,10 @@ const UserDashboard = () => {
                 <LogOut className="w-4 h-4" />
                 <span className="hidden md:inline">Logout</span>
               </button>
+              <button
+                onClick={() => navigate('/profile')}
+                className="px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+              >Profile</button>
               
               {/* Mobile Menu Button */}
               <button
@@ -535,12 +545,15 @@ const UserDashboard = () => {
                   </div>
 
                   <div className="flex space-x-2">
-                    <button className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-all duration-200">
+                    <button onClick={() => openBookingDetails(booking)} className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-all duration-200">
                       View Details
                     </button>
-                    <button className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-all duration-200">
+                    <a
+                      href={`${API_BASE_URL}/api/documents/${booking.id}/${(booking.documents?.[0]?.id)||0}/download`}
+                      className="flex-1 text-center bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-all duration-200"
+                    >
                       Download Docs
-                    </button>
+                    </a>
                   </div>
                 </div>
               </div>
@@ -578,6 +591,44 @@ const UserDashboard = () => {
           images={currentImages}
           onClose={() => setShowImageSlider(false)}
         />
+      )}
+
+      {detailsBooking && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-bold">Booking Details</h3>
+              <button onClick={closeBookingDetails} className="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+            <div className="space-y-2 text-sm text-gray-700">
+              <p><span className="font-medium">Vehicle:</span> {detailsBooking.vehicle_details?.make} {detailsBooking.vehicle_details?.model}</p>
+              <p><span className="font-medium">Period:</span> {detailsBooking.contractStartDate} → {detailsBooking.contractEndDate}</p>
+              <p><span className="font-medium">Weekly Rent:</span> ${detailsBooking.weeklyRent}</p>
+              <p><span className="font-medium">Bond:</span> ${detailsBooking.bondAmount}</p>
+              <p><span className="font-medium">Status:</span> {detailsBooking.status}</p>
+            </div>
+            {detailsBooking.documents?.length > 0 && (
+              <div className="mt-4">
+                <h4 className="font-semibold mb-2">Documents</h4>
+                <ul className="space-y-1 text-sm">
+                  {detailsBooking.documents.map((doc, idx) => (
+                    <li key={idx}>
+                      <a
+                        className="text-blue-600 hover:underline"
+                        href={`${API_BASE_URL}/api/documents/${detailsBooking.id}/${doc.id}/download`}
+                      >
+                        {doc.documentType} – {doc.fileName}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <div className="mt-6 text-right">
+              <button onClick={closeBookingDetails} className="px-4 py-2 bg-blue-600 text-white rounded-lg">Close</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

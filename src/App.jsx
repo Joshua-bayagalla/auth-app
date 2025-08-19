@@ -9,6 +9,7 @@ import AdminDashboard from './components/AdminDashboard';
 import EmailVerification from './components/EmailVerification';
 import ProtectedRoute from './components/ProtectedRoute';
 import RentalApplication from './components/RentalApplication';
+import Profile from './components/Profile';
 
 // Fallback component for any missing components
        function FallbackComponent({ name }) {
@@ -60,6 +61,7 @@ function App() {
             {/* Protected Routes */}
             <Route path="/dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
             <Route path="/user-dashboard" element={<ProtectedRoute requiredRole="user"><UserDashboard /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute requiredRole="user"><Profile /></ProtectedRoute>} />
             <Route path="/admin-dashboard" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
             <Route path="/rental-application" element={<ProtectedRoute requiredRole="user"><RentalApplication /></ProtectedRoute>} />
             <Route path="/verify" element={<EmailVerification />} />

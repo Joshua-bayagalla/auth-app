@@ -2082,8 +2082,14 @@ app.use('/api/*', (req, res) => {
   res.status(404).json({ error: 'API endpoint not found' });
 });
 
-// Serve React app for all other GET routes
+// Serve React app for all other GET routes - ensure production build index is returned
 app.get('*', (req, res) => {
+  const distIndex = path.join(__dirname, 'dist', 'index.html');
+  if (fs.existsSync(distIndex)) {
+    res.sendFile(distIndex);
+    return;
+  }
+  // Fallback (dev or missing build)
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
