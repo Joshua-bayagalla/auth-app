@@ -1518,7 +1518,17 @@ const AdminDashboard = () => {
                         required
                       />
                     </div>
-                    {/* License Plate field removed per request */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">License Plate</label>
+                      <input
+                        type="text"
+                        value={vehicleForm.licensePlate}
+                        onChange={(e) => setVehicleForm({...vehicleForm, licensePlate: e.target.value})}
+                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="e.g., ABC123"
+                        required
+                      />
+                    </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">VIN</label>
                       <input
@@ -1759,7 +1769,17 @@ const AdminDashboard = () => {
                         required
                       />
                     </div>
-                    {/* License Plate field removed in edit form per request */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">License Plate</label>
+                      <input
+                        type="text"
+                        value={editVehicleForm.licensePlate}
+                        onChange={(e) => setEditVehicleForm({...editVehicleForm, licensePlate: e.target.value})}
+                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="e.g., ABC123"
+                        required
+                      />
+                    </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">VIN</label>
                       <input
