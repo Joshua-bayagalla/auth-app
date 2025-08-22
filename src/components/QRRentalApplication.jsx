@@ -19,7 +19,7 @@ import { API_BASE_URL } from '../config';
 const QRRentalApplication = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const vehicle = location.state?.vehicle;
+  const vehicle = location.state?.vehicle; // Potentially pre-selected vehicle
 
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -387,107 +387,6 @@ const QRRentalApplication = () => {
               </div>
             </div>
           )}
-            <div className="bg-white/90 backdrop-blur-md rounded-3xl shadow-xl border border-white/30 p-8">
-              <div className="flex items-center mb-6">
-                <FileText className="w-8 h-8 text-purple-600 mr-3" />
-                <h2 className="text-2xl font-bold text-gray-900">Document Upload</h2>
-              </div>
-              
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Driving License (Front) *</label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
-                      <Camera className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => handleFileUpload(e, 'licenseFront')}
-                        className="hidden"
-                        id="licenseFront"
-                        required
-                      />
-                      <label htmlFor="licenseFront" className="cursor-pointer">
-                        <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
-                        <p className="text-xs text-gray-500 mt-1">JPG, PNG, PDF up to 10MB</p>
-                      </label>
-                    </div>
-                    {formData.licenseFront && (
-                      <p className="text-sm text-green-600 mt-2">✓ {formData.licenseFront.name}</p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Driving License (Back) *</label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
-                      <Camera className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => handleFileUpload(e, 'licenseBack')}
-                        className="hidden"
-                        id="licenseBack"
-                        required
-                      />
-                      <label htmlFor="licenseBack" className="cursor-pointer">
-                        <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
-                        <p className="text-xs text-gray-500 mt-1">JPG, PNG, PDF up to 10MB</p>
-                      </label>
-                    </div>
-                    {formData.licenseBack && (
-                      <p className="text-sm text-green-600 mt-2">✓ {formData.licenseBack.name}</p>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Bond Payment Proof *</label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
-                      <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => handleFileUpload(e, 'bondProof')}
-                        className="hidden"
-                        id="bondProof"
-                        required
-                      />
-                      <label htmlFor="bondProof" className="cursor-pointer">
-                        <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
-                        <p className="text-xs text-gray-500 mt-1">Payment receipt screenshot</p>
-                      </label>
-                    </div>
-                    {formData.bondProof && (
-                      <p className="text-sm text-green-600 mt-2">✓ {formData.bondProof.name}</p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Rent Payment Proof *</label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
-                      <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={(e) => handleFileUpload(e, 'rentProof')}
-                        className="hidden"
-                        id="rentProof"
-                        required
-                      />
-                      <label htmlFor="rentProof" className="cursor-pointer">
-                        <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
-                        <p className="text-xs text-gray-500 mt-1">Payment receipt screenshot</p>
-                      </label>
-                    </div>
-                    {formData.rentProof && (
-                      <p className="text-sm text-green-600 mt-2">✓ {formData.rentProof.name}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Step 3: Payment Information */}
           {currentStep === 3 && (
@@ -497,63 +396,89 @@ const QRRentalApplication = () => {
                 <h2 className="text-2xl font-bold text-gray-900">Payment Information</h2>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200">
-                  <h3 className="text-lg font-semibold text-blue-900 mb-4">Business Account</h3>
-                  <div className="space-y-2 text-sm">
-                    <p><span className="font-medium">Name:</span> Kamboh logistics pty ltd</p>
-                    <p><span className="font-medium">BSB:</span> 083004</p>
-                    <p><span className="font-medium">Account:</span> 787900650</p>
+              {/* Highlighted Bank Details */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl p-8 border-2 border-blue-200 mb-8">
+                <h3 className="text-xl font-bold text-blue-900 mb-6 text-center">🏦 Bank Account Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-white rounded-xl p-6 border border-blue-300 shadow-lg">
+                    <div className="flex items-center mb-4">
+                      <CreditCard className="w-6 h-6 text-blue-600 mr-2" />
+                      <h4 className="text-lg font-semibold text-blue-900">Business Account</h4>
+                    </div>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-700">Account Name:</span>
+                        <span className="text-blue-900 font-semibold">Kamboh logistics pty ltd</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-700">BSB:</span>
+                        <span className="text-blue-900 font-semibold">083004</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-700">Account Number:</span>
+                        <span className="text-blue-900 font-semibold">787900650</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
 
-                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 border border-green-200">
-                  <h3 className="text-lg font-semibold text-green-900 mb-4">PAYID</h3>
-                  <div className="space-y-2 text-sm">
-                    <p><span className="font-medium">Mobile:</span> +61411766786</p>
-                    <p className="text-xs text-gray-600">Use this for quick payments</p>
+                  <div className="bg-white rounded-xl p-6 border border-green-300 shadow-lg">
+                    <div className="flex items-center mb-4">
+                      <Upload className="w-6 h-6 text-green-600 mr-2" />
+                      <h4 className="text-lg font-semibold text-green-900">PAYID (Quick Payment)</h4>
+                    </div>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-700">Mobile:</span>
+                        <span className="text-green-900 font-semibold">+61411766786</span>
+                      </div>
+                      <p className="text-xs text-gray-600 mt-2">Use this for instant payments</p>
+                    </div>
                   </div>
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Contract Period *</label>
-                  <input
-                    type="text"
-                    name="contractPeriod"
-                    value={formData.contractPeriod}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                    placeholder="e.g., 6 months"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Bond Amount *</label>
-                  <input
-                    type="number"
-                    name="bondAmount"
-                    value={formData.bondAmount}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                    placeholder="Amount in AUD"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Weekly Rent *</label>
-                  <input
-                    type="number"
-                    name="weeklyRent"
-                    value={formData.weeklyRent}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                    placeholder="Amount in AUD"
-                  />
+              {/* Contract Details */}
+              <div className="bg-gray-50 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Contract Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Contract Period *</label>
+                    <input
+                      type="text"
+                      name="contractPeriod"
+                      value={formData.contractPeriod}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      placeholder="e.g., 6 months"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Bond Amount *</label>
+                    <input
+                      type="number"
+                      name="bondAmount"
+                      value={formData.bondAmount}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      placeholder="Amount in AUD"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Weekly Rent *</label>
+                    <input
+                      type="number"
+                      name="weeklyRent"
+                      value={formData.weeklyRent}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      placeholder="Amount in AUD"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
