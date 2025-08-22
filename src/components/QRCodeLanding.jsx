@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Car, QrCode, ArrowRight, Download, Upload, FileText, CreditCard, User, Shield } from 'lucide-react';
+import { Car, QrCode, ArrowRight, Download, Upload, FileText, CreditCard, User, Shield, Clock, TrendingUp } from 'lucide-react';
 import QRCode from 'qrcode';
 
 const QRCodeLanding = () => {
@@ -117,62 +117,77 @@ const QRCodeLanding = () => {
           </div>
 
           {/* Process Steps */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4 mx-auto">
-                <User className="w-6 h-6 text-blue-600" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto mb-12">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20 hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center mb-4 mx-auto shadow-lg">
+                <User className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">1. Personal Details</h3>
-              <p className="text-gray-600 text-sm">Fill in your personal information and contact details</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-3 text-center">1. Personal Details</h3>
+              <p className="text-gray-600 text-center">Fill in your personal information and contact details</p>
             </div>
 
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4 mx-auto">
-                <FileText className="w-6 h-6 text-purple-600" />
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20 hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center mb-4 mx-auto shadow-lg">
+                <FileText className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">2. Upload Documents</h3>
-              <p className="text-gray-600 text-sm">Upload your license, bond proof, and rent payment</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-3 text-center">2. Upload Documents</h3>
+              <p className="text-gray-600 text-center">Upload your license, bond proof, and rent payment</p>
             </div>
 
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20">
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4 mx-auto">
-                <Shield className="w-6 h-6 text-green-600" />
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20 hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center mb-4 mx-auto shadow-lg">
+                <Shield className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">3. Get Approved</h3>
-              <p className="text-gray-600 text-sm">Receive email confirmation with all documents</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-3 text-center">3. Get Approved</h3>
+              <p className="text-gray-600 text-center">Receive email confirmation with all documents</p>
+            </div>
+          </div>
+
+          {/* Additional Features Section */}
+          <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 rounded-3xl p-8 max-w-4xl mx-auto mb-12">
+            <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">Why Choose SK Car Rental?</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex items-start space-x-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Car className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Wide Vehicle Selection</h3>
+                  <p className="text-gray-600">Choose from our diverse fleet of well-maintained vehicles</p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-4">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-6 h-6 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Secure & Safe</h3>
+                  <p className="text-gray-600">All vehicles are fully insured and regularly maintained</p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-4">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Clock className="w-6 h-6 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">24/7 Support</h3>
+                  <p className="text-gray-600">Round-the-clock customer support for any assistance</p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-4">
+                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="w-6 h-6 text-orange-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Flexible Plans</h3>
+                  <p className="text-gray-600">Daily, weekly, and monthly rental options available</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Bank Details Section */}
-        <div className="bg-white/90 backdrop-blur-md rounded-3xl shadow-xl border border-white/30 p-8 max-w-2xl mx-auto">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Payment Information</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200">
-              <div className="flex items-center mb-4">
-                <CreditCard className="w-6 h-6 text-blue-600 mr-2" />
-                <h3 className="text-lg font-semibold text-blue-900">Business Account</h3>
-              </div>
-              <div className="space-y-2 text-sm">
-                <p><span className="font-medium">Name:</span> Kamboh logistics pty ltd</p>
-                <p><span className="font-medium">BSB:</span> 083004</p>
-                <p><span className="font-medium">Account:</span> 787900650</p>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 border border-green-200">
-              <div className="flex items-center mb-4">
-                <Upload className="w-6 h-6 text-green-600 mr-2" />
-                <h3 className="text-lg font-semibold text-green-900">PAYID</h3>
-              </div>
-              <div className="space-y-2 text-sm">
-                <p><span className="font-medium">Mobile:</span> +61411766786</p>
-                <p className="text-xs text-gray-600">Use this for quick payments</p>
-              </div>
-            </div>
-          </div>
-        </div>
       </main>
     </div>
   );

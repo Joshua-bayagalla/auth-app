@@ -159,6 +159,32 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleApplicationAction = async (applicationId, action) => {
+    try {
+      const response = await fetch(`/api/drivers/${applicationId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          status: action === 'approve' ? 'approved' : 'rejected',
+          actionDate: new Date().toISOString()
+        }),
+      });
+
+      if (response.ok) {
+        fetchData();
+        alert(`Application ${action === 'approve' ? 'approved' : 'rejected'} successfully!`);
+      } else {
+        const error = await response.json();
+        alert(`Error: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert(`Error ${action}ing application`);
+    }
+  };
+
   const getStats = () => {
     const totalVehicles = vehicles.length;
     const availableVehicles = vehicles.filter(v => v.status === 'available').length;
@@ -309,61 +335,106 @@ const AdminDashboard = () => {
       case 'applications':
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Rental Applications</h2>
+            <h2 className="text-2xl font-bold text-gray-900">New Applications</h2>
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applicant</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contract Details</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Personal Details</th>
+                      <th className="hidden md:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact & Address</th>
+                      <th className="hidden lg:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle & Contract</th>
+                      <th className="hidden xl:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment & Dates</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {drivers.filter(d => d.status === 'pending_approval').map((application) => (
                       <tr key={application.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {application.firstName} {application.lastName}
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <div className="space-y-2">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {application.firstName} {application.lastName}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                ID: {application.id}
+                              </div>
                             </div>
-                            <div className="text-sm text-gray-500">
-                              {application.email} • {application.phone}
+                            <div className="text-xs text-gray-600">
+                              <div>📧 {application.email}</div>
+                              <div>📱 {application.phone}</div>
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {application.vehicleMake && application.vehicleModel ? (
+                        <td className="hidden md:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <div className="space-y-2 text-xs text-gray-600">
                             <div>
-                              {application.vehicleMake} {application.vehicleModel}
-                              {application.vehicleLicensePlate && (
-                                <div className="text-gray-500">{application.vehicleLicensePlate}</div>
-                              )}
+                              <span className="font-medium">Address:</span><br/>
+                              {application.address}
                             </div>
-                          ) : (
-                            <span className="text-gray-400">No vehicle selected</span>
-                          )}
+                            <div>
+                              <span className="font-medium">Emergency Contact:</span><br/>
+                              {application.emergencyContact} ({application.emergencyPhone})
+                            </div>
+                          </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          <div>Period: {application.contractPeriod}</div>
-                          <div>Bond: ${application.bondAmount}</div>
-                          <div>Weekly: ${application.weeklyRent}</div>
+                        <td className="hidden lg:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <div className="space-y-2 text-xs">
+                            {application.vehicleMake && application.vehicleModel ? (
+                              <div>
+                                <div className="font-medium text-gray-900">
+                                  🚗 {application.vehicleMake} {application.vehicleModel}
+                                </div>
+                                {application.vehicleLicensePlate && (
+                                  <div className="text-gray-600">Plate: {application.vehicleLicensePlate}</div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">No vehicle selected</span>
+                            )}
+                            <div className="text-gray-600">
+                              <div>📅 Contract: {application.contractPeriod}</div>
+                              <div>💳 Bond: ${application.bondAmount}</div>
+                              <div>💰 Weekly: ${application.weeklyRent}</div>
+                            </div>
+                          </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                            Pending Approval
-                          </span>
+                        <td className="hidden xl:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <div className="space-y-2 text-xs">
+                            <div>
+                              <span className="font-medium text-gray-900">Joined Date:</span><br/>
+                              <span className="text-gray-600">
+                                {application.createdAt ? new Date(application.createdAt).toLocaleDateString() : 'N/A'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-900">Next Rent Date:</span><br/>
+                              <span className="text-gray-600">
+                                {application.nextRentDate ? new Date(application.nextRentDate).toLocaleDateString() : 'Weekly'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-900">Payment Status:</span><br/>
+                              <span className="text-green-600 font-medium">Bond Paid</span>
+                            </div>
+                          </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button className="text-green-600 hover:text-green-900 mr-3">
-                            Approve
-                          </button>
-                          <button className="text-red-600 hover:text-red-900">
-                            Reject
-                          </button>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <div className="space-y-2">
+                            <button 
+                              onClick={() => handleApplicationAction(application.id, 'approve')}
+                              className="w-full px-3 py-2 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors"
+                            >
+                              ✅ Approve
+                            </button>
+                            <button 
+                              onClick={() => handleApplicationAction(application.id, 'reject')}
+                              className="w-full px-3 py-2 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors"
+                            >
+                              ❌ Reject
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -586,7 +657,7 @@ const AdminDashboard = () => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4 mb-8">
           <div 
             className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-4 text-white cursor-pointer hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105"
             onClick={() => setActiveTab('vehicles')}
@@ -645,7 +716,7 @@ const AdminDashboard = () => {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm opacity-90">Pending Apps</p>
+                <p className="text-sm opacity-90">New Applications</p>
                 <p className="text-2xl font-bold">{stats.pendingApplications}</p>
               </div>
               <FileText className="w-8 h-8 opacity-80" />
@@ -694,7 +765,7 @@ const AdminDashboard = () => {
 
         {/* Unified Tab Navigation */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-2 shadow-lg border border-white/20 mb-8">
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
             <button
               onClick={() => setActiveTab('vehicles')}
               className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${

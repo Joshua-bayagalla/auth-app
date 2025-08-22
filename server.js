@@ -1267,6 +1267,43 @@ app.post('/api/drivers/:id/payment', (req, res) => {
   }
 });
 
+// Update driver application status (approve/reject)
+app.put('/api/drivers/:id/status', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, actionDate } = req.body;
+    
+    const driverIndex = drivers.findIndex(d => d.id == id);
+    if (driverIndex === -1) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+    
+    // Update the status
+    drivers[driverIndex].status = status;
+    drivers[driverIndex].actionDate = actionDate;
+    drivers[driverIndex].updatedAt = new Date().toISOString();
+    
+    // If approved, set next rent date to 1 week from now
+    if (status === 'approved') {
+      const nextRentDate = new Date();
+      nextRentDate.setDate(nextRentDate.getDate() + 7);
+      drivers[driverIndex].nextRentDate = nextRentDate.toISOString();
+    }
+    
+    // Save to database
+    saveData(users, verificationTokens, vehicles, drivers);
+    
+    res.json({ 
+      message: `Application ${status} successfully`,
+      driver: drivers[driverIndex]
+    });
+    
+  } catch (error) {
+    console.error('Error updating driver status:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Document management endpoints
 app.post('/api/drivers/:id/documents', upload.single('documentFile'), async (req, res) => {
   try {
