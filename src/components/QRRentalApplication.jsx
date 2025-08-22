@@ -37,6 +37,9 @@ const QRRentalApplication = () => {
     bondAmount: '',
     weeklyRent: '',
     
+    // Contract Upload
+    contractDocument: null,
+    
     // Documents
     licenseFront: null,
     licenseBack: null,
@@ -91,7 +94,7 @@ const QRRentalApplication = () => {
       // Add all form data
       Object.keys(formData).forEach(key => {
         if (formData[key] !== null && formData[key] !== '') {
-          if (key.includes('license') || key.includes('Proof')) {
+          if (key.includes('license') || key.includes('Proof') || key.includes('contractDocument')) {
             formDataToSend.append(key, formData[key]);
           } else {
             formDataToSend.append(key, formData[key]);
@@ -128,9 +131,9 @@ const QRRentalApplication = () => {
 
   const steps = [
     { number: 1, title: 'Personal Details', icon: User },
-    { number: 2, title: 'Documents', icon: FileText },
+    { number: 2, title: 'Contract', icon: Shield },
     { number: 3, title: 'Payment', icon: CreditCard },
-    { number: 4, title: 'Contract', icon: Shield }
+    { number: 4, title: 'Documents', icon: FileText }
   ];
 
   return (
@@ -307,8 +310,83 @@ const QRRentalApplication = () => {
             </div>
           )}
 
-          {/* Step 2: Documents */}
+          {/* Step 2: Contract */}
           {currentStep === 2 && (
+            <div className="bg-white/90 backdrop-blur-md rounded-3xl shadow-xl border border-white/30 p-8">
+              <div className="flex items-center mb-6">
+                <Shield className="w-8 h-8 text-indigo-600 mr-3" />
+                <h2 className="text-2xl font-bold text-gray-900">Contract Agreement</h2>
+              </div>
+              
+              <div className="space-y-6">
+                <div className="bg-gray-50 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Terms and Conditions</h3>
+                  <div className="text-sm text-gray-600 space-y-3 max-h-64 overflow-y-auto">
+                    <p>1. The vehicle must be returned in the same condition as received.</p>
+                    <p>2. All traffic violations and fines are the responsibility of the renter.</p>
+                    <p>3. The bond will be refunded within 7 business days after vehicle return.</p>
+                    <p>4. Weekly rent payments must be made on time.</p>
+                    <p>5. The vehicle is for personal use only, not for commercial purposes.</p>
+                    <p>6. Insurance coverage is included in the rental agreement.</p>
+                    <p>7. Maintenance and service costs are covered by the rental company.</p>
+                    <p>8. Early termination may result in additional fees.</p>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Upload Signed Contract *</label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
+                    <FileText className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx,image/*"
+                      onChange={(e) => handleFileUpload(e, 'contractDocument')}
+                      className="hidden"
+                      id="contractDocument"
+                      required
+                    />
+                    <label htmlFor="contractDocument" className="cursor-pointer">
+                      <p className="text-sm text-gray-600">Click to upload signed contract</p>
+                      <p className="text-xs text-gray-500 mt-1">PDF, DOC, DOCX, or image files</p>
+                    </label>
+                  </div>
+                  {formData.contractDocument && (
+                    <p className="text-sm text-green-600 mt-2">✓ {formData.contractDocument.name}</p>
+                  )}
+                </div>
+                
+                <div className="space-y-4">
+                  <label className="flex items-start space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="contractAgreed"
+                      checked={formData.contractAgreed}
+                      onChange={handleInputChange}
+                      required
+                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">
+                      I agree to the rental contract terms and conditions *
+                    </span>
+                  </label>
+                  
+                  <label className="flex items-start space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="termsAgreed"
+                      checked={formData.termsAgreed}
+                      onChange={handleInputChange}
+                      required
+                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">
+                      I confirm that all information provided is accurate and complete *
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
             <div className="bg-white/90 backdrop-blur-md rounded-3xl shadow-xl border border-white/30 p-8">
               <div className="flex items-center mb-6">
                 <FileText className="w-8 h-8 text-purple-600 mr-3" />
@@ -481,57 +559,105 @@ const QRRentalApplication = () => {
             </div>
           )}
 
-          {/* Step 4: Contract Agreement */}
+          {/* Step 4: Documents */}
           {currentStep === 4 && (
             <div className="bg-white/90 backdrop-blur-md rounded-3xl shadow-xl border border-white/30 p-8">
               <div className="flex items-center mb-6">
-                <Shield className="w-8 h-8 text-indigo-600 mr-3" />
-                <h2 className="text-2xl font-bold text-gray-900">Contract Agreement</h2>
+                <FileText className="w-8 h-8 text-purple-600 mr-3" />
+                <h2 className="text-2xl font-bold text-gray-900">Document Upload</h2>
               </div>
               
               <div className="space-y-6">
-                <div className="bg-gray-50 rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Terms and Conditions</h3>
-                  <div className="text-sm text-gray-600 space-y-3 max-h-64 overflow-y-auto">
-                    <p>1. The vehicle must be returned in the same condition as received.</p>
-                    <p>2. All traffic violations and fines are the responsibility of the renter.</p>
-                    <p>3. The bond will be refunded within 7 business days after vehicle return.</p>
-                    <p>4. Weekly rent payments must be made on time.</p>
-                    <p>5. The vehicle is for personal use only, not for commercial purposes.</p>
-                    <p>6. Insurance coverage is included in the rental agreement.</p>
-                    <p>7. Maintenance and service costs are covered by the rental company.</p>
-                    <p>8. Early termination may result in additional fees.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Driving License (Front) *</label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
+                      <Camera className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => handleFileUpload(e, 'licenseFront')}
+                        className="hidden"
+                        id="licenseFront"
+                        required
+                      />
+                      <label htmlFor="licenseFront" className="cursor-pointer">
+                        <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
+                        <p className="text-xs text-gray-500 mt-1">JPG, PNG, PDF up to 10MB</p>
+                      </label>
+                    </div>
+                    {formData.licenseFront && (
+                      <p className="text-sm text-green-600 mt-2">✓ {formData.licenseFront.name}</p>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Driving License (Back) *</label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
+                      <Camera className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => handleFileUpload(e, 'licenseBack')}
+                        className="hidden"
+                        id="licenseBack"
+                        required
+                      />
+                      <label htmlFor="licenseBack" className="cursor-pointer">
+                        <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
+                        <p className="text-xs text-gray-500 mt-1">JPG, PNG, PDF up to 10MB</p>
+                      </label>
+                    </div>
+                    {formData.licenseBack && (
+                      <p className="text-sm text-green-600 mt-2">✓ {formData.licenseBack.name}</p>
+                    )}
                   </div>
                 </div>
                 
-                <div className="space-y-4">
-                  <label className="flex items-start space-x-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="contractAgreed"
-                      checked={formData.contractAgreed}
-                      onChange={handleInputChange}
-                      required
-                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">
-                      I agree to the rental contract terms and conditions *
-                    </span>
-                  </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Bond Payment Proof *</label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
+                      <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => handleFileUpload(e, 'bondProof')}
+                        className="hidden"
+                        id="bondProof"
+                        required
+                      />
+                      <label htmlFor="bondProof" className="cursor-pointer">
+                        <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
+                        <p className="text-xs text-gray-500 mt-1">Payment receipt screenshot</p>
+                      </label>
+                    </div>
+                    {formData.bondProof && (
+                      <p className="text-sm text-green-600 mt-2">✓ {formData.bondProof.name}</p>
+                    )}
+                  </div>
                   
-                  <label className="flex items-start space-x-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="termsAgreed"
-                      checked={formData.termsAgreed}
-                      onChange={handleInputChange}
-                      required
-                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">
-                      I confirm that all information provided is accurate and complete *
-                    </span>
-                  </label>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Rent Payment Proof *</label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
+                      <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => handleFileUpload(e, 'rentProof')}
+                        className="hidden"
+                        id="rentProof"
+                        required
+                      />
+                      <label htmlFor="rentProof" className="cursor-pointer">
+                        <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
+                        <p className="text-xs text-gray-500 mt-1">Payment receipt screenshot</p>
+                      </label>
+                    </div>
+                    {formData.rentProof && (
+                      <p className="text-sm text-green-600 mt-2">✓ {formData.rentProof.name}</p>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

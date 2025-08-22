@@ -1910,7 +1910,8 @@ app.post('/api/rental-applications', uploadRentalApplication.fields([
   { name: 'licenseFront', maxCount: 1 },
   { name: 'licenseBack', maxCount: 1 },
   { name: 'bondProof', maxCount: 1 },
-  { name: 'rentProof', maxCount: 1 }
+  { name: 'rentProof', maxCount: 1 },
+  { name: 'contractDocument', maxCount: 1 }
 ]), (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     return res.status(400).json({ error: `File upload error: ${err.message}` });
@@ -1952,7 +1953,7 @@ app.post('/api/rental-applications', uploadRentalApplication.fields([
 
     // Validate file uploads
     if (!req.files || !req.files.licenseFront || !req.files.licenseBack || 
-        !req.files.bondProof || !req.files.rentProof) {
+        !req.files.bondProof || !req.files.rentProof || !req.files.contractDocument) {
       return res.status(400).json({ error: 'All documents are required' });
     }
 
@@ -1986,6 +1987,7 @@ app.post('/api/rental-applications', uploadRentalApplication.fields([
       licenseBackUrl: `data:${req.files.licenseBack[0].mimetype};base64,${req.files.licenseBack[0].buffer.toString('base64')}`,
       bondProofUrl: `data:${req.files.bondProof[0].mimetype};base64,${req.files.bondProof[0].buffer.toString('base64')}`,
       rentProofUrl: `data:${req.files.rentProof[0].mimetype};base64,${req.files.rentProof[0].buffer.toString('base64')}`,
+      contractDocumentUrl: `data:${req.files.contractDocument[0].mimetype};base64,${req.files.contractDocument[0].buffer.toString('base64')}`,
       
       // Documents array for compatibility
       documents: [
@@ -2012,6 +2014,12 @@ app.post('/api/rental-applications', uploadRentalApplication.fields([
           documentType: 'rent_proof',
           fileName: req.files.rentProof[0].originalname,
           fileUrl: `data:${req.files.rentProof[0].mimetype};base64,${req.files.rentProof[0].buffer.toString('base64')}`
+        },
+        {
+          id: 5,
+          documentType: 'contract_document',
+          fileName: req.files.contractDocument[0].originalname,
+          fileUrl: `data:${req.files.contractDocument[0].mimetype};base64,${req.files.contractDocument[0].buffer.toString('base64')}`
         }
       ]
     };
