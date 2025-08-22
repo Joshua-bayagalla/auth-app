@@ -185,13 +185,65 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleEditDriver = (driver) => {
+    // TODO: Implement driver editing functionality
+    alert('Driver editing functionality will be implemented soon!');
+  };
+
+  const handleDeleteDriver = async (driverId) => {
+    if (window.confirm('Are you sure you want to delete this driver?')) {
+      try {
+        const response = await fetch(`/api/drivers/${driverId}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          fetchData();
+          alert('Driver deleted successfully!');
+        } else {
+          alert('Error deleting driver');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error deleting driver');
+      }
+    }
+  };
+
+  const handleSendDocuments = async (driver) => {
+    try {
+      const response = await fetch(`/api/drivers/${driver.id}/send-documents`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          driverId: driver.id,
+          email: driver.email,
+          firstName: driver.firstName,
+          lastName: driver.lastName
+        }),
+      });
+
+      if (response.ok) {
+        alert('Documents sent successfully to ' + driver.email);
+      } else {
+        const error = await response.json();
+        alert(`Error sending documents: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error sending documents');
+    }
+  };
+
   const getStats = () => {
     const totalVehicles = vehicles.length;
     const availableVehicles = vehicles.filter(v => v.status === 'available').length;
     const rentedVehicles = vehicles.filter(v => v.status === 'rented').length;
     const maintenanceVehicles = vehicles.filter(v => v.status === 'maintenance').length;
     const pendingApplications = drivers.filter(d => d.status === 'pending_approval').length;
-    const totalUsers = users.length;
+    const totalDrivers = drivers.filter(d => d.status === 'approved').length;
     const totalPayments = drivers.filter(d => d.status === 'approved').length;
     const expiringDocuments = drivers.filter(d => {
       // Check for documents expiring in next 30 days
@@ -210,7 +262,7 @@ const AdminDashboard = () => {
       rentedVehicles,
       maintenanceVehicles,
       pendingApplications,
-      totalUsers,
+      totalDrivers,
       totalPayments,
       expiringDocuments
     };
@@ -522,6 +574,126 @@ const AdminDashboard = () => {
           </div>
         );
 
+      case 'drivers':
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Driver Management</h2>
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Driver Info</th>
+                      <th className="hidden md:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Details</th>
+                      <th className="hidden lg:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle & Contract</th>
+                      <th className="hidden xl:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status & Dates</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {drivers.filter(d => d.status === 'approved').map((driver) => (
+                      <tr key={driver.id} className="hover:bg-gray-50">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <div className="space-y-2">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {driver.firstName} {driver.lastName}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                ID: {driver.id}
+                              </div>
+                            </div>
+                            <div className="text-xs text-gray-600">
+                              <div>📧 {driver.email}</div>
+                              <div>📱 {driver.phone}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="hidden md:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <div className="space-y-2 text-xs text-gray-600">
+                            <div>
+                              <span className="font-medium">Address:</span><br/>
+                              {driver.address}
+                            </div>
+                            <div>
+                              <span className="font-medium">Emergency:</span><br/>
+                              {driver.emergencyContact} ({driver.emergencyPhone})
+                            </div>
+                          </div>
+                        </td>
+                        <td className="hidden lg:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <div className="space-y-2 text-xs">
+                            {driver.vehicleMake && driver.vehicleModel ? (
+                              <div>
+                                <div className="font-medium text-gray-900">
+                                  🚗 {driver.vehicleMake} {driver.vehicleModel}
+                                </div>
+                                {driver.vehicleLicensePlate && (
+                                  <div className="text-gray-600">Plate: {driver.vehicleLicensePlate}</div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">No vehicle assigned</span>
+                            )}
+                            <div className="text-gray-600">
+                              <div>📅 Contract: {driver.contractPeriod}</div>
+                              <div>💳 Bond: ${driver.bondAmount}</div>
+                              <div>💰 Weekly: ${driver.weeklyRent}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="hidden xl:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <div className="space-y-2 text-xs">
+                            <div>
+                              <span className="font-medium text-gray-900">Joined:</span><br/>
+                              <span className="text-gray-600">
+                                {driver.createdAt ? new Date(driver.createdAt).toLocaleDateString() : 'N/A'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-900">Next Rent:</span><br/>
+                              <span className="text-gray-600">
+                                {driver.nextRentDate ? new Date(driver.nextRentDate).toLocaleDateString() : 'Weekly'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                Active
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <div className="space-y-2">
+                            <button 
+                              onClick={() => handleEditDriver(driver)}
+                              className="w-full px-3 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                              ✏️ Edit
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteDriver(driver.id)}
+                              className="w-full px-3 py-2 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors"
+                            >
+                              🗑️ Delete
+                            </button>
+                            <button 
+                              onClick={() => handleSendDocuments(driver)}
+                              className="w-full px-3 py-2 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors"
+                            >
+                              📧 Send Docs
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+
       case 'payments':
         return (
           <div className="space-y-6">
@@ -656,6 +828,19 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome Message */}
+        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-3xl p-8 mb-8 text-white shadow-2xl">
+          <div className="flex items-center space-x-4">
+            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+              <Car className="w-8 h-8" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Welcome back, Admin! 👋</h1>
+              <p className="text-blue-100 text-lg">Manage your fleet, review applications, and keep track of all operations from your dashboard.</p>
+            </div>
+          </div>
+        </div>
+
         {/* Statistics Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4 mb-8">
           <div 
@@ -736,29 +921,18 @@ const AdminDashboard = () => {
             </div>
           </div>
           
-          <div 
-            className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-4 text-white cursor-pointer hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105"
-            onClick={() => setActiveTab('payments')}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm opacity-90">Total Users</p>
-                <p className="text-2xl font-bold">{stats.totalUsers}</p>
-              </div>
-              <Users className="w-8 h-8 opacity-80" />
-            </div>
-          </div>
+
           
           <div 
             className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl p-4 text-white cursor-pointer hover:from-rose-600 hover:to-rose-700 transition-all duration-200 transform hover:scale-105"
-            onClick={() => setActiveTab('payments')}
+            onClick={() => setActiveTab('drivers')}
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm opacity-90">Payments</p>
-                <p className="text-2xl font-bold">{stats.totalPayments}</p>
+                <p className="text-sm opacity-90">Total Drivers</p>
+                <p className="text-2xl font-bold">{stats.totalDrivers}</p>
               </div>
-              <DollarSign className="w-8 h-8 opacity-80" />
+              <Users className="w-8 h-8 opacity-80" />
             </div>
           </div>
         </div>
@@ -815,15 +989,15 @@ const AdminDashboard = () => {
             </button>
             
             <button
-              onClick={() => setActiveTab('payments')}
+              onClick={() => setActiveTab('drivers')}
               className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-                activeTab === 'payments'
+                activeTab === 'drivers'
                   ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
-              <DollarSign className="w-5 h-5" />
-              <span>Payments</span>
+              <Users className="w-5 h-5" />
+              <span>Drivers</span>
             </button>
           </div>
         </div>

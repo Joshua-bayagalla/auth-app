@@ -1304,6 +1304,73 @@ app.put('/api/drivers/:id/status', (req, res) => {
   }
 });
 
+// Send documents to approved driver
+app.post('/api/drivers/:id/send-documents', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { email, firstName, lastName } = req.body;
+    
+    const driver = drivers.find(d => d.id == id);
+    if (!driver) {
+      return res.status(404).json({ error: 'Driver not found' });
+    }
+    
+    if (driver.status !== 'approved') {
+      return res.status(400).json({ error: 'Can only send documents to approved drivers' });
+    }
+    
+    // Send email with documents
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Welcome to SK Car Rental - Your Documents',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #2563eb;">Welcome to SK Car Rental! 🚗</h2>
+          <p>Dear ${firstName} ${lastName},</p>
+          <p>Congratulations! Your rental application has been approved. Here are your important documents:</p>
+          
+          <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #1e40af;">📋 Required Documents</h3>
+            <ul style="color: #374151;">
+              <li>Payment Receipt</li>
+              <li>Vehicle Inspection Report</li>
+              <li>Registration Certificate</li>
+              <li>CPV Registration Report</li>
+              <li>Insurance Certificate</li>
+            </ul>
+          </div>
+          
+          <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #059669;">📅 Next Steps</h3>
+            <p><strong>Next Rent Payment:</strong> ${driver.nextRentDate ? new Date(driver.nextRentDate).toLocaleDateString() : 'Weekly'}</p>
+            <p><strong>Weekly Rent:</strong> $${driver.weeklyRent}</p>
+            <p><strong>Contract Period:</strong> ${driver.contractPeriod}</p>
+          </div>
+          
+          <p>Please keep these documents safe and present them when requested.</p>
+          <p>If you have any questions, please contact our support team.</p>
+          
+          <p>Thank you for choosing SK Car Rental!</p>
+          <p style="color: #6b7280; font-size: 14px;">Best regards,<br>SK Car Rental Team</p>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('Documents sent to:', email);
+    
+    res.json({ 
+      message: 'Documents sent successfully',
+      email: email
+    });
+    
+  } catch (error) {
+    console.error('Error sending documents:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Document management endpoints
 app.post('/api/drivers/:id/documents', upload.single('documentFile'), async (req, res) => {
   try {
