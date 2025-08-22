@@ -240,42 +240,42 @@ const UserDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
         {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-white/20 sticky top-0 z-40">
+      <header className="bg-white/90 backdrop-blur-md shadow-xl border-b border-white/30 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-green-600 rounded-full flex items-center justify-center">
-                <Car className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Car className="w-7 h-7 text-white" />
               </div>
             <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
+                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
                   SK Car Rental
                 </h1>
-                <p className="text-xs text-gray-500">Welcome {currentUser?.email?.split('@')[0] || 'User'}</p>
+                <p className="text-xs text-gray-600 font-medium">Welcome {currentUser?.email?.split('@')[0] || 'User'}</p>
               </div>
         </div>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-6">
+            <div className="hidden md:flex items-center space-x-4">
               <button
                 onClick={() => setActiveTab('available')}
-                className={`px-4 py-2 rounded-lg transition-all duration-200 ${
+                className={`px-6 py-3 rounded-xl transition-all duration-300 font-medium ${
                   activeTab === 'available'
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl transform scale-105'
+                    : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50 border border-gray-200 hover:border-blue-200'
                 }`}
               >
                 Available Cars
               </button>
               <button
                 onClick={() => setActiveTab('applications')}
-                className={`px-4 py-2 rounded-lg transition-all duration-200 ${
+                className={`px-6 py-3 rounded-xl transition-all duration-300 font-medium ${
                   activeTab === 'applications'
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-xl transform scale-105'
+                    : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50 border border-gray-200 hover:border-purple-200'
                 }`}
               >
                 Applications ({applications.length})
@@ -283,13 +283,18 @@ const UserDashboard = () => {
             </div>
 
             {/* User Menu */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
               {/* Compact profile menu */}
               <div className="flex items-center space-x-2">
-                <button onClick={() => navigate('/profile')} className="px-3 py-2 text-sm rounded-lg border hover:bg-gray-50">Profile</button>
+                <button 
+                  onClick={() => navigate('/profile')} 
+                  className="px-4 py-2 text-sm rounded-xl border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-medium"
+                >
+                  Profile
+                </button>
                 <button
                   onClick={handleLogout}
-                  className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 border border-red-200 text-sm"
+                  className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 border border-red-200 text-sm font-medium shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
                 >
                   Logout
                 </button>
@@ -348,9 +353,20 @@ const UserDashboard = () => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Banner */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900">Welcome, {currentUser?.email?.split('@')[0] || 'driver'} 👋</h2>
-          <p className="text-sm text-gray-600">Browse available cars, track your applications, and view payment reminders.</p>
+        <div className="bg-gradient-to-r from-white/90 to-blue-50/90 backdrop-blur-md rounded-3xl shadow-xl border border-white/30 p-8 mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                Welcome, {currentUser?.email?.split('@')[0] || 'driver'} 👋
+              </h2>
+              <p className="text-gray-600 text-lg">Browse available cars, track your applications, and view payment reminders.</p>
+            </div>
+            <div className="hidden md:block">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <Car className="w-8 h-8 text-white" />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -371,76 +387,77 @@ const UserDashboard = () => {
           </nav>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20 transform hover:scale-105 transition-all duration-300">
-            <div className="flex items-center">
-              <div className="p-3 bg-blue-100 rounded-full">
-                <Car className="w-6 h-6 text-blue-600" />
+        {/* Premium Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 shadow-xl border border-blue-200 transform hover:scale-105 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-100 text-sm font-medium">Available Cars</p>
+                <p className="text-3xl font-bold text-white">{vehicles.length}</p>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Available Cars</p>
-                <p className="text-2xl font-bold text-gray-900">{vehicles.length}</p>
-              </div>
-            </div>
-            </div>
-            
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20 transform hover:scale-105 transition-all duration-300">
-            <div className="flex items-center">
-              <div className="p-3 bg-green-100 rounded-full">
-                <Calendar className="w-6 h-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Active Bookings</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.activeBookings}</p>
-                      </div>
-                    </div>
-                    </div>
-
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20 transform hover:scale-105 transition-all duration-300">
-                                <div className="flex items-center">
-              <div className="p-3 bg-yellow-100 rounded-full">
-                <DollarSign className="w-6 h-6 text-yellow-600" />
-                                </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Value</p>
-                <p className="text-2xl font-bold text-gray-900">${stats.totalValue}</p>
-                              </div>
-                        </div>
-                      </div>
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20 transform hover:scale-105 transition-all duration-300">
-            <div className="flex items-center">
-              <div className="p-3 bg-purple-100 rounded-full">
-                <Calendar className="w-6 h-6 text-purple-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Next Payment</p>
-                <p className="text-2xl font-bold text-gray-900">{nextPaymentDate() || '—'}</p>
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <Car className="w-6 h-6 text-white" />
               </div>
             </div>
           </div>
-                  </div>
+          
+          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 shadow-xl border border-green-200 transform hover:scale-105 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-green-100 text-sm font-medium">Active Bookings</p>
+                <p className="text-3xl font-bold text-white">{stats.activeBookings}</p>
+              </div>
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-yellow-500 to-orange-500 rounded-2xl p-6 shadow-xl border border-yellow-200 transform hover:scale-105 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-yellow-100 text-sm font-medium">Total Value</p>
+                <p className="text-3xl font-bold text-white">${stats.totalValue}</p>
+              </div>
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 shadow-xl border border-purple-200 transform hover:scale-105 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-purple-100 text-sm font-medium">Next Payment</p>
+                <p className="text-3xl font-bold text-white">{nextPaymentDate() || '—'}</p>
+              </div>
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Search and Filter */}
         {activeTab === 'available' && (
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20 mb-8">
+          <div className="bg-gradient-to-r from-white/90 to-blue-50/90 backdrop-blur-md rounded-2xl p-6 shadow-xl border border-white/30 mb-8">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   type="text"
-                  placeholder="Search cars..."
+                  placeholder="Search cars by make, model, or license plate..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                  className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white/80 backdrop-blur-sm"
                 />
               </div>
               <select
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
-                className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                className="px-6 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white/80 backdrop-blur-sm font-medium"
               >
-                <option value="all">All</option>
+                <option value="all">All Categories</option>
                 <option value="make">Make</option>
                 <option value="model">Model</option>
                 <option value="license">License Plate</option>
@@ -455,7 +472,7 @@ const UserDashboard = () => {
             {filteredVehicles.map((vehicle) => (
               <div
                 key={vehicle.id}
-                className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 overflow-hidden transform hover:scale-105 transition-all duration-300 hover:shadow-xl"
+                className="bg-white/90 backdrop-blur-md rounded-3xl shadow-xl border border-white/30 overflow-hidden transform hover:scale-105 transition-all duration-300 hover:shadow-2xl"
               >
                 {/* Car Images */}
                 <div className="relative h-48 overflow-hidden">
@@ -507,11 +524,11 @@ const UserDashboard = () => {
                       <h3 className="text-xl font-bold text-gray-900 mb-1">
                         {vehicle.make} {vehicle.model}
                       </h3>
-                      <p className="text-gray-600">{vehicle.year} • {vehicle.color}</p>
+                      <p className="text-gray-600 font-medium">{vehicle.year} • {vehicle.color}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-blue-600">${vehicle.rentPerWeek}</p>
-                      <p className="text-sm text-gray-500">per week</p>
+                      <p className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">${vehicle.rentPerWeek}</p>
+                      <p className="text-sm text-gray-500 font-medium">per week</p>
                         </div>
                       </div>
 
@@ -530,11 +547,10 @@ const UserDashboard = () => {
                   </div>
                 </div>
 
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     <button
-                      onClick={() => openVehicleDetails(vehicle)
-                      }
-                      className="w-full border text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-50"
+                      onClick={() => openVehicleDetails(vehicle)}
+                      className="w-full border-2 border-gray-200 text-gray-700 py-3 px-4 rounded-xl font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
                     >
                       View Details
                     </button>
@@ -543,9 +559,9 @@ const UserDashboard = () => {
                         setSelectedVehicle(vehicle);
                         navigate('/rental-application', { state: { vehicle } });
                       }}
-                      className="w-full bg-gradient-to-r from-blue-600 to-green-600 text-white py-2 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-green-700 shadow-lg"
+                      className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
                     >
-                      Rent
+                      Rent Now
                     </button>
                   </div>
                 </div>

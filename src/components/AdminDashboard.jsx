@@ -659,16 +659,16 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Welcome, Admin</h1>
-              <p className="mt-2 text-gray-600">Manage vehicles, applications, documents and payments from one place.</p>
-              <div className="mt-3 bg-blue-50 border border-blue-200 text-blue-800 text-sm rounded-xl px-4 py-2 inline-flex items-center">
-                <span className="w-2 h-2 bg-blue-500 rounded-full mr-2" />
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Welcome, Admin</h1>
+              <p className="mt-2 text-gray-600 text-lg">Manage vehicles, applications, documents and payments from one place.</p>
+              <div className="mt-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 text-blue-800 text-sm rounded-xl px-4 py-3 inline-flex items-center shadow-sm">
+                <span className="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse" />
                 Tip: Use the tabs below to switch between sections quickly.
               </div>
             </div>
@@ -677,98 +677,164 @@ const AdminDashboard = () => {
                 localStorage.removeItem('user');
                 window.location.href = '/';
               }}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
             >
               Sign Out
             </button>
           </div>
         </div>
 
-        {/* Simple Statistics */}
-        <div className="mb-8 grid grid-cols-1 md:grid-cols-5 gap-4">
-          <div className="bg-white rounded-lg p-4 shadow-sm border">
-            <p className="text-sm text-gray-600">Total Vehicles</p>
-            <p className="text-2xl font-bold text-gray-900">{vehicles.length}</p>
-                </div>
-                      <div className="bg-white rounded-lg p-4 shadow-sm border">
-              <p className="text-sm text-gray-600">Available</p>
-              <p className="text-2xl font-bold text-green-600">{vehicles.filter(v => {
-                const status = Array.isArray(v.status) ? v.status[0] : v.status;
-                return status === 'available';
-              }).length}</p>
-                </div>
-            <div className="bg-white rounded-lg p-4 shadow-sm border">
-              <p className="text-sm text-gray-600">Rented</p>
-              <p className="text-2xl font-bold text-blue-600">{vehicles.filter(v => {
-                const status = Array.isArray(v.status) ? v.status[0] : v.status;
-                return status === 'rented';
-              }).length}</p>
+        {/* Premium Statistics Cards */}
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-5 gap-6">
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 shadow-xl border border-blue-200 transform hover:scale-105 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-100 text-sm font-medium">Total Vehicles</p>
+                <p className="text-3xl font-bold text-white">{vehicles.length}</p>
               </div>
-                      <div className="bg-white rounded-lg p-4 shadow-sm border">
-              <p className="text-sm text-gray-600">Maintenance</p>
-              <p className="text-2xl font-bold text-orange-600">{vehicles.filter(v => {
-                const status = Array.isArray(v.status) ? v.status[0] : v.status;
-                return status === 'maintenance';
-              }).length}</p>
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
             </div>
-          <div className="bg-white rounded-lg p-4 shadow-sm border">
-            <p className="text-sm text-gray-600">Pending Applications</p>
-            <p className="text-2xl font-bold text-purple-600">{rentalApplications.filter(r => r.status === 'pending_approval').length}</p>
+          </div>
+          
+          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 shadow-xl border border-green-200 transform hover:scale-105 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-green-100 text-sm font-medium">Available</p>
+                <p className="text-3xl font-bold text-white">{vehicles.filter(v => {
+                  const status = Array.isArray(v.status) ? v.status[0] : v.status;
+                  return status === 'available';
+                }).length}</p>
+              </div>
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl p-6 shadow-xl border border-indigo-200 transform hover:scale-105 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-indigo-100 text-sm font-medium">Rented</p>
+                <p className="text-3xl font-bold text-white">{vehicles.filter(v => {
+                  const status = Array.isArray(v.status) ? v.status[0] : v.status;
+                  return status === 'rented';
+                }).length}</p>
+              </div>
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-6 shadow-xl border border-orange-200 transform hover:scale-105 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-orange-100 text-sm font-medium">Maintenance</p>
+                <p className="text-3xl font-bold text-white">{vehicles.filter(v => {
+                  const status = Array.isArray(v.status) ? v.status[0] : v.status;
+                  return status === 'maintenance';
+                }).length}</p>
+              </div>
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 shadow-xl border border-purple-200 transform hover:scale-105 transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-purple-100 text-sm font-medium">Pending Apps</p>
+                <p className="text-3xl font-bold text-white">{rentalApplications.filter(r => r.status === 'pending_approval').length}</p>
+              </div>
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="mb-6">
-          <nav className="flex flex-wrap gap-4 md:space-x-6 border-b border-gray-200">
+        {/* Premium Tab Navigation */}
+        <div className="mb-8">
+          <nav className="flex flex-wrap gap-2 md:gap-4 bg-white/80 backdrop-blur-sm rounded-2xl p-2 shadow-lg border border-white/20">
             <button
               onClick={() => setActiveTab('vehicles')}
-              className={`py-2 px-3 border-b-2 font-medium text-sm rounded-t ${
+              className={`px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 flex items-center space-x-2 ${
                 activeTab === 'vehicles'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg transform scale-105'
+                  : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
               }`}
             >
-              Vehicles
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+              <span className="hidden sm:inline">Vehicles</span>
             </button>
             <button
               onClick={() => setActiveTab('maintenance')}
-              className={`py-2 px-3 border-b-2 font-medium text-sm rounded-t ${
+              className={`px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 flex items-center space-x-2 ${
                 activeTab === 'maintenance'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg transform scale-105'
+                  : 'text-gray-600 hover:text-orange-600 hover:bg-orange-50'
               }`}
             >
-              Maintenance
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span className="hidden sm:inline">Maintenance</span>
             </button>
             <button
               onClick={() => setActiveTab('applications')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 flex items-center space-x-2 ${
                 activeTab === 'applications'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg transform scale-105'
+                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
               }`}
             >
-              Rental Applications
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="hidden sm:inline">Applications</span>
             </button>
             <button
               onClick={() => setActiveTab('alerts')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 flex items-center space-x-2 ${
                 activeTab === 'alerts'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg transform scale-105'
+                  : 'text-gray-600 hover:text-red-600 hover:bg-red-50'
               }`}
             >
-              Document Alerts
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <span className="hidden sm:inline">Alerts</span>
             </button>
             <button
               onClick={() => setActiveTab('payments')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 flex items-center space-x-2 ${
                 activeTab === 'payments'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg transform scale-105'
+                  : 'text-gray-600 hover:text-green-600 hover:bg-green-50'
               }`}
             >
-              Payments
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+              </svg>
+              <span className="hidden sm:inline">Payments</span>
             </button>
           </nav>
         </div>
@@ -802,31 +868,67 @@ const AdminDashboard = () => {
               </button>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border">
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">License Plate</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bond Amount</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weekly Rent</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Vehicle</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">License Plate</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Bond Amount</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Weekly Rent</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white divide-y divide-gray-100">
               {vehicles.map((vehicle) => (
-                      <tr key={vehicle.id} className="hover:bg-gray-50">
+                      <tr key={vehicle.id} className="hover:bg-blue-50/50 transition-colors duration-200">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{vehicle.make} {vehicle.model}</div>
-                            <div className="text-sm text-gray-500">{vehicle.year} • {vehicle.color}</div>
-                      </div>
+                          <div className="flex items-center space-x-3">
+                            {/* Vehicle Photo */}
+                            <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
+                              {(() => {
+                                const images = (
+                                  (vehicle.photoUrls && vehicle.photoUrls.length > 0)
+                                    ? vehicle.photoUrls.map((u) => (u.startsWith('http') || u.startsWith('data:') ? u : `${API_BASE_URL}${u}`))
+                                    : (vehicle.photoUrl
+                                        ? [vehicle.photoUrl.startsWith('http') || vehicle.photoUrl.startsWith('data:') ? vehicle.photoUrl : `${API_BASE_URL}${vehicle.photoUrl}`]
+                                        : []
+                                      )
+                                );
+                                if (images.length > 0) {
+                                  return (
+                                    <img
+                                      src={images[0]}
+                                      alt={`${vehicle.make} ${vehicle.model}`}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                    />
+                                  );
+                                }
+                                return (
+                                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                                    <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                    </svg>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                            <div>
+                              <div className="text-sm font-semibold text-gray-900">{vehicle.make} {vehicle.model}</div>
+                              <div className="text-sm text-gray-500">{vehicle.year} • {vehicle.color}</div>
+                            </div>
+                          </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vehicle.licensePlate}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            {vehicle.licensePlate}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
                             (Array.isArray(vehicle.status) ? vehicle.status[0] : vehicle.status) === 'available' ? 'bg-green-100 text-green-800' : 
                             (Array.isArray(vehicle.status) ? vehicle.status[0] : vehicle.status) === 'rented' ? 'bg-blue-100 text-blue-800' :
                             (Array.isArray(vehicle.status) ? vehicle.status[0] : vehicle.status) === 'maintenance' ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-800'
@@ -836,33 +938,33 @@ const AdminDashboard = () => {
                              (Array.isArray(vehicle.status) ? vehicle.status[0] : vehicle.status) === 'maintenance' ? 'Maintenance' : (Array.isArray(vehicle.status) ? vehicle.status[0] : vehicle.status)}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${vehicle.bondAmount}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${vehicle.rentPerWeek}/week</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">${vehicle.bondAmount}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-600">${vehicle.rentPerWeek}/week</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <div className="flex space-x-2">
+                    <div className="flex flex-wrap gap-2">
                       <button
                               onClick={() => handleViewVehicle(vehicle)}
-                              className="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-xs"
+                              className="px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200 text-xs font-medium shadow-sm hover:shadow-md"
                             >
                               View
                             </button>
                             <button
                               onClick={() => handleEditVehicle(vehicle)}
-                              className="px-3 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors text-xs"
+                              className="px-3 py-1.5 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-all duration-200 text-xs font-medium shadow-sm hover:shadow-md"
                       >
                         Edit
                       </button>
                             {(Array.isArray(vehicle.status) ? vehicle.status[0] : vehicle.status) !== 'maintenance' && (
                       <button
                                 onClick={() => handleMarkAsMaintenance(vehicle)}
-                                className="px-3 py-1 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors text-xs"
+                                className="px-3 py-1.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-all duration-200 text-xs font-medium shadow-sm hover:shadow-md"
                               >
                                 Maintenance
                               </button>
                             )}
                             <button
                               onClick={() => handleDeleteVehicle(vehicle)}
-                              className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors text-xs"
+                              className="px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 text-xs font-medium shadow-sm hover:shadow-md"
                       >
                         Delete
                       </button>
