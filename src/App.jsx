@@ -11,6 +11,9 @@ import ProtectedRoute from './components/ProtectedRoute';
 import RentalApplication from './components/RentalApplication';
 import Profile from './components/Profile';
 import Landing from './components/Landing';
+import QRCodeLanding from './components/QRCodeLanding';
+import QRRentalApplication from './components/QRRentalApplication';
+import AdminLogin from './components/AdminLogin';
 
 // Fallback component for any missing components
        function FallbackComponent({ name }) {
@@ -56,9 +59,16 @@ function App() {
       <AuthProvider>
         <div className="App">
           <Routes>
-            <Route path="/" element={<Landing />} />
+            {/* QR Code Based System - New Main Routes */}
+            <Route path="/" element={<QRCodeLanding />} />
+            <Route path="/qr-rental-application" element={<QRRentalApplication />} />
+            <Route path="/admin-login" element={<AdminLogin />} />
+            
+            {/* Legacy Routes - Keep for backward compatibility */}
+            <Route path="/legacy" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            
             {/* Protected Routes */}
             <Route path="/dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
             <Route path="/user-dashboard" element={<ProtectedRoute requiredRole="user"><UserDashboard /></ProtectedRoute>} />

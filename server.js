@@ -1905,6 +1905,175 @@ app.post('/api/rentals', uploadRentalApplication.fields([
   }
 });
 
+// QR-based Rental Application endpoint
+app.post('/api/rental-applications', uploadRentalApplication.fields([
+  { name: 'licenseFront', maxCount: 1 },
+  { name: 'licenseBack', maxCount: 1 },
+  { name: 'bondProof', maxCount: 1 },
+  { name: 'rentProof', maxCount: 1 }
+]), (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({ error: `File upload error: ${err.message}` });
+  } else if (err) {
+    return res.status(400).json({ error: err.message });
+  }
+  next();
+}, async (req, res) => {
+  try {
+    const {
+      firstName,
+      lastName,
+      email,
+      phone,
+      address,
+      emergencyContact,
+      emergencyPhone,
+      contractPeriod,
+      bondAmount,
+      weeklyRent,
+      contractAgreed,
+      termsAgreed,
+      vehicleId,
+      vehicleMake,
+      vehicleModel,
+      vehicleLicensePlate
+    } = req.body;
+
+    // Validate required fields
+    if (!firstName || !lastName || !email || !phone || !address || 
+        !emergencyContact || !emergencyPhone || !contractPeriod || 
+        !bondAmount || !weeklyRent) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    if (!contractAgreed || !termsAgreed) {
+      return res.status(400).json({ error: 'Contract and terms must be agreed to' });
+    }
+
+    // Validate file uploads
+    if (!req.files || !req.files.licenseFront || !req.files.licenseBack || 
+        !req.files.bondProof || !req.files.rentProof) {
+      return res.status(400).json({ error: 'All documents are required' });
+    }
+
+    // Create new rental application
+    const newApplication = {
+      id: Date.now(),
+      firstName,
+      lastName,
+      email,
+      phone,
+      address,
+      emergencyContact,
+      emergencyPhone,
+      contractPeriod,
+      bondAmount: parseInt(bondAmount),
+      weeklyRent: parseInt(weeklyRent),
+      contractAgreed: true,
+      termsAgreed: true,
+      status: 'pending_approval',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      
+      // Vehicle details
+      vehicleId: vehicleId ? parseInt(vehicleId) : null,
+      vehicleMake,
+      vehicleModel,
+      vehicleLicensePlate,
+      
+      // Document URLs
+      licenseFrontUrl: `data:${req.files.licenseFront[0].mimetype};base64,${req.files.licenseFront[0].buffer.toString('base64')}`,
+      licenseBackUrl: `data:${req.files.licenseBack[0].mimetype};base64,${req.files.licenseBack[0].buffer.toString('base64')}`,
+      bondProofUrl: `data:${req.files.bondProof[0].mimetype};base64,${req.files.bondProof[0].buffer.toString('base64')}`,
+      rentProofUrl: `data:${req.files.rentProof[0].mimetype};base64,${req.files.rentProof[0].buffer.toString('base64')}`,
+      
+      // Documents array for compatibility
+      documents: [
+        {
+          id: 1,
+          documentType: 'license_front',
+          fileName: req.files.licenseFront[0].originalname,
+          fileUrl: `data:${req.files.licenseFront[0].mimetype};base64,${req.files.licenseFront[0].buffer.toString('base64')}`
+        },
+        {
+          id: 2,
+          documentType: 'license_back',
+          fileName: req.files.licenseBack[0].originalname,
+          fileUrl: `data:${req.files.licenseBack[0].mimetype};base64,${req.files.licenseBack[0].buffer.toString('base64')}`
+        },
+        {
+          id: 3,
+          documentType: 'bond_proof',
+          fileName: req.files.bondProof[0].originalname,
+          fileUrl: `data:${req.files.bondProof[0].mimetype};base64,${req.files.bondProof[0].buffer.toString('base64')}`
+        },
+        {
+          id: 4,
+          documentType: 'rent_proof',
+          fileName: req.files.rentProof[0].originalname,
+          fileUrl: `data:${req.files.rentProof[0].mimetype};base64,${req.files.rentProof[0].buffer.toString('base64')}`
+        }
+      ]
+    };
+
+    // Add to drivers array (for compatibility with existing system)
+    drivers.push(newApplication);
+    
+    // Save data
+    saveData(users, verificationTokens, vehicles, drivers);
+
+    // Send email confirmation
+    try {
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: 'Rental Application Submitted - SK Car Rental',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2563eb;">Rental Application Submitted Successfully</h2>
+            <p>Dear ${firstName} ${lastName},</p>
+            <p>Your rental application has been submitted successfully. Here are the details:</p>
+            
+            <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #1e40af;">Application Details</h3>
+              <p><strong>Application ID:</strong> ${newApplication.id}</p>
+              <p><strong>Contract Period:</strong> ${contractPeriod}</p>
+              <p><strong>Bond Amount:</strong> $${bondAmount}</p>
+              <p><strong>Weekly Rent:</strong> $${weeklyRent}</p>
+              ${vehicleMake ? `<p><strong>Vehicle:</strong> ${vehicleMake} ${vehicleModel} (${vehicleLicensePlate})</p>` : ''}
+            </div>
+            
+            <p>You will receive an email confirmation with the following documents once your application is approved:</p>
+            <ul>
+              <li>Payment Receipt</li>
+              <li>Vehicle Inspection Report</li>
+              <li>Registration Certificate</li>
+              <li>CPV Registration Report</li>
+            </ul>
+            
+            <p>Thank you for choosing SK Car Rental!</p>
+          </div>
+        `
+      };
+
+      await transporter.sendMail(mailOptions);
+      console.log('Email confirmation sent to:', email);
+    } catch (emailError) {
+      console.error('Error sending email confirmation:', emailError);
+      // Don't fail the request if email fails
+    }
+
+    res.status(201).json({
+      message: 'Rental application submitted successfully',
+      application: newApplication
+    });
+
+  } catch (error) {
+    console.error('Error submitting QR rental application:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Payment tracking endpoints
 app.get('/api/payments', (req, res) => {
   try {
