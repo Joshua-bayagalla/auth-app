@@ -1,15 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Car, QrCode, ArrowRight, Download, Upload, FileText, CreditCard, User, Shield } from 'lucide-react';
+import QRCode from 'qrcode';
 
 const QRCodeLanding = () => {
   const navigate = useNavigate();
   const [showQRCode, setShowQRCode] = useState(false);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
 
   const handleScanQR = () => {
     // Navigate to the new rental application form
     navigate('/qr-rental-application');
   };
+
+  const generateQRCode = async () => {
+    try {
+      // Generate QR code with the application URL
+      const applicationUrl = `${window.location.origin}/qr-rental-application`;
+      const qrDataUrl = await QRCode.toDataURL(applicationUrl, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+      setQrCodeDataUrl(qrDataUrl);
+      setShowQRCode(true);
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      // Fallback to showing QR code anyway
+      setShowQRCode(true);
+    }
+  };
+
+  // Generate QR code on component mount
+  useEffect(() => {
+    generateQRCode();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
@@ -58,22 +86,15 @@ const QRCodeLanding = () => {
 
           {/* QR Code Section */}
           <div className="bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/30 p-8 max-w-md mx-auto mb-12">
-            {!showQRCode ? (
-              <div className="text-center">
-                <div className="w-48 h-48 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-6 border-2 border-dashed border-gray-300">
-                  <QrCode className="w-16 h-16 text-gray-400" />
-                </div>
-                <p className="text-gray-600 mb-4">QR Code will appear here</p>
-                <button
-                  onClick={() => setShowQRCode(true)}
-                  className="px-8 py-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
-                >
-                  Generate QR Code
-                </button>
-              </div>
-            ) : (
-              <div className="text-center">
-                <div className="w-48 h-48 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 border-2 border-gray-200 shadow-lg">
+            <div className="text-center">
+              <div className="w-48 h-48 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 border-2 border-gray-200 shadow-lg p-4">
+                {qrCodeDataUrl ? (
+                  <img 
+                    src={qrCodeDataUrl} 
+                    alt="QR Code for SK Car Rental Application" 
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
                   <div className="text-center">
                     <div className="w-32 h-32 bg-black rounded-lg flex items-center justify-center mx-auto mb-2">
                       <div className="w-24 h-24 bg-white rounded flex items-center justify-center">
@@ -82,17 +103,17 @@ const QRCodeLanding = () => {
                     </div>
                     <p className="text-xs text-gray-500">SK Car Rental</p>
                   </div>
-                </div>
-                <p className="text-gray-600 mb-4">Scan this QR code with your phone camera</p>
-                <button
-                  onClick={handleScanQR}
-                  className="px-8 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl font-semibold hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2 mx-auto"
-                >
-                  <span>Start Application</span>
-                  <ArrowRight className="w-5 h-5" />
-                </button>
+                )}
               </div>
-            )}
+              <p className="text-gray-600 mb-4">Scan this QR code with your phone camera</p>
+              <button
+                onClick={handleScanQR}
+                className="px-8 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl font-semibold hover:from-green-700 hover:to-green-800 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2 mx-auto"
+              >
+                <span>Start Application</span>
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Process Steps */}
