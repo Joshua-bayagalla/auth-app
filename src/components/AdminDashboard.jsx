@@ -1,658 +1,546 @@
 import React, { useState, useEffect } from 'react';
-import { API_BASE_URL, API_ENDPOINTS } from '../config';
-
-// Excel export function
-const exportToExcel = (payments, dateRange) => {
-  // Calculate summary statistics
-  const totalAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
-  const totalBondAmount = payments.reduce((sum, p) => sum + (p.bondAmount || 0), 0);
-  const totalRentAmount = payments.reduce((sum, p) => sum + (p.weeklyRent || 0), 0);
-  
-  // Create CSV content with summary
-  const summary = [
-    'PAYMENT SUMMARY REPORT',
-    `Date Range: ${dateRange.startDate} to ${dateRange.endDate}`,
-    `Total Payments: ${payments.length}`,
-    `Total Amount: $${totalAmount.toLocaleString()}`,
-    `Total Bond Amount: $${totalBondAmount.toLocaleString()}`,
-    `Total Rent Amount: $${totalRentAmount.toLocaleString()}`,
-    '',
-    'DETAILED PAYMENT DATA',
-    ''
-  ];
-
-  const headers = [
-    'Customer Name',
-    'Email',
-    'Phone',
-    'License Number',
-    'Address',
-    'Emergency Contact',
-    'Emergency Phone',
-    'Contract Period',
-    'Vehicle Make',
-    'Vehicle Model',
-    'License Plate',
-    'Payment Type',
-    'Total Amount',
-    'Bond Amount',
-    'Weekly Rent',
-    'Payment Date',
-    'Status'
-  ];
-
-  const csvContent = [
-    ...summary,
-    headers.join(','),
-    ...payments.map(payment => [
-      `"${payment.customerName}"`,
-      `"${payment.customerEmail}"`,
-      `"${payment.customerPhone}"`,
-      `"${payment.customerLicenseNumber}"`,
-      `"${payment.customerAddress}"`,
-      `"${payment.emergencyContact}"`,
-      `"${payment.emergencyPhone}"`,
-      `"${payment.contractPeriod}"`,
-      `"${payment.vehicleMake}"`,
-      `"${payment.vehicleModel}"`,
-      `"${payment.vehicleLicensePlate}"`,
-      `"${payment.paymentType}"`,
-      payment.amount,
-      payment.bondAmount,
-      payment.weeklyRent,
-      `"${new Date(payment.paymentDate).toLocaleDateString()}"`,
-      `"${payment.status}"`
-    ].join(','))
-  ].join('\n');
-
-  // Create and download file
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  link.setAttribute('href', url);
-  link.setAttribute('download', `payments_${dateRange.startDate}_to_${dateRange.endDate}.csv`);
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  
-  // Show success message
-  alert(`Excel file exported successfully!\nFilename: payments_${dateRange.startDate}_to_${dateRange.endDate}.csv\nTotal records: ${payments.length}`);
-};
+import { useNavigate } from 'react-router-dom';
+import { 
+  Car, 
+  Plus, 
+  Edit, 
+  Trash2, 
+  LogOut, 
+  Users, 
+  FileText, 
+  AlertTriangle, 
+  DollarSign, 
+  Wrench,
+  CheckCircle,
+  Clock,
+  TrendingUp,
+  Shield
+} from 'lucide-react';
 
 const AdminDashboard = () => {
-  console.log('AdminDashboard component rendering...');
-  
-  const [vehicles, setVehicles] = useState([]);
-  const [rentalApplications, setRentalApplications] = useState([]);
-  const [documentExpiryAlerts, setDocumentExpiryAlerts] = useState([]);
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('vehicles');
+  const [vehicles, setVehicles] = useState([]);
+  const [drivers, setDrivers] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showAddVehicleModal, setShowAddVehicleModal] = useState(false);
-  const [showEditVehicleModal, setShowEditVehicleModal] = useState(false);
-  const [showViewVehicleModal, setShowViewVehicleModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
-  const [viewingVehicle, setViewingVehicle] = useState(null);
-  const [showEditRentalModal, setShowEditRentalModal] = useState(false);
-  const [editingRental, setEditingRental] = useState(null);
-  const [editRentalForm, setEditRentalForm] = useState({});
-  const [vehicleForm, setVehicleForm] = useState({
+  const [formData, setFormData] = useState({
     make: '',
     model: '',
     year: '',
     licensePlate: '',
-    vin: '',
-    bondAmount: '',
-    rentPerWeek: '',
-    currentMileage: '',
-    odoMeter: '',
-    nextServiceDate: '',
-    vehicleType: 'sedan',
     color: '',
-    fuelType: 'petrol',
-    transmission: 'automatic',
-    status: 'available',
-    ownerName: ''
+    dailyRate: '',
+    weeklyRate: '',
+    monthlyRate: '',
+    photo: null
   });
-  const [editVehicleForm, setEditVehicleForm] = useState({
-    make: '',
-    model: '',
-    year: '',
-    licensePlate: '',
-    vin: '',
-    bondAmount: '',
-    rentPerWeek: '',
-    currentMileage: '',
-    odoMeter: '',
-    nextServiceDate: '',
-    vehicleType: 'sedan',
-    color: '',
-    fuelType: 'petrol',
-    transmission: 'automatic',
-    status: 'available',
-    ownerName: ''
-  });
-  const [selectedVehiclePhotos, setSelectedVehiclePhotos] = useState([]);
-  const [selectedDocuments, setSelectedDocuments] = useState({});
-  const [vehicleDocumentExpiry, setVehicleDocumentExpiry] = useState({});
-  const [payments, setPayments] = useState([]);
-  const [paymentDateRange, setPaymentDateRange] = useState({
-    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Last 30 days
-    endDate: new Date().toISOString().split('T')[0]
-  });
-  const [filteredPayments, setFilteredPayments] = useState([]);
-
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        await Promise.all([
-          fetchVehicles(),
-          fetchRentalApplications(),
-          fetchDocumentExpiryAlerts(),
-          fetchPayments()
-        ]);
-      } catch (error) {
-        console.error('Error loading dashboard data:', error);
-        setError('Failed to load dashboard data. Please refresh the page.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    loadData();
+    fetchData();
   }, []);
 
-  useEffect(() => {
-    filterPaymentsByDateRange();
-  }, [payments, paymentDateRange]);
-
-  const fetchVehicles = async () => {
+  const fetchData = async () => {
     try {
-      const response = await fetch(API_ENDPOINTS.VEHICLES);
-      if (response.ok) {
-      const data = await response.json();
-      setVehicles(data);
-      } else {
-        console.error('Error fetching vehicles:', response.status);
-        setVehicles([]);
+      const [vehiclesRes, driversRes, usersRes] = await Promise.all([
+        fetch('/api/vehicles'),
+        fetch('/api/drivers'),
+        fetch('/api/users')
+      ]);
+
+      if (vehiclesRes.ok) {
+        const vehiclesData = await vehiclesRes.json();
+        setVehicles(vehiclesData);
+      }
+
+      if (driversRes.ok) {
+        const driversData = await driversRes.json();
+        setDrivers(driversData);
+      }
+
+      if (usersRes.ok) {
+        const usersData = await usersRes.json();
+        setUsers(usersData);
       }
     } catch (error) {
-      console.error('Error fetching vehicles:', error);
-      setVehicles([]);
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const fetchRentalApplications = async () => {
-    try {
-      const response = await fetch(API_ENDPOINTS.RENTAL_APPLICATIONS);
-      if (response.ok) {
-      const data = await response.json();
-      setRentalApplications(data);
-      } else {
-        console.error('Error fetching rental applications:', response.status);
-        setRentalApplications([]);
-      }
-    } catch (error) {
-      console.error('Error fetching rental applications:', error);
-      setRentalApplications([]);
-    }
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    navigate('/admin-login');
   };
 
-  const fetchDocumentExpiryAlerts = async () => {
-    try {
-      const response = await fetch(API_ENDPOINTS.DOCUMENT_EXPIRY_ALERTS);
-      if (response.ok) {
-      const data = await response.json();
-      setDocumentExpiryAlerts(data);
-      } else {
-        console.error('Error fetching document expiry alerts:', response.status);
-        setDocumentExpiryAlerts([]);
-      }
-    } catch (error) {
-      console.error('Error fetching document expiry alerts:', error);
-      setDocumentExpiryAlerts([]);
-    }
+  const handleInputChange = (e) => {
+    const { name, value, files } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: files ? files[0] : value
+    }));
   };
 
-  const fetchPayments = async () => {
-    try {
-      const response = await fetch(API_ENDPOINTS.PAYMENTS);
-          if (response.ok) {
-            const data = await response.json();
-        setPayments(data);
-      } else {
-        console.error('Error fetching payments:', response.status);
-        setPayments([]);
-      }
-    } catch (error) {
-      console.error('Error fetching payments:', error);
-      setPayments([]);
-    }
-  };
-
-  const filterPaymentsByDateRange = () => {
-    const filtered = payments.filter(payment => {
-      const paymentDate = new Date(payment.paymentDate);
-      const startDate = new Date(paymentDateRange.startDate);
-      const endDate = new Date(paymentDateRange.endDate);
-      endDate.setHours(23, 59, 59); // Include the entire end date
-      
-      return paymentDate >= startDate && paymentDate <= endDate;
-    });
-    setFilteredPayments(filtered);
-  };
-
-  const getPaymentStats = () => {
-    const totalAmount = filteredPayments.reduce((sum, payment) => sum + payment.amount, 0);
-    const totalPayments = filteredPayments.length;
-    const totalBondAmount = filteredPayments.reduce((sum, p) => sum + (p.bondAmount || 0), 0);
-    const totalRentAmount = filteredPayments.reduce((sum, p) => sum + (p.weeklyRent || 0), 0);
-    
-    return {
-      totalAmount,
-      totalPayments,
-      totalBondAmount,
-      totalRentAmount
-    };
-  };
-
-  const handleSubmitVehicle = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
     try {
-      const formData = new FormData();
-      
-      // Add all vehicle form fields
-      Object.keys(vehicleForm).forEach(key => {
-        formData.append(key, vehicleForm[key] || '');
-      });
-      
-      // Debug: Log what's being sent
-      console.log('Vehicle form data:', vehicleForm);
-      console.log('FormData entries:');
-      for (let [key, value] of formData.entries()) {
-        console.log(key, ':', value);
-      }
-      
-      // Add vehicle photo if selected
-      if (selectedVehiclePhotos.length > 0) {
-        formData.append('vehiclePhoto', selectedVehiclePhotos[0]);
-      }
-
-      // Add documents if selected
-      Object.keys(selectedDocuments).forEach(key => {
-        if (selectedDocuments[key]) {
-          formData.append('documents', selectedDocuments[key]);
-          formData.append(`documentType_${key}`, key);
-          formData.append(`expiryDate_${key}`, vehicleDocumentExpiry[key] || '');
+      const formDataToSend = new FormData();
+      Object.keys(formData).forEach(key => {
+        if (formData[key] !== null && formData[key] !== '') {
+          formDataToSend.append(key, formData[key]);
         }
       });
 
-      const response = await fetch(API_ENDPOINTS.VEHICLES, {
-        method: 'POST',
-        body: formData,
+      const url = editingVehicle 
+        ? `/api/vehicles/${editingVehicle.id}` 
+        : '/api/vehicles';
+      
+      const method = editingVehicle ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        body: formDataToSend,
       });
 
       if (response.ok) {
-        const newVehicle = await response.json();
-        setVehicles([...vehicles, newVehicle]);
-        setShowAddVehicleModal(false);
-        setVehicleForm({
-          make: '',
-          model: '',
-          year: '',
-          licensePlate: '',
-          vin: '',
-          bondAmount: '',
-          rentPerWeek: '',
-          currentMileage: '',
-          odoMeter: '',
-          nextServiceDate: '',
-          vehicleType: 'sedan',
-          color: '',
-          fuelType: 'petrol',
-          transmission: 'automatic',
-          status: 'available',
-          ownerName: ''
+        setShowAddModal(false);
+        setEditingVehicle(null);
+        setFormData({
+          make: '', model: '', year: '', licensePlate: '', color: '',
+          dailyRate: '', weeklyRate: '', monthlyRate: '', photo: null
         });
-        setSelectedVehiclePhotos([]);
-        setSelectedDocuments({});
-        setVehicleDocumentExpiry({});
-        alert('Vehicle added successfully!');
-      } else {
-        const errorData = await response.json();
-        console.error('Server error:', errorData);
-        console.error('Response status:', response.status);
-        console.error('Response headers:', response.headers);
-        alert(`Error adding vehicle: ${errorData.error || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('Error adding vehicle:', error);
-      alert('Error adding vehicle: ' + error.message);
-    }
-  };
-
-  const handleApproveRental = async (applicationId) => {
-    try {
-      const response = await fetch(`${API_ENDPOINTS.RENTAL_APPLICATIONS}/${applicationId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action: 'approved' }),
-      });
-
-      if (response.ok) {
-        await fetchRentalApplications();
-        await fetchVehicles();
-        alert('Rental application approved successfully!');
-      } else {
-        const err = await response.json().catch(() => ({}));
-        alert(`Error approving rental application: ${err.error || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('Error approving rental:', error);
-      alert('Error approving rental application');
-    }
-  };
-
-  const handleRejectRental = async (applicationId) => {
-    try {
-      const response = await fetch(`${API_ENDPOINTS.RENTAL_APPLICATIONS}/${applicationId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action: 'rejected' }),
-      });
-
-      if (response.ok) {
-        await fetchRentalApplications();
-        await fetchVehicles();
-        alert('Rental application rejected successfully!');
-      } else {
-        const err = await response.json().catch(() => ({}));
-        alert(`Error rejecting rental application: ${err.error || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('Error rejecting rental:', error);
-      alert('Error rejecting rental application');
-    }
-  };
-
-  const handleEditRental = (application) => {
-    setEditingRental(application);
-    setEditRentalForm({
-      firstName: application.firstName || '',
-      lastName: application.lastName || '',
-      email: application.email || '',
-      phone: application.phone || '',
-      contractPeriod: application.contractPeriod || '',
-      bondAmount: application.bondAmount || '',
-      weeklyRent: application.weeklyRent || '',
-      status: application.status || 'pending_approval',
-      notes: application.notes || ''
-    });
-    setShowEditRentalModal(true);
-  };
-
-  const handleUpdateRental = async (e) => {
-    e.preventDefault();
-    
-    try {
-      const response = await fetch(`${API_ENDPOINTS.RENTAL_APPLICATIONS}/${editingRental.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(editRentalForm),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        setRentalApplications(rentalApplications.map(app => 
-          app.id === editingRental.id ? result.application : app
-        ));
-        setShowEditRentalModal(false);
-        setEditingRental(null);
-        setEditRentalForm({});
-        alert('Rental application updated successfully!');
+        fetchData();
       } else {
         const error = await response.json();
-        alert(`Error updating rental application: ${error.error}`);
+        alert(`Error: ${error.error || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Error updating rental application:', error);
-      alert('Failed to update rental application');
+      console.error('Error:', error);
+      alert('Error saving vehicle');
     }
   };
 
-  const handleEditVehicle = (vehicle) => {
+  const handleEdit = (vehicle) => {
     setEditingVehicle(vehicle);
-    setEditVehicleForm({
+    setFormData({
       make: vehicle.make || '',
       model: vehicle.model || '',
       year: vehicle.year || '',
       licensePlate: vehicle.licensePlate || '',
-      vin: vehicle.vin || '',
-      bondAmount: vehicle.bondAmount || '',
-      rentPerWeek: vehicle.rentPerWeek || '',
-      currentMileage: vehicle.currentMileage || '',
-      odoMeter: vehicle.odoMeter || '',
-      nextServiceDate: vehicle.nextServiceDate || '',
-      vehicleType: vehicle.vehicleType || 'sedan',
       color: vehicle.color || '',
-      fuelType: vehicle.fuelType || 'petrol',
-      transmission: vehicle.transmission || 'automatic',
-      status: vehicle.status || 'available',
-      ownerName: vehicle.ownerName || ''
+      dailyRate: vehicle.dailyRate || '',
+      weeklyRate: vehicle.weeklyRate || '',
+      monthlyRate: vehicle.monthlyRate || '',
+      photo: null
     });
-    setShowEditVehicleModal(true);
+    setShowAddModal(true);
   };
 
-  const handleViewVehicle = (vehicle) => {
-    setViewingVehicle(vehicle);
-    setShowViewVehicleModal(true);
-  };
-
-  const handleDeleteVehicle = async (vehicle) => {
-    if (!confirm(`Are you sure you want to delete ${vehicle.make} ${vehicle.model}? This action cannot be undone.`)) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_ENDPOINTS.VEHICLES}/${vehicle.id}`, {
+  const handleDelete = async (vehicleId) => {
+    if (window.confirm('Are you sure you want to delete this vehicle?')) {
+      try {
+        const response = await fetch(`/api/vehicles/${vehicleId}`, {
           method: 'DELETE',
         });
 
         if (response.ok) {
-        setVehicles(vehicles.filter(v => v.id !== vehicle.id));
-          alert('Vehicle deleted successfully!');
-      } else {
-        const error = await response.json();
-        alert(`Error deleting vehicle: ${error.error}`);
+          fetchData();
+        } else {
+          alert('Error deleting vehicle');
         }
       } catch (error) {
-        console.error('Error deleting vehicle:', error);
-      alert('Failed to delete vehicle');
+        console.error('Error:', error);
+        alert('Error deleting vehicle');
+      }
     }
   };
 
-  const handleMarkAsMaintenance = async (vehicle) => {
-    if (!confirm(`Are you sure you want to mark ${vehicle.make} ${vehicle.model} as maintenance?`)) {
-      return;
-    }
-
-    try {
-      const formData = new FormData();
-      
-      // Keep all existing vehicle data EXCEPT status
-      Object.keys(vehicle).forEach(key => {
-        if (key !== 'id' && key !== 'createdAt' && key !== 'updatedAt' && key !== 'status') {
-          formData.append(key, vehicle[key] || '');
-        }
+  const getStats = () => {
+    const totalVehicles = vehicles.length;
+    const availableVehicles = vehicles.filter(v => v.status === 'available').length;
+    const rentedVehicles = vehicles.filter(v => v.status === 'rented').length;
+    const maintenanceVehicles = vehicles.filter(v => v.status === 'maintenance').length;
+    const pendingApplications = drivers.filter(d => d.status === 'pending_approval').length;
+    const totalUsers = users.length;
+    const totalPayments = drivers.filter(d => d.status === 'approved').length;
+    const expiringDocuments = drivers.filter(d => {
+      // Check for documents expiring in next 30 days
+      return d.documents && d.documents.some(doc => {
+        const expiryDate = new Date(doc.expiryDate);
+        const today = new Date();
+        const diffTime = expiryDate - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays <= 30 && diffDays > 0;
       });
-      
-      // Set the new status
-      formData.append('status', 'maintenance');
+    }).length;
 
-      const response = await fetch(`${API_ENDPOINTS.VEHICLES}/${vehicle.id}`, {
-        method: 'PUT',
-        body: formData,
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        setVehicles(vehicles.map(v => v.id === vehicle.id ? result.vehicle : v));
-        alert('Vehicle marked as maintenance successfully!');
-      } else {
-        const error = await response.json();
-        alert(`Error updating vehicle: ${error.error}`);
-      }
-    } catch (error) {
-      console.error('Error updating vehicle:', error);
-      alert('Failed to update vehicle');
-    }
-  };
-
-  const handleMarkAsAvailable = async (vehicle) => {
-    if (!confirm(`Are you sure you want to mark ${vehicle.make} ${vehicle.model} as available?`)) {
-        return;
-      }
-
-    try {
-      const formData = new FormData();
-      
-      // Keep all existing vehicle data EXCEPT status
-      Object.keys(vehicle).forEach(key => {
-        if (key !== 'id' && key !== 'createdAt' && key !== 'updatedAt' && key !== 'status') {
-          formData.append(key, vehicle[key] || '');
-        }
-      });
-      
-      // Set the new status
-      formData.append('status', 'available');
-
-      const response = await fetch(`${API_ENDPOINTS.VEHICLES}/${vehicle.id}`, {
-        method: 'PUT',
-        body: formData,
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        setVehicles(vehicles.map(v => v.id === vehicle.id ? result.vehicle : v));
-        alert('Vehicle marked as available successfully!');
-      } else {
-        const error = await response.json();
-        alert(`Error updating vehicle: ${error.error}`);
-      }
-    } catch (error) {
-      console.error('Error updating vehicle:', error);
-      alert('Failed to update vehicle');
-    }
-  };
-
-  const handleUpdateVehicle = async (e) => {
-    e.preventDefault();
-    
-    try {
-      const formData = new FormData();
-      
-      // Add all vehicle form fields
-      Object.keys(editVehicleForm).forEach(key => {
-        formData.append(key, editVehicleForm[key] || '');
-      });
-      
-      // Add vehicle photo if selected
-      if (selectedVehiclePhotos.length > 0) {
-        formData.append('vehiclePhoto', selectedVehiclePhotos[0]);
-      }
-
-      const response = await fetch(`${API_ENDPOINTS.VEHICLES}/${editingVehicle.id}`, {
-        method: 'PUT',
-        body: formData,
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        setVehicles(vehicles.map(v => v.id === editingVehicle.id ? result.vehicle : v));
-        setShowEditVehicleModal(false);
-        setEditingVehicle(null);
-        setSelectedVehiclePhotos([]);
-        alert('Vehicle updated successfully!');
-      } else {
-        const error = await response.json();
-        alert(`Error updating vehicle: ${error.error}`);
-      }
-    } catch (error) {
-      console.error('Error updating vehicle:', error);
-      alert('Failed to update vehicle');
-    }
-  };
-
-  const getStatusBadge = (status) => {
-    const statusConfig = {
-      pending_approval: { color: 'bg-yellow-100 text-yellow-800', text: 'Pending' },
-      active: { color: 'bg-green-100 text-green-800', text: 'Approved' },
-      rejected: { color: 'bg-red-100 text-red-800', text: 'Rejected' }
+    return {
+      totalVehicles,
+      availableVehicles,
+      rentedVehicles,
+      maintenanceVehicles,
+      pendingApplications,
+      totalUsers,
+      totalPayments,
+      expiringDocuments
     };
-    
-    const config = statusConfig[status] || statusConfig.pending_approval;
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
-        {config.text}
-      </span>
-    );
   };
 
-  const getAlertLevelBadge = (level) => {
-    const levelConfig = {
-      critical: { color: 'bg-red-100 text-red-800', text: 'Critical' },
-      warning: { color: 'bg-orange-100 text-orange-800', text: 'Warning' },
-      info: { color: 'bg-blue-100 text-blue-800', text: 'Info' }
-    };
-    
-    const config = levelConfig[level] || levelConfig.info;
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
-        {config.text}
-      </span>
-    );
+  const stats = getStats();
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'vehicles':
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">Vehicle Management</h2>
+              <button
+                onClick={() => {
+                  setEditingVehicle(null);
+                  setFormData({
+                    make: '', model: '', year: '', licensePlate: '', color: '',
+                    dailyRate: '', weeklyRate: '', monthlyRate: '', photo: null
+                  });
+                  setShowAddModal(true);
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center space-x-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Vehicle</span>
+              </button>
+            </div>
+            
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Photo</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rates</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {vehicles.map((vehicle) => (
+                      <tr key={vehicle.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
+                            {vehicle.photoUrl ? (
+                              <img 
+                                src={vehicle.photoUrl} 
+                                alt={`${vehicle.make} ${vehicle.model}`}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Car className="w-8 h-8 text-gray-400" />
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {vehicle.make} {vehicle.model}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {vehicle.year} • {vehicle.color} • {vehicle.licensePlate}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <div>Daily: ${vehicle.dailyRate}</div>
+                          <div>Weekly: ${vehicle.weeklyRate}</div>
+                          <div>Monthly: ${vehicle.monthlyRate}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            vehicle.status === 'available' ? 'bg-green-100 text-green-800' :
+                            vehicle.status === 'rented' ? 'bg-blue-100 text-blue-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {vehicle.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button
+                            onClick={() => handleEdit(vehicle)}
+                            className="text-indigo-600 hover:text-indigo-900 mr-3"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(vehicle.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'maintenance':
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Maintenance Management</h2>
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="text-center text-gray-500">
+                <Wrench className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                <p>No maintenance records found</p>
+                <p className="text-sm">Maintenance tracking will be available soon</p>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'applications':
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Rental Applications</h2>
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applicant</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contract Details</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {drivers.filter(d => d.status === 'pending_approval').map((application) => (
+                      <tr key={application.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {application.firstName} {application.lastName}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {application.email} • {application.phone}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {application.vehicleMake && application.vehicleModel ? (
+                            <div>
+                              {application.vehicleMake} {application.vehicleModel}
+                              {application.vehicleLicensePlate && (
+                                <div className="text-gray-500">{application.vehicleLicensePlate}</div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">No vehicle selected</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <div>Period: {application.contractPeriod}</div>
+                          <div>Bond: ${application.bondAmount}</div>
+                          <div>Weekly: ${application.weeklyRent}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                            Pending Approval
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button className="text-green-600 hover:text-green-900 mr-3">
+                            Approve
+                          </button>
+                          <button className="text-red-600 hover:text-red-900">
+                            Reject
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'alerts':
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Expiry Alerts</h2>
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Document</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expiry Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Days Left</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {drivers.filter(d => d.documents && d.documents.some(doc => {
+                      const expiryDate = new Date(doc.expiryDate);
+                      const today = new Date();
+                      const diffTime = expiryDate - today;
+                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                      return diffDays <= 30 && diffDays > 0;
+                    })).map((driver) => {
+                      const expiringDocs = driver.documents.filter(doc => {
+                        const expiryDate = new Date(doc.expiryDate);
+                        const today = new Date();
+                        const diffTime = expiryDate - today;
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        return diffDays <= 30 && diffDays > 0;
+                      });
+                      
+                      return expiringDocs.map((doc) => {
+                        const expiryDate = new Date(doc.expiryDate);
+                        const today = new Date();
+                        const diffTime = expiryDate - today;
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        
+                        return (
+                          <tr key={`${driver.id}-${doc.id}`} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <AlertTriangle className="w-4 h-4 text-yellow-500 mr-2" />
+                                <span className="text-sm font-medium text-gray-900">{doc.documentType}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {driver.firstName} {driver.lastName}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {expiryDate.toLocaleDateString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                diffDays <= 7 ? 'bg-red-100 text-red-800' :
+                                diffDays <= 14 ? 'bg-orange-100 text-orange-800' :
+                                'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {diffDays} days
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <button className="text-blue-600 hover:text-blue-900">
+                                Send Reminder
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      });
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'payments':
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Payment Management</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Total Revenue</h3>
+                  <DollarSign className="w-8 h-8 text-green-600" />
+                </div>
+                <div className="text-3xl font-bold text-green-600">
+                  ${drivers.filter(d => d.status === 'approved').reduce((sum, d) => sum + (d.weeklyRent || 0), 0)}
+                </div>
+                <p className="text-sm text-gray-500 mt-2">Weekly rental income</p>
+              </div>
+              
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Pending Payments</h3>
+                  <Clock className="w-8 h-8 text-yellow-600" />
+                </div>
+                <div className="text-3xl font-bold text-yellow-600">
+                  {drivers.filter(d => d.status === 'pending_approval').length}
+                </div>
+                <p className="text-sm text-gray-500 mt-2">Applications awaiting approval</p>
+              </div>
+              
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Active Rentals</h3>
+                  <CheckCircle className="w-8 h-8 text-blue-600" />
+                </div>
+                <div className="text-3xl font-bold text-blue-600">
+                  {drivers.filter(d => d.status === 'approved').length}
+                </div>
+                <p className="text-sm text-gray-500 mt-2">Currently active contracts</p>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Recent Payments</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Renter</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {drivers.filter(d => d.status === 'approved').map((driver) => (
+                      <tr key={driver.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {driver.firstName} {driver.lastName}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {driver.vehicleMake} {driver.vehicleModel}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          ${driver.weeklyRent}/week
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                            Active
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
   };
 
-  // Show loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
-          <p className="text-sm text-gray-500 mt-2">Please wait while we fetch your data</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error state
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            <p className="font-bold">Error</p>
-            <p>{error}</p>
-          </div>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Refresh Page
-          </button>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -660,1737 +548,379 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Welcome, Admin</h1>
-              <p className="mt-2 text-gray-600 text-lg">Manage vehicles, applications, documents and payments from one place.</p>
-              <div className="mt-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 text-blue-800 text-sm rounded-xl px-4 py-3 inline-flex items-center shadow-sm">
-                <span className="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse" />
-                Tip: Use the tabs below to switch between sections quickly.
+      {/* Header */}
+      <header className="bg-white/90 backdrop-blur-md shadow-xl border-b border-white/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Car className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  Admin Dashboard
+                </h1>
+                <p className="text-sm text-gray-600">SK Car Rental Management</p>
               </div>
             </div>
-            <button
-              onClick={() => {
-                localStorage.removeItem('user');
-                window.location.href = '/';
-              }}
-              className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-            >
-              Sign Out
-            </button>
-          </div>
-        </div>
-
-        {/* Premium Statistics Cards */}
-        <div className="mb-8 grid grid-cols-1 md:grid-cols-5 gap-6">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 shadow-xl border border-blue-200 transform hover:scale-105 transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-100 text-sm font-medium">Total Vehicles</p>
-                <p className="text-3xl font-bold text-white">{vehicles.length}</p>
-              </div>
-              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 shadow-xl border border-green-200 transform hover:scale-105 transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-100 text-sm font-medium">Available</p>
-                <p className="text-3xl font-bold text-white">{vehicles.filter(v => {
-                  const status = Array.isArray(v.status) ? v.status[0] : v.status;
-                  return status === 'available';
-                }).length}</p>
-              </div>
-              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl p-6 shadow-xl border border-indigo-200 transform hover:scale-105 transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-indigo-100 text-sm font-medium">Rented</p>
-                <p className="text-3xl font-bold text-white">{vehicles.filter(v => {
-                  const status = Array.isArray(v.status) ? v.status[0] : v.status;
-                  return status === 'rented';
-                }).length}</p>
-              </div>
-              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-6 shadow-xl border border-orange-200 transform hover:scale-105 transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-orange-100 text-sm font-medium">Maintenance</p>
-                <p className="text-3xl font-bold text-white">{vehicles.filter(v => {
-                  const status = Array.isArray(v.status) ? v.status[0] : v.status;
-                  return status === 'maintenance';
-                }).length}</p>
-              </div>
-              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 shadow-xl border border-purple-200 transform hover:scale-105 transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-purple-100 text-sm font-medium">Pending Apps</p>
-                <p className="text-3xl font-bold text-white">{rentalApplications.filter(r => r.status === 'pending_approval').length}</p>
-              </div>
-              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Premium Tab Navigation */}
-        <div className="mb-8">
-          <nav className="flex flex-wrap gap-2 md:gap-4 bg-white/80 backdrop-blur-sm rounded-2xl p-2 shadow-lg border border-white/20">
-            <button
-              onClick={() => setActiveTab('vehicles')}
-              className={`px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 flex items-center space-x-2 ${
-                activeTab === 'vehicles'
-                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg transform scale-105'
-                  : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-              }`}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-              <span className="hidden sm:inline">Vehicles</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('maintenance')}
-              className={`px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 flex items-center space-x-2 ${
-                activeTab === 'maintenance'
-                  ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg transform scale-105'
-                  : 'text-gray-600 hover:text-orange-600 hover:bg-orange-50'
-              }`}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span className="hidden sm:inline">Maintenance</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('applications')}
-              className={`px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 flex items-center space-x-2 ${
-                activeTab === 'applications'
-                  ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg transform scale-105'
-                  : 'text-gray-600 hover:text-purple-600 hover:bg-purple-50'
-              }`}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span className="hidden sm:inline">Applications</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('alerts')}
-              className={`px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 flex items-center space-x-2 ${
-                activeTab === 'alerts'
-                  ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg transform scale-105'
-                  : 'text-gray-600 hover:text-red-600 hover:bg-red-50'
-              }`}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-              <span className="hidden sm:inline">Alerts</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('payments')}
-              className={`px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 flex items-center space-x-2 ${
-                activeTab === 'payments'
-                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg transform scale-105'
-                  : 'text-gray-600 hover:text-green-600 hover:bg-green-50'
-              }`}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-              </svg>
-              <span className="hidden sm:inline">Payments</span>
-            </button>
-          </nav>
-        </div>
-
-        {/* Vehicles Tab */}
-        {activeTab === 'vehicles' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Vehicle Management</h2>
-                <p className="text-sm text-gray-600 mt-1">
-                                     Manage all vehicles • Available: {vehicles.filter(v => {
-                     const status = Array.isArray(v.status) ? v.status[0] : v.status;
-                     return status === 'available';
-                   }).length} • 
-                   Rented: {vehicles.filter(v => {
-                     const status = Array.isArray(v.status) ? v.status[0] : v.status;
-                     return status === 'rented';
-                   }).length} • 
-                   Maintenance: {vehicles.filter(v => {
-                     const status = Array.isArray(v.status) ? v.status[0] : v.status;
-                     return status === 'maintenance';
-                   }).length}
+            
+            <div className="flex items-center space-x-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-2">
+                <p className="text-sm text-blue-700">
+                  <span className="font-medium">Tip:</span> Use the tabs below to switch between sections quickly
                 </p>
               </div>
-              <button
-                onClick={() => setShowAddVehicleModal(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Add Vehicle
-              </button>
-            </div>
-
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Vehicle</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">License Plate</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Bond Amount</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Weekly Rent</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-100">
-              {vehicles.map((vehicle) => (
-                      <tr key={vehicle.id} className="hover:bg-blue-50/50 transition-colors duration-200">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center space-x-3">
-                            {/* Vehicle Photo */}
-                            <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
-                              {(() => {
-                                const images = (
-                                  (vehicle.photoUrls && vehicle.photoUrls.length > 0)
-                                    ? vehicle.photoUrls.map((u) => (u.startsWith('http') || u.startsWith('data:') ? u : `${API_BASE_URL}${u}`))
-                                    : (vehicle.photoUrl
-                                        ? [vehicle.photoUrl.startsWith('http') || vehicle.photoUrl.startsWith('data:') ? vehicle.photoUrl : `${API_BASE_URL}${vehicle.photoUrl}`]
-                                        : []
-                                      )
-                                );
-                                if (images.length > 0) {
-                                  return (
-                                    <img
-                                      src={images[0]}
-                                      alt={`${vehicle.make} ${vehicle.model}`}
-                                      className="w-full h-full object-cover"
-                                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                    />
-                                  );
-                                }
-                                return (
-                                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                                    <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                                    </svg>
-                                  </div>
-                                );
-                              })()}
-                            </div>
-                            <div>
-                              <div className="text-sm font-semibold text-gray-900">{vehicle.make} {vehicle.model}</div>
-                              <div className="text-sm text-gray-500">{vehicle.year} • {vehicle.color}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                            {vehicle.licensePlate}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                            (Array.isArray(vehicle.status) ? vehicle.status[0] : vehicle.status) === 'available' ? 'bg-green-100 text-green-800' : 
-                            (Array.isArray(vehicle.status) ? vehicle.status[0] : vehicle.status) === 'rented' ? 'bg-blue-100 text-blue-800' :
-                            (Array.isArray(vehicle.status) ? vehicle.status[0] : vehicle.status) === 'maintenance' ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {(Array.isArray(vehicle.status) ? vehicle.status[0] : vehicle.status) === 'available' ? 'Available' : 
-                             (Array.isArray(vehicle.status) ? vehicle.status[0] : vehicle.status) === 'rented' ? 'Rented' :
-                             (Array.isArray(vehicle.status) ? vehicle.status[0] : vehicle.status) === 'maintenance' ? 'Maintenance' : (Array.isArray(vehicle.status) ? vehicle.status[0] : vehicle.status)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">${vehicle.bondAmount}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-600">${vehicle.rentPerWeek}/week</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                              onClick={() => handleViewVehicle(vehicle)}
-                              className="px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200 text-xs font-medium shadow-sm hover:shadow-md"
-                            >
-                              View
-                            </button>
-                            <button
-                              onClick={() => handleEditVehicle(vehicle)}
-                              className="px-3 py-1.5 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-all duration-200 text-xs font-medium shadow-sm hover:shadow-md"
-                      >
-                        Edit
-                      </button>
-                            {(Array.isArray(vehicle.status) ? vehicle.status[0] : vehicle.status) !== 'maintenance' && (
-                      <button
-                                onClick={() => handleMarkAsMaintenance(vehicle)}
-                                className="px-3 py-1.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-all duration-200 text-xs font-medium shadow-sm hover:shadow-md"
-                              >
-                                Maintenance
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleDeleteVehicle(vehicle)}
-                              className="px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 text-xs font-medium shadow-sm hover:shadow-md"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                  </div>
-                </div>
-          </div>
-        )}
-
-        {/* Maintenance Tab */}
-        {activeTab === 'maintenance' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Vehicle Maintenance</h2>
-                <p className="text-sm text-gray-600 mt-1">Manage vehicles currently under repair or service</p>
-              </div>
-              <button
-                onClick={fetchVehicles}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                Refresh
-              </button>
-            </div>
-
-            {/* Maintenance Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                <div className="flex items-center">
-                  <div className="p-2 bg-orange-100 rounded-lg">
-                    <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-orange-600">In Maintenance</p>
-                                         <p className="text-2xl font-bold text-orange-900">{vehicles.filter(v => {
-                       const status = Array.isArray(v.status) ? v.status[0] : v.status;
-                       return status === 'maintenance';
-                     }).length}</p>
-                  </div>
-                </div>
-              </div>
               
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-center">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-blue-600">Service Due Soon</p>
-                    <p className="text-2xl font-bold text-blue-900">
-                                             {vehicles.filter(v => {
-                         const status = Array.isArray(v.status) ? v.status[0] : v.status;
-                         return status === 'maintenance' && v.nextServiceDate && new Date(v.nextServiceDate) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-                       }).length}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="flex items-center">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-green-600">Ready to Return</p>
-                    <p className="text-2xl font-bold text-green-900">
-                                             {vehicles.filter(v => {
-                         const status = Array.isArray(v.status) ? v.status[0] : v.status;
-                         return status === 'maintenance' && v.nextServiceDate && new Date(v.nextServiceDate) > new Date();
-                       }).length}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-                          {vehicles.filter(vehicle => {
-                const status = Array.isArray(vehicle.status) ? vehicle.status[0] : vehicle.status;
-                return status === 'maintenance';
-              }).length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-lg shadow-sm border">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">All Vehicles Operational</h3>
-                <p className="text-gray-500">No vehicles are currently in maintenance</p>
-              </div>
-            ) : (
-              <div className="bg-white rounded-lg shadow-sm border">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h3 className="text-lg font-medium text-gray-900">Maintenance Vehicles</h3>
-                  <p className="text-sm text-gray-600 mt-1">Vehicles currently under repair or service</p>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle Details</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service Information</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {vehicles.filter(vehicle => {
-                      // Handle both string and array status values
-                      const status = Array.isArray(vehicle.status) ? vehicle.status[0] : vehicle.status;
-                      return status === 'maintenance';
-                    }).map((vehicle) => (
-                        <tr key={vehicle.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4">
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">{vehicle.make} {vehicle.model}</div>
-                              <div className="text-sm text-gray-500">{vehicle.year} • {vehicle.color}</div>
-                              <div className="text-sm text-gray-500 mt-1">License: {vehicle.licensePlate}</div>
-                              <div className="text-sm text-gray-500">Mileage: {vehicle.currentMileage} km</div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="space-y-2">
-                              <div className="flex items-center">
-                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                  Under Maintenance
-                                </span>
-                              </div>
-                              <div className="text-sm text-gray-600">
-                                <span className="font-medium">Next Service:</span> {vehicle.nextServiceDate ? new Date(vehicle.nextServiceDate).toLocaleDateString() : 'Not scheduled'}
-                              </div>
-                              {vehicle.nextServiceDate && new Date(vehicle.nextServiceDate) <= new Date() && (
-                                <div className="text-sm text-red-600 font-medium">
-                                  ⚠️ Service overdue
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex flex-col space-y-2">
-                              <button
-                                onClick={() => handleViewVehicle(vehicle)}
-                                className="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-xs"
-                              >
-                                View Details
-                              </button>
-                              <button
-                                onClick={() => handleEditVehicle(vehicle)}
-                                className="px-3 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors text-xs"
-                              >
-                                Edit Vehicle
-                              </button>
-                              <button
-                                onClick={() => handleMarkAsAvailable(vehicle)}
-                                className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors text-xs"
-                              >
-                                Mark as Available
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-            </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Rental Applications Tab */}
-        {activeTab === 'applications' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-gray-900">Rental Applications</h2>
               <button
-                onClick={fetchRentalApplications}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                onClick={handleLogout}
+                className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-medium hover:from-red-600 hover:to-red-700 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
               >
-                Refresh
+                <LogOut className="w-4 h-4 inline mr-2" />
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-8">
+          <div 
+            className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-4 text-white cursor-pointer hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105"
+            onClick={() => setActiveTab('vehicles')}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Total Vehicles</p>
+                <p className="text-2xl font-bold">{stats.totalVehicles}</p>
+              </div>
+              <Car className="w-8 h-8 opacity-80" />
+            </div>
+          </div>
+          
+          <div 
+            className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-4 text-white cursor-pointer hover:from-green-600 hover:to-green-700 transition-all duration-200 transform hover:scale-105"
+            onClick={() => setActiveTab('vehicles')}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Available</p>
+                <p className="text-2xl font-bold">{stats.availableVehicles}</p>
+              </div>
+              <CheckCircle className="w-8 h-8 opacity-80" />
+            </div>
+          </div>
+          
+          <div 
+            className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-4 text-white cursor-pointer hover:from-purple-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105"
+            onClick={() => setActiveTab('vehicles')}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Rented</p>
+                <p className="text-2xl font-bold">{stats.rentedVehicles}</p>
+              </div>
+              <TrendingUp className="w-8 h-8 opacity-80" />
+            </div>
+          </div>
+          
+          <div 
+            className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-4 text-white cursor-pointer hover:from-orange-600 hover:to-orange-700 transition-all duration-200 transform hover:scale-105"
+            onClick={() => setActiveTab('maintenance')}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Maintenance</p>
+                <p className="text-2xl font-bold">{stats.maintenanceVehicles}</p>
+              </div>
+              <Wrench className="w-8 h-8 opacity-80" />
+            </div>
+          </div>
+          
+          <div 
+            className="bg-gradient-to-br from-violet-500 to-violet-600 rounded-2xl p-4 text-white cursor-pointer hover:from-violet-600 hover:to-violet-700 transition-all duration-200 transform hover:scale-105"
+            onClick={() => setActiveTab('applications')}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Pending Apps</p>
+                <p className="text-2xl font-bold">{stats.pendingApplications}</p>
+              </div>
+              <FileText className="w-8 h-8 opacity-80" />
+            </div>
+          </div>
+          
+          <div 
+            className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl p-4 text-white cursor-pointer hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 transform hover:scale-105"
+            onClick={() => setActiveTab('alerts')}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Expiry Alerts</p>
+                <p className="text-2xl font-bold">{stats.expiringDocuments}</p>
+              </div>
+              <AlertTriangle className="w-8 h-8 opacity-80" />
+            </div>
+          </div>
+          
+          <div 
+            className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-4 text-white cursor-pointer hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105"
+            onClick={() => setActiveTab('payments')}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Total Users</p>
+                <p className="text-2xl font-bold">{stats.totalUsers}</p>
+              </div>
+              <Users className="w-8 h-8 opacity-80" />
+            </div>
+          </div>
+          
+          <div 
+            className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl p-4 text-white cursor-pointer hover:from-rose-600 hover:to-rose-700 transition-all duration-200 transform hover:scale-105"
+            onClick={() => setActiveTab('payments')}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Payments</p>
+                <p className="text-2xl font-bold">{stats.totalPayments}</p>
+              </div>
+              <DollarSign className="w-8 h-8 opacity-80" />
+            </div>
+          </div>
+        </div>
+
+        {/* Unified Tab Navigation */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-2 shadow-lg border border-white/20 mb-8">
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setActiveTab('vehicles')}
+              className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                activeTab === 'vehicles'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              <Car className="w-5 h-5" />
+              <span>Vehicles</span>
+            </button>
+            
+            <button
+              onClick={() => setActiveTab('maintenance')}
+              className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                activeTab === 'maintenance'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              <Wrench className="w-5 h-5" />
+              <span>Maintenance</span>
+            </button>
+            
+            <button
+              onClick={() => setActiveTab('applications')}
+              className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                activeTab === 'applications'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              <FileText className="w-5 h-5" />
+              <span>Applications</span>
+            </button>
+            
+            <button
+              onClick={() => setActiveTab('alerts')}
+              className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                activeTab === 'alerts'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              <AlertTriangle className="w-5 h-5" />
+              <span>Expiry Alerts</span>
+            </button>
+            
+            <button
+              onClick={() => setActiveTab('payments')}
+              className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                activeTab === 'payments'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              <DollarSign className="w-5 h-5" />
+              <span>Payments</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        <div className="bg-white/90 backdrop-blur-md rounded-3xl shadow-xl border border-white/30 p-8">
+          {renderContent()}
+        </div>
+      </main>
+
+      {/* Add/Edit Vehicle Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {editingVehicle ? 'Edit Vehicle' : 'Add New Vehicle'}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowAddModal(false);
+                  setEditingVehicle(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
             
-            {rentalApplications.length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-lg shadow-sm border">
-                <p className="text-gray-500">No rental applications found</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-              {rentalApplications.map((application) => (
-                  <div key={application.id} className="bg-white rounded-lg shadow-sm border p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
-                          {application.firstName} {application.lastName}
-                      </h3>
-                      <p className="text-sm text-gray-600">{application.email}</p>
-                        <p className="text-sm text-gray-600">Phone: {application.phone}</p>
-                    </div>
-                      <div className="flex items-center space-x-2">
-                    {getStatusBadge(application.status)}
-                        {application.vehicle_details && (
-                          <span className="text-sm text-gray-600">
-                            {application.vehicle_details.make} {application.vehicle_details.model}
-                          </span>
-                        )}
-                      </div>
-                  </div>
-                  
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-4">
-                      <div>
-                        <span className="font-medium">Contract Period:</span> {application.contractPeriod}
-                      </div>
-                      <div>
-                        <span className="font-medium">Bond Amount:</span> ${application.bondAmount}
-                      </div>
-                      <div>
-                        <span className="font-medium">Weekly Rent:</span> ${application.weeklyRent}
-                      </div>
-                      <div>
-                        <span className="font-medium">Submitted:</span> {new Date(application.createdAt).toLocaleDateString()}
-                      </div>
-                  </div>
-
-                    {/* Car Photos Display */}
-                    {application.carPhotosUrls && application.carPhotosUrls.length > 0 && (
-                      <div className="mb-4">
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">Current Car Photos:</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {application.carPhotosUrls.map((photoUrl, index) => (
-                            <div key={index} className="relative">
-                              <img
-                                src={photoUrl}
-                                alt={`Car photo ${index + 1}`}
-                                className="w-20 h-20 object-cover rounded-lg border border-gray-200"
-                                onError={(e) => {
-                                  e.target.style.display = 'none';
-                                }}
-                              />
-                              <a
-                                href={photoUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 hover:bg-opacity-30 transition-all rounded-lg"
-                                title="Click to view full size"
-                              >
-                                <svg className="w-6 h-6 text-white opacity-0 hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                </svg>
-                              </a>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleEditRental(application)}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        Edit
-                      </button>
-                      {application.status === 'pending_approval' && (
-                        <>
-                          <button
-                            onClick={() => handleApproveRental(application.id)}
-                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                      >
-                        Approve
-                      </button>
-                      <button
-                            onClick={() => handleRejectRental(application.id)}
-                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                      >
-                        Reject
-                      </button>
-                        </>
-                      )}
-                    </div>
-                </div>
-              ))}
-            </div>
-            )}
-          </div>
-        )}
-
-        {/* Document Alerts Tab */}
-        {activeTab === 'alerts' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <div>
-            <h2 className="text-xl font-semibold text-gray-900">Document Expiry Alerts</h2>
-                <p className="text-sm text-gray-600 mt-1">Monitor vehicle documents that are expiring soon</p>
-              </div>
-              <button
-                onClick={fetchDocumentExpiryAlerts}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                Refresh
-              </button>
-            </div>
-            
-            {documentExpiryAlerts.length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-lg shadow-sm border">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">All Documents Up to Date</h3>
-                <p className="text-gray-500">No documents are expiring soon</p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {/* Group alerts by vehicle */}
-                {(() => {
-                  const vehicleGroups = {};
-                  documentExpiryAlerts.forEach(alert => {
-                    if (!vehicleGroups[alert.vehicle_name]) {
-                      vehicleGroups[alert.vehicle_name] = [];
-                    }
-                    vehicleGroups[alert.vehicle_name].push(alert);
-                  });
-
-                  return Object.entries(vehicleGroups).map(([vehicleName, alerts]) => {
-                    const criticalCount = alerts.filter(a => a.alert_level === 'critical').length;
-                    const warningCount = alerts.filter(a => a.alert_level === 'warning').length;
-                    const infoCount = alerts.filter(a => a.alert_level === 'info').length;
-                    
-                    // Determine overall alert level for the vehicle
-                    let overallLevel = 'info';
-                    let overallColor = 'blue';
-                    if (criticalCount > 0) {
-                      overallLevel = 'critical';
-                      overallColor = 'red';
-                    } else if (warningCount > 0) {
-                      overallLevel = 'warning';
-                      overallColor = 'orange';
-                    }
-
-                    return (
-                      <div key={vehicleName} className={`bg-${overallColor}-50 border border-${overallColor}-200 rounded-lg p-6`}>
-                        <div className="flex justify-between items-start mb-4">
-                          <div>
-                            <h3 className={`text-xl font-semibold text-${overallColor}-900`}>{vehicleName}</h3>
-                            <p className={`text-sm text-${overallColor}-700 mt-1`}>
-                              {alerts.length} document{alerts.length > 1 ? 's' : ''} requiring attention
-                        </p>
-                      </div>
-                          <div className="flex items-center space-x-2">
-                            {criticalCount > 0 && (
-                              <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium">
-                                {criticalCount} Expired
-                              </span>
-                            )}
-                            {warningCount > 0 && (
-                              <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium">
-                                {warningCount} Expiring Soon
-                              </span>
-                            )}
-                            {infoCount > 0 && (
-                              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                                {infoCount} Upcoming
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="space-y-3">
-                          {alerts.map((alert, index) => {
-                            const alertColors = {
-                              critical: 'red',
-                              warning: 'orange',
-                              info: 'blue'
-                            };
-                            const color = alertColors[alert.alert_level];
-                            
-                            return (
-                              <div key={index} className={`bg-white border border-${color}-200 rounded-lg p-4`}>
-                                <div className="flex justify-between items-start">
-                                  <div className="flex-1">
-                                    <h4 className={`text-lg font-semibold text-${color}-900`}>
-                                      {alert.document_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                    </h4>
-                                    <p className={`text-sm text-${color}-600 mt-1`}>
-                                      {alert.alert_level === 'critical' ? 'Expired on:' : 'Expires on:'} {new Date(alert.expiry_date).toLocaleDateString()}
-                                    </p>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <span className={`px-3 py-1 bg-${color}-100 text-${color}-800 rounded-full text-sm font-medium`}>
-                                      {alert.alert_level === 'critical' ? 'EXPIRED' : 
-                                       alert.alert_level === 'warning' ? 'EXPIRING SOON' : 'UPCOMING'}
-                                    </span>
-                                    <span className={`text-sm font-medium text-${color}-600`}>
-                                      {alert.alert_level === 'critical' 
-                                        ? `${Math.abs(alert.days_until_expiry)} days overdue`
-                                        : `${alert.days_until_expiry} days left`
-                                      }
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Payments Tab */}
-        {activeTab === 'payments' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Payment Tracking</h2>
-                <p className="text-sm text-gray-600 mt-1">Monitor all payments received with date range filtering</p>
-              </div>
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => exportToExcel(filteredPayments, paymentDateRange)}
-                  disabled={filteredPayments.length === 0}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-2"
-                  title={`Export ${filteredPayments.length} payment records from ${paymentDateRange.startDate} to ${paymentDateRange.endDate}`}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <span>Export to Excel</span>
-                </button>
-                <button
-                  onClick={fetchPayments}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                >
-                  Refresh
-                </button>
-              </div>
-            </div>
-
-            {/* Date Range Filter */}
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Filter by Date Range</h3>
-              <div className="flex flex-wrap gap-4 items-end">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                        <input
-                          type="date"
-                    value={paymentDateRange.startDate}
-                    onChange={(e) => setPaymentDateRange({...paymentDateRange, startDate: e.target.value})}
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Make *</label>
                   <input
-                    type="date"
-                    value={paymentDateRange.endDate}
-                    onChange={(e) => setPaymentDateRange({...paymentDateRange, endDate: e.target.value})}
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    type="text"
+                    name="make"
+                    value={formData.make}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., Toyota"
                   />
-                    </div>
-                <button
-                  onClick={() => setPaymentDateRange({
-                    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                    endDate: new Date().toISOString().split('T')[0]
-                  })}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  Last 30 Days
-                </button>
-                <button
-                  onClick={() => setPaymentDateRange({
-                    startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                    endDate: new Date().toISOString().split('T')[0]
-                  })}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-                >
-                  Last 7 Days
-                </button>
-                  </div>
-              </div>
-
-            {/* Payment Statistics */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-white rounded-lg p-4 shadow-sm border">
-                <p className="text-sm text-gray-600">Total Payments</p>
-                <p className="text-2xl font-bold text-blue-600">{getPaymentStats().totalPayments}</p>
-              </div>
-              <div className="bg-white rounded-lg p-4 shadow-sm border">
-                <p className="text-sm text-gray-600">Total Amount</p>
-                <p className="text-2xl font-bold text-green-600">${getPaymentStats().totalAmount.toLocaleString()}</p>
-              </div>
-              <div className="bg-white rounded-lg p-4 shadow-sm border">
-                <p className="text-sm text-gray-600">Total Bond Amount</p>
-                <p className="text-2xl font-bold text-purple-600">${getPaymentStats().totalBondAmount.toLocaleString()}</p>
-              </div>
-              <div className="bg-white rounded-lg p-4 shadow-sm border">
-                <p className="text-sm text-gray-600">Total Rent Amount</p>
-                <p className="text-2xl font-bold text-orange-600">${getPaymentStats().totalRentAmount.toLocaleString()}</p>
-              </div>
-            </div>
-
-            {/* Payments Table */}
-            <div className="bg-white rounded-lg shadow-sm border">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900">Payment Details</h3>
-                <p className="text-sm text-gray-600 mt-1">Showing {filteredPayments.length} payments in selected date range</p>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer Details</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Type</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredPayments.length === 0 ? (
-                      <tr>
-                        <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
-                          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                            </svg>
-                          </div>
-                          <p className="text-lg font-medium text-gray-900 mb-2">No Payments Found</p>
-                          <p className="text-gray-500">No payments match the selected date range</p>
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredPayments.map((payment) => (
-                        <tr key={payment.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4">
-                            <div className="space-y-1">
-                              <div className="text-sm font-medium text-gray-900">{payment.customerName}</div>
-                              <div className="text-xs text-gray-500">
-                                <div>📧 {payment.customerEmail}</div>
-                                <div>📞 {payment.customerPhone}</div>
-                                <div>🚗 License: {payment.customerLicenseNumber}</div>
-                                <div>📍 {payment.customerAddress}</div>
-                                <div>🆘 Emergency: {payment.emergencyContact} ({payment.emergencyPhone})</div>
-                                <div>📅 Contract: {payment.contractPeriod}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900">{payment.vehicleMake} {payment.vehicleModel}</div>
-                            <div className="text-sm text-gray-500">{payment.vehicleLicensePlate}</div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              Rental Payment
-                            </span>
-                            <div className="text-xs text-gray-500 mt-1">
-                              Bond: ${payment.bondAmount} | Rent: ${payment.weeklyRent}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-sm font-medium text-gray-900">${payment.amount.toLocaleString()}</td>
-                          <td className="px-6 py-4 text-sm text-gray-500">{new Date(payment.paymentDate).toLocaleDateString()}</td>
-                          <td className="px-6 py-4">
-                            {payment.receiptUrl && (
-                              <a
-                                href={payment.receiptUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-800 text-sm font-medium underline"
-                                title="Click to view receipt in new tab"
-                              >
-                                View Receipt
-                              </a>
-                            )}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Add Vehicle Modal */}
-        {showAddVehicleModal && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-              <div className="mt-3">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium text-gray-900">Add New Vehicle</h3>
-                  <button
-                    onClick={() => setShowAddVehicleModal(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                <form onSubmit={handleSubmitVehicle} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Make</label>
-                      <input
-                        type="text"
-                        value={vehicleForm.make}
-                        onChange={(e) => setVehicleForm({...vehicleForm, make: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., Toyota"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Model</label>
-                      <input
-                        type="text"
-                        value={vehicleForm.model}
-                        onChange={(e) => setVehicleForm({...vehicleForm, model: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., Camry"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Year</label>
-                      <input
-                        type="text"
-                        value={vehicleForm.year}
-                        onChange={(e) => setVehicleForm({...vehicleForm, year: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., 2023"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">License Plate</label>
-                      <input
-                        type="text"
-                        value={vehicleForm.licensePlate}
-                        onChange={(e) => setVehicleForm({...vehicleForm, licensePlate: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., ABC123"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">VIN</label>
-                      <input
-                        type="text"
-                        value={vehicleForm.vin}
-                        onChange={(e) => setVehicleForm({...vehicleForm, vin: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., 1HGBH41JXMN109186"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Color</label>
-                      <input
-                        type="text"
-                        value={vehicleForm.color}
-                        onChange={(e) => setVehicleForm({...vehicleForm, color: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., Red"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Bond Amount ($)</label>
-                      <input
-                        type="number"
-                        value={vehicleForm.bondAmount}
-                        onChange={(e) => setVehicleForm({...vehicleForm, bondAmount: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., 1000"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Weekly Rent ($)</label>
-                      <input
-                        type="number"
-                        value={vehicleForm.rentPerWeek}
-                        onChange={(e) => setVehicleForm({...vehicleForm, rentPerWeek: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., 200"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Current Mileage</label>
-                      <input
-                        type="number"
-                        value={vehicleForm.currentMileage}
-                        onChange={(e) => setVehicleForm({...vehicleForm, currentMileage: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., 50000"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Odometer</label>
-                      <input
-                        type="number"
-                        value={vehicleForm.odoMeter}
-                        onChange={(e) => setVehicleForm({...vehicleForm, odoMeter: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., 50000"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Next Service Date</label>
-                      <input
-                        type="date"
-                        value={vehicleForm.nextServiceDate}
-                        onChange={(e) => setVehicleForm({...vehicleForm, nextServiceDate: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Vehicle Type</label>
-                      <select
-                        value={vehicleForm.vehicleType}
-                        onChange={(e) => setVehicleForm({...vehicleForm, vehicleType: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      >
-                        <option value="sedan">Sedan</option>
-                        <option value="suv">SUV</option>
-                        <option value="hatchback">Hatchback</option>
-                        <option value="wagon">Wagon</option>
-                        <option value="convertible">Convertible</option>
-                        <option value="minivan">Minivan</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Fuel Type</label>
-                      <select
-                        value={vehicleForm.fuelType}
-                        onChange={(e) => setVehicleForm({...vehicleForm, fuelType: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      >
-                        <option value="petrol">Petrol</option>
-                        <option value="diesel">Diesel</option>
-                        <option value="hybrid">Hybrid</option>
-                        <option value="electric">Electric</option>
-                        <option value="gasoline">Gasoline</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Transmission</label>
-                      <select
-                        value={vehicleForm.transmission}
-                        onChange={(e) => setVehicleForm({...vehicleForm, transmission: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      >
-                        <option value="automatic">Automatic</option>
-                        <option value="manual">Manual</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Owner Name</label>
-                      <input
-                        type="text"
-                        value={vehicleForm.ownerName}
-                        onChange={(e) => setVehicleForm({...vehicleForm, ownerName: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., John Doe"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Vehicle Photo</label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => setSelectedVehiclePhotos(e.target.files)}
-                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    <p className="mt-1 text-sm text-gray-500">Upload vehicle photo (JPG, PNG, WEBP)</p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Vehicle Documents</label>
-                    <div className="mt-2 space-y-2">
-                      {['car_contract', 'red_book_inspection_report', 'car_registration', 'car_insurance', 'cpv_registration'].map((docType) => (
-                        <div key={docType} className="flex items-center space-x-2">
-                          <input
-                            type="file"
-                            accept=".pdf,.doc,.docx"
-                            onChange={(e) => setSelectedDocuments({...selectedDocuments, [docType]: e.target.files[0]})}
-                            className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                          />
-                          <input
-                            type="date"
-                            placeholder="Expiry Date"
-                            onChange={(e) => setVehicleDocumentExpiry({...vehicleDocumentExpiry, [docType]: e.target.value})}
-                            className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                          />
-                          <span className="text-sm text-gray-600 w-32">{docType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="mt-1 text-sm text-gray-500">Upload vehicle documents (PDF, DOC, DOCX)</p>
-                  </div>
-
-                  <div className="flex justify-end space-x-3 pt-4">
-                    <button
-                      type="button"
-                      onClick={() => setShowAddVehicleModal(false)}
-                      className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                    >
-                      Add Vehicle
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Edit Vehicle Modal */}
-        {showEditVehicleModal && editingVehicle && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-              <div className="mt-3">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium text-gray-900">Edit Vehicle</h3>
-                  <button
-                    onClick={() => setShowEditVehicleModal(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                <form onSubmit={handleUpdateVehicle} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Make</label>
-                      <input
-                        type="text"
-                        value={editVehicleForm.make}
-                        onChange={(e) => setEditVehicleForm({...editVehicleForm, make: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., Toyota"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Model</label>
-                      <input
-                        type="text"
-                        value={editVehicleForm.model}
-                        onChange={(e) => setEditVehicleForm({...editVehicleForm, model: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., Camry"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Year</label>
-                      <input
-                        type="text"
-                        value={editVehicleForm.year}
-                        onChange={(e) => setEditVehicleForm({...editVehicleForm, year: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., 2023"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">License Plate</label>
-                      <input
-                        type="text"
-                        value={editVehicleForm.licensePlate}
-                        onChange={(e) => setEditVehicleForm({...editVehicleForm, licensePlate: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., ABC123"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">VIN</label>
-                      <input
-                        type="text"
-                        value={editVehicleForm.vin}
-                        onChange={(e) => setEditVehicleForm({...editVehicleForm, vin: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., 1HGBH41JXMN109186"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Color</label>
-                      <input
-                        type="text"
-                        value={editVehicleForm.color}
-                        onChange={(e) => setEditVehicleForm({...editVehicleForm, color: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., Red"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Bond Amount ($)</label>
-                      <input
-                        type="number"
-                        value={editVehicleForm.bondAmount}
-                        onChange={(e) => setEditVehicleForm({...editVehicleForm, bondAmount: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., 1000"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Weekly Rent ($)</label>
-                      <input
-                        type="number"
-                        value={editVehicleForm.rentPerWeek}
-                        onChange={(e) => setEditVehicleForm({...editVehicleForm, rentPerWeek: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., 200"
-                        required
-                      />
-                    </div>
-                    <div>
-                       <label className="block text-sm font-medium text-gray-700">Current Mileage</label>
-                      <input
-                        type="number"
-                         value={editVehicleForm.currentMileage}
-                         onChange={(e) => setEditVehicleForm({...editVehicleForm, currentMileage: e.target.value})}
-                         className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                         placeholder="e.g., 50000"
-                         required
-                      />
-                    </div>
-                    <div>
-                       <label className="block text-sm font-medium text-gray-700">Odometer</label>
-                      <input
-                        type="number"
-                         value={editVehicleForm.odoMeter}
-                         onChange={(e) => setEditVehicleForm({...editVehicleForm, odoMeter: e.target.value})}
-                         className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                         placeholder="e.g., 50000"
-                      />
-                    </div>
-                    <div>
-                       <label className="block text-sm font-medium text-gray-700">Next Service Date</label>
-                      <input
-                        type="date"
-                         value={editVehicleForm.nextServiceDate}
-                         onChange={(e) => setEditVehicleForm({...editVehicleForm, nextServiceDate: e.target.value})}
-                         className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                       <label className="block text-sm font-medium text-gray-700">Status</label>
-                      <select
-                         value={editVehicleForm.status}
-                         onChange={(e) => setEditVehicleForm({...editVehicleForm, status: e.target.value})}
-                         className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                         required
-                       >
-                         <option value="available">Available</option>
-                         <option value="rented">Rented</option>
-                         <option value="maintenance">Maintenance</option>
-                      </select>
-                       <p className="mt-1 text-xs text-gray-500">
-                         Available: Can be rented | Rented: Currently rented | Maintenance: Under repair/service
-                       </p>
-                    </div>
-                    <div>
-                       <label className="block text-sm font-medium text-gray-700">Owner Name</label>
-                      <input
-                        type="text"
-                         value={editVehicleForm.ownerName}
-                         onChange={(e) => setEditVehicleForm({...editVehicleForm, ownerName: e.target.value})}
-                         className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                         placeholder="e.g., John Doe"
-                      />
-                    </div>
-                    <div>
-                       <label className="block text-sm font-medium text-gray-700">Vehicle Type</label>
-                      <select
-                         value={editVehicleForm.vehicleType}
-                         onChange={(e) => setEditVehicleForm({...editVehicleForm, vehicleType: e.target.value})}
-                         className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                         required
-                       >
-                         <option value="sedan">Sedan</option>
-                         <option value="suv">SUV</option>
-                         <option value="hatchback">Hatchback</option>
-                         <option value="wagon">Wagon</option>
-                         <option value="convertible">Convertible</option>
-                         <option value="minivan">Minivan</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Fuel Type</label>
-                      <select
-                        value={editVehicleForm.fuelType}
-                        onChange={(e) => setEditVehicleForm({...editVehicleForm, fuelType: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      >
-                        <option value="petrol">Petrol</option>
-                        <option value="diesel">Diesel</option>
-                        <option value="hybrid">Hybrid</option>
-                        <option value="electric">Electric</option>
-                        <option value="gasoline">Gasoline</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Transmission</label>
-                      <select
-                        value={editVehicleForm.transmission}
-                        onChange={(e) => setEditVehicleForm({...editVehicleForm, transmission: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      >
-                        <option value="automatic">Automatic</option>
-                        <option value="manual">Manual</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Vehicle Photo</label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => setSelectedVehiclePhotos(e.target.files)}
-                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    <p className="mt-1 text-sm text-gray-500">Upload vehicle photo (JPG, PNG, WEBP)</p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Vehicle Documents</label>
-                    <div className="mt-2 space-y-2">
-                      {['car_contract', 'red_book_inspection_report', 'car_registration', 'car_insurance', 'cpv_registration'].map((docType) => (
-                        <div key={docType} className="flex items-center space-x-2">
-                          <input
-                            type="file"
-                            accept=".pdf,.doc,.docx"
-                            onChange={(e) => setSelectedDocuments({...selectedDocuments, [docType]: e.target.files[0]})}
-                            className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                          />
-                          <input
-                            type="date"
-                            placeholder="Expiry Date"
-                            onChange={(e) => setVehicleDocumentExpiry({...vehicleDocumentExpiry, [docType]: e.target.value})}
-                            className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                          />
-                          <span className="text-sm text-gray-600 w-32">{docType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="mt-1 text-sm text-gray-500">Upload vehicle documents (PDF, DOC, DOCX)</p>
-                  </div>
-
-                  <div className="flex justify-end space-x-3 pt-4">
-                              <button
-                                type="button"
-                      onClick={() => setShowEditVehicleModal(false)}
-                      className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                    >
-                      Update Vehicle
-                              </button>
-                            </div>
-                </form>
-              </div>
-                        </div>
-                      </div>
-                    )}
-
-         {/* View Vehicle Modal */}
-         {showViewVehicleModal && viewingVehicle && (
-           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-             <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-               <div className="mt-3">
-                 <div className="flex justify-between items-center mb-4">
-                   <h3 className="text-lg font-medium text-gray-900">Vehicle Details</h3>
-                   <button
-                     onClick={() => setShowViewVehicleModal(false)}
-                     className="text-gray-400 hover:text-gray-600"
-                   >
-                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                     </svg>
-                   </button>
-                 </div>
-                 
-                 <div className="space-y-4">
-                   {/* Vehicle Photo */}
-                   {viewingVehicle.photoUrl || (viewingVehicle.photoUrls && viewingVehicle.photoUrls.length > 0) ? (
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Photo</label>
-                       <img 
-                         src={
-                           viewingVehicle.photoUrl
-                             ? (viewingVehicle.photoUrl.startsWith('data:') || viewingVehicle.photoUrl.startsWith('http')
-                                 ? viewingVehicle.photoUrl
-                                 : `${API_BASE_URL}${viewingVehicle.photoUrl}`)
-                             : (
-                                 viewingVehicle.photoUrls[0].startsWith('http') || viewingVehicle.photoUrls[0].startsWith('data:')
-                                   ? viewingVehicle.photoUrls[0]
-                                   : `${API_BASE_URL}${viewingVehicle.photoUrls[0]}`
-                               )
-                         }
-                         alt={`${viewingVehicle.make} ${viewingVehicle.model}`}
-                         className="w-full h-48 object-cover rounded-lg border"
-                         onError={(e) => { e.currentTarget.style.display='none'; }}
-                       />
-                     </div>
-                   ) : null}
-
-                   {/* Basic Information */}
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700">Make</label>
-                       <p className="mt-1 text-sm text-gray-900">{viewingVehicle.make}</p>
-                     </div>
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700">Model</label>
-                       <p className="mt-1 text-sm text-gray-900">{viewingVehicle.model}</p>
-                     </div>
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700">Year</label>
-                       <p className="mt-1 text-sm text-gray-900">{viewingVehicle.year}</p>
-                     </div>
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700">License Plate</label>
-                       <p className="mt-1 text-sm text-gray-900">{viewingVehicle.licensePlate}</p>
-                     </div>
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700">VIN</label>
-                       <p className="mt-1 text-sm text-gray-900">{viewingVehicle.vin}</p>
-                     </div>
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700">Color</label>
-                       <p className="mt-1 text-sm text-gray-900">{viewingVehicle.color}</p>
-                     </div>
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700">Vehicle Type</label>
-                       <p className="mt-1 text-sm text-gray-900">{viewingVehicle.vehicleType}</p>
-                     </div>
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700">Fuel Type</label>
-                       <p className="mt-1 text-sm text-gray-900">{viewingVehicle.fuelType}</p>
-                     </div>
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700">Transmission</label>
-                       <p className="mt-1 text-sm text-gray-900">{viewingVehicle.transmission}</p>
-                     </div>
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700">Status</label>
-                       <p className="mt-1 text-sm text-gray-900">
-                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                           viewingVehicle.status === 'available' ? 'bg-green-100 text-green-800' : 
-                           viewingVehicle.status === 'rented' ? 'bg-blue-100 text-blue-800' :
-                           viewingVehicle.status === 'maintenance' ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-800'
-                         }`}>
-                           {viewingVehicle.status === 'available' ? 'Available' : 
-                            viewingVehicle.status === 'rented' ? 'Rented' :
-                            viewingVehicle.status === 'maintenance' ? 'Maintenance' : viewingVehicle.status}
-                         </span>
-                       </p>
-                     </div>
-                   </div>
-
-                   {/* Financial Information */}
-                   <div className="border-t pt-4">
-                     <h4 className="text-md font-medium text-gray-900 mb-3">Financial Information</h4>
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                       <div>
-                         <label className="block text-sm font-medium text-gray-700">Bond Amount</label>
-                         <p className="mt-1 text-sm text-gray-900">${viewingVehicle.bondAmount}</p>
-                       </div>
-                       <div>
-                         <label className="block text-sm font-medium text-gray-700">Weekly Rent</label>
-                         <p className="mt-1 text-sm text-gray-900">${viewingVehicle.rentPerWeek}/week</p>
-                       </div>
-                       <div>
-                         <label className="block text-sm font-medium text-gray-700">Current Mileage</label>
-                         <p className="mt-1 text-sm text-gray-900">{viewingVehicle.currentMileage} km</p>
-                       </div>
-                     </div>
-                  </div>
-
-                  {/* Documents */}
-                   {viewingVehicle.documents && viewingVehicle.documents.length > 0 && (
-                     <div className="border-t pt-4">
-                       <h4 className="text-md font-medium text-gray-900 mb-3">Vehicle Documents</h4>
-                       <div className="space-y-2">
-                         {viewingVehicle.documents.map((doc, index) => (
-                           <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                               <p className="text-sm font-medium text-gray-900">
-                                 {doc.documentType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                               </p>
-                               <p className="text-xs text-gray-600">{doc.fileName}</p>
-                               {doc.expiryDate && (
-                                 <p className="text-xs text-gray-600">Expires: {new Date(doc.expiryDate).toLocaleDateString()}</p>
-                               )}
-                             </div>
-                             <a
-                               href={doc.fileUrl}
-                               target="_blank"
-                               rel="noopener noreferrer"
-                               className="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-xs"
-                             >
-                               Download
-                             </a>
-                           </div>
-                         ))}
-                       </div>
-                     </div>
-                   )}
-
-                   {/* Timestamps */}
-                   <div className="border-t pt-4">
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
-                       <div>
-                         <span className="font-medium">Created:</span> {new Date(viewingVehicle.createdAt).toLocaleString()}
-                       </div>
-                       <div>
-                         <span className="font-medium">Last Updated:</span> {new Date(viewingVehicle.updatedAt).toLocaleString()}
-                       </div>
-                     </div>
-                   </div>
-
-                   <div className="flex justify-end pt-4">
-                     <button
-                       onClick={() => setShowViewVehicleModal(false)}
-                       className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-                     >
-                       Close
-                     </button>
-                   </div>
-                 </div>
-               </div>
-             </div>
-           </div>
-         )}
-
-        {/* Edit Rental Application Modal */}
-        {showEditRentalModal && editingRental && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-              <div className="mt-3">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium text-gray-900">Edit Rental Application</h3>
-                  <button
-                    onClick={() => setShowEditRentalModal(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
                 </div>
                 
-                <form onSubmit={handleUpdateRental} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">First Name</label>
-                          <input
-                        type="text"
-                        value={editRentalForm.firstName}
-                        onChange={(e) => setEditRentalForm({...editRentalForm, firstName: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Last Name</label>
-                          <input
-                        type="text"
-                        value={editRentalForm.lastName}
-                        onChange={(e) => setEditRentalForm({...editRentalForm, lastName: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        required
-                          />
-                        </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Email</label>
-                      <input
-                        type="email"
-                        value={editRentalForm.email}
-                        onChange={(e) => setEditRentalForm({...editRentalForm, email: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Phone</label>
-                      <input
-                        type="tel"
-                        value={editRentalForm.phone}
-                        onChange={(e) => setEditRentalForm({...editRentalForm, phone: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Contract Period</label>
-                      <input
-                        type="text"
-                        value={editRentalForm.contractPeriod}
-                        onChange={(e) => setEditRentalForm({...editRentalForm, contractPeriod: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., 6 months"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Bond Amount ($)</label>
-                      <input
-                        type="number"
-                        value={editRentalForm.bondAmount}
-                        onChange={(e) => setEditRentalForm({...editRentalForm, bondAmount: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Weekly Rent ($)</label>
-                      <input
-                        type="number"
-                        value={editRentalForm.weeklyRent}
-                        onChange={(e) => setEditRentalForm({...editRentalForm, weeklyRent: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Status</label>
-                      <select
-                        value={editRentalForm.status}
-                        onChange={(e) => setEditRentalForm({...editRentalForm, status: e.target.value})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      >
-                        <option value="pending_approval">Pending Approval</option>
-                        <option value="approved">Approved</option>
-                        <option value="rejected">Rejected</option>
-                        <option value="active">Active</option>
-                        <option value="completed">Completed</option>
-                      </select>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Notes</label>
-                    <textarea
-                      value={editRentalForm.notes}
-                      onChange={(e) => setEditRentalForm({...editRentalForm, notes: e.target.value})}
-                      rows={3}
-                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Additional notes about this rental application..."
-                    />
-                  </div>
-
-                  <div className="flex justify-end space-x-3 pt-4">
-                    <button
-                      type="button"
-                      onClick={() => setShowEditRentalModal(false)}
-                      className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                    >
-                      Update Application
-                    </button>
-                  </div>
-                </form>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Model *</label>
+                  <input
+                    type="text"
+                    name="model"
+                    value={formData.model}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., Camry"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Year *</label>
+                  <input
+                    type="number"
+                    name="year"
+                    value={formData.year}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., 2023"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">License Plate *</label>
+                  <input
+                    type="text"
+                    name="licensePlate"
+                    value={formData.licensePlate}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., ABC123"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
+                  <input
+                    type="text"
+                    name="color"
+                    value={formData.color}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., Silver"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Daily Rate *</label>
+                  <input
+                    type="number"
+                    name="dailyRate"
+                    value={formData.dailyRate}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Amount in AUD"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Weekly Rate</label>
+                  <input
+                    type="number"
+                    name="weeklyRate"
+                    value={formData.weeklyRate}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Amount in AUD"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Rate</label>
+                  <input
+                    type="number"
+                    name="monthlyRate"
+                    value={formData.monthlyRate}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Amount in AUD"
+                  />
+                </div>
+                
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Photo</label>
+                  <input
+                    type="file"
+                    name="photo"
+                    onChange={handleInputChange}
+                    accept="image/*"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
               </div>
-            </div>
+              
+              <div className="flex justify-end space-x-4 pt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setEditingVehicle(null);
+                  }}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors"
+                >
+                  {editingVehicle ? 'Update Vehicle' : 'Add Vehicle'}
+                </button>
+              </div>
+            </form>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
