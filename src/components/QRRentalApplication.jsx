@@ -37,8 +37,12 @@ const QRRentalApplication = () => {
     bondAmount: '',
     weeklyRent: '',
     
-    // Contract Upload
-    contractDocument: null,
+    // New Contract Fields
+    vehicleType: '',
+    vehicleRego: '',
+    securityBond: '',
+    insuranceExcess25: '1300',
+    insuranceExcess21: '1800',
     
     // Documents
     licenseFront: null,
@@ -47,8 +51,7 @@ const QRRentalApplication = () => {
     rentProof: null,
     
     // Contract Agreement
-    contractAgreed: false,
-    termsAgreed: false
+    contractAgreement: false
   });
 
   const [loading, setLoading] = useState(false);
@@ -315,72 +318,171 @@ const QRRentalApplication = () => {
             <div className="bg-white/90 backdrop-blur-md rounded-3xl shadow-xl border border-white/30 p-8">
               <div className="flex items-center mb-6">
                 <Shield className="w-8 h-8 text-indigo-600 mr-3" />
-                <h2 className="text-2xl font-bold text-gray-900">Contract Agreement</h2>
+                <h2 className="text-2xl font-bold text-gray-900">SK Car Rental Agreement</h2>
               </div>
               
               <div className="space-y-6">
+                {/* Contract Form */}
                 <div className="bg-gray-50 rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Terms and Conditions</h3>
-                  <div className="text-sm text-gray-600 space-y-3 max-h-64 overflow-y-auto">
-                    <p>1. The vehicle must be returned in the same condition as received.</p>
-                    <p>2. All traffic violations and fines are the responsibility of the renter.</p>
-                    <p>3. The bond will be refunded within 7 business days after vehicle return.</p>
-                    <p>4. Weekly rent payments must be made on time.</p>
-                    <p>5. The vehicle is for personal use only, not for commercial purposes.</p>
-                    <p>6. Insurance coverage is included in the rental agreement.</p>
-                    <p>7. Maintenance and service costs are covered by the rental company.</p>
-                    <p>8. Early termination may result in additional fees.</p>
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Upload Signed Contract *</label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
-                    <FileText className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <input
-                      type="file"
-                      accept=".pdf,.doc,.docx,image/*"
-                      onChange={(e) => handleFileUpload(e, 'contractDocument')}
-                      className="hidden"
-                      id="contractDocument"
-                      required
-                    />
-                    <label htmlFor="contractDocument" className="cursor-pointer">
-                      <p className="text-sm text-gray-600">Click to upload signed contract</p>
-                      <p className="text-xs text-gray-500 mt-1">PDF, DOC, DOCX, or image files</p>
-                    </label>
-                  </div>
-                  {formData.contractDocument && (
-                    <p className="text-sm text-green-600 mt-2">✓ {formData.contractDocument.name}</p>
-                  )}
-                </div>
-                
-                <div className="space-y-4">
-                  <label className="flex items-start space-x-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      name="contractAgreed"
-                      checked={formData.contractAgreed}
-                      onChange={handleInputChange}
-                      required
-                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">
-                      I agree to the rental contract terms and conditions *
-                    </span>
-                  </label>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-6">📋 Contract Details</h3>
                   
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Vehicle Information */}
+                    <div className="space-y-4">
+                      <h5 className="font-medium text-gray-900 border-b pb-2">🚗 Vehicle Details</h5>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Type</label>
+                        <select
+                          name="vehicleType"
+                          value={formData.vehicleType || ''}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                          <option value="">Select vehicle type</option>
+                          <option value="Sedan">Sedan</option>
+                          <option value="Hatchback">Hatchback</option>
+                          <option value="SUV">SUV</option>
+                          <option value="Van">Van</option>
+                        </select>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Registration</label>
+                        <input
+                          type="text"
+                          name="vehicleRego"
+                          value={formData.vehicleRego || ''}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="e.g., ABC123"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Weekly Rent (AUD)</label>
+                        <input
+                          type="number"
+                          name="weeklyRent"
+                          value={formData.weeklyRent || ''}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="e.g., 195"
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Financial Terms */}
+                    <div className="space-y-4">
+                      <h5 className="font-medium text-gray-900 border-b pb-2">💰 Financial Terms</h5>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Security Bond (AUD)</label>
+                        <input
+                          type="number"
+                          name="securityBond"
+                          value={formData.securityBond || ''}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="e.g., 2000"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Insurance Excess - 25+ years (AUD)</label>
+                        <input
+                          type="number"
+                          name="insuranceExcess25"
+                          value={formData.insuranceExcess25 || '1300'}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="1300"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Insurance Excess - 21-24 years (AUD)</label>
+                        <input
+                          type="number"
+                          name="insuranceExcess21"
+                          value={formData.insuranceExcess21 || '1800'}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="1800"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Contract Terms */}
+                  <div className="mt-8 space-y-4">
+                    <h5 className="font-medium text-gray-900 border-b pb-2">📜 Contract Terms & Conditions</h5>
+                    
+                    <div className="bg-white rounded-xl p-4 space-y-3 text-sm">
+                      <div className="flex items-start space-x-2">
+                        <span className="font-medium text-indigo-600">1.</span>
+                        <span>The Lessor will rent out a <strong>{formData.vehicleType || '_____'}</strong> (Rego: <strong>{formData.vehicleRego || '_____'}</strong>) to the Lessee. Weekly rent: <strong>AU${formData.weeklyRent || '_____'}/Week</strong></span>
+                      </div>
+                      
+                      <div className="flex items-start space-x-2">
+                        <span className="font-medium text-indigo-600">2.</span>
+                        <span>Security bond of <strong>AU${formData.securityBond || '_____'}</strong> must be deposited in advance and is refundable upon vehicle return in undisputed condition.</span>
+                      </div>
+                      
+                      <div className="flex items-start space-x-2">
+                        <span className="font-medium text-indigo-600">3.</span>
+                        <span>Insurance excess: <strong>AU${formData.insuranceExcess25 || '1300'}</strong> for drivers 25+ years, <strong>AU${formData.insuranceExcess21 || '1800'}</strong> for drivers 21-24 years.</span>
+                      </div>
+                      
+                      <div className="flex items-start space-x-2">
+                        <span className="font-medium text-indigo-600">4.</span>
+                        <span>Glass and glass screen damage are not covered under insurance. Driver is responsible for all glass repairs.</span>
+                      </div>
+                      
+                      <div className="flex items-start space-x-2">
+                        <span className="font-medium text-indigo-600">5.</span>
+                        <span>Vehicle can only be used for rideshare purposes under the lessee's name in Victoria state only.</span>
+                      </div>
+                      
+                      <div className="flex items-start space-x-2">
+                        <span className="font-medium text-indigo-600">6.</span>
+                        <span>Lessee must give minimum 2 weeks notice before terminating the lease.</span>
+                      </div>
+                      
+                      <div className="flex items-start space-x-2">
+                        <span className="font-medium text-indigo-600">7.</span>
+                        <span>Weekly rent must be paid in advance. 5% late fee applies for late payments.</span>
+                      </div>
+                      
+                      <div className="flex items-start space-x-2">
+                        <span className="font-medium text-indigo-600">8.</span>
+                        <span>Vehicle must be maintained in roadworthy condition. Lessee responsible for tyre punctures and regular servicing.</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+
+                
+                {/* Agreement Checkbox */}
+                <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-200">
                   <label className="flex items-start space-x-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      name="termsAgreed"
-                      checked={formData.termsAgreed}
-                      onChange={handleInputChange}
+                      name="contractAgreement"
+                      checked={formData.contractAgreement || false}
+                      onChange={(e) => setFormData(prev => ({ ...prev, contractAgreement: e.target.checked }))}
                       required
-                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      className="mt-1 w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                     />
                     <span className="text-sm text-gray-700">
-                      I confirm that all information provided is accurate and complete *
+                      I have read, understood, and agree to all the terms and conditions of this SK Car Rental Agreement. I acknowledge my responsibilities for vehicle maintenance, insurance excess payments, and compliance with all rental terms.
                     </span>
                   </label>
                 </div>
