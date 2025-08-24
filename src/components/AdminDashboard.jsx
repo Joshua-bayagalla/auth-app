@@ -35,7 +35,8 @@ const AdminDashboard = () => {
     year: '',
     licensePlate: '',
     color: '',
-    photo: null
+    photo: null,
+    vehiclePhoto: null
   });
 
   useEffect(() => {
@@ -86,21 +87,35 @@ const AdminDashboard = () => {
 
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: files ? files[0] : value
-    }));
+    if (name === 'vehiclePhoto') {
+      setFormData(prev => ({
+        ...prev,
+        vehiclePhoto: files ? files[0] : null
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const formDataToSend = new FormData();
-      Object.keys(formData).forEach(key => {
-        if (formData[key] !== null && formData[key] !== '') {
-          formDataToSend.append(key, formData[key]);
-        }
-      });
+      
+      // Add basic fields
+      if (formData.make) formDataToSend.append('make', formData.make);
+      if (formData.model) formDataToSend.append('model', formData.model);
+      if (formData.year) formDataToSend.append('year', formData.year);
+      if (formData.licensePlate) formDataToSend.append('licensePlate', formData.licensePlate);
+      if (formData.color) formDataToSend.append('color', formData.color);
+      
+      // Add vehicle photo if exists
+      if (formData.vehiclePhoto) {
+        formDataToSend.append('vehiclePhoto', formData.vehiclePhoto);
+      }
 
       const url = editingVehicle 
         ? `/api/vehicles/${editingVehicle.id}` 
@@ -117,7 +132,7 @@ const AdminDashboard = () => {
         setShowAddModal(false);
         setEditingVehicle(null);
         setFormData({
-          make: '', model: '', year: '', licensePlate: '', color: '', photo: null
+          make: '', model: '', year: '', licensePlate: '', color: '', photo: null, vehiclePhoto: null
         });
         fetchData();
       } else {
@@ -138,7 +153,8 @@ const AdminDashboard = () => {
           year: vehicle.year || '',
           licensePlate: vehicle.licensePlate || '',
           color: vehicle.color || '',
-          photo: null
+          photo: null,
+          vehiclePhoto: null
         });
     setShowAddModal(true);
   };
@@ -1128,10 +1144,10 @@ const AdminDashboard = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Photo</label>
                   <input
                     type="file"
-                    name="photo"
+                    name="vehiclePhoto"
                     onChange={handleInputChange}
                     accept="image/*"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
               </div>
