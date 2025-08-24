@@ -33,16 +33,20 @@ const QRRentalApplication = () => {
     emergencyPhone: '',
     
     // Contract Details
-    contractPeriod: '',
-    bondAmount: '',
     weeklyRent: '',
     
     // New Contract Fields
     vehicleType: '',
     vehicleRego: '',
+    contractPeriod: '',
     securityBond: '',
+    bondAmount: '',
     insuranceExcess25: '1300',
     insuranceExcess21: '1800',
+    agreedKmsPerWeek: '',
+    dailyRate: '',
+    lateFeePercentage: '5',
+    noticePeriodWeeks: '2',
     
     // Documents
     licenseFront: null,
@@ -420,6 +424,94 @@ const QRRentalApplication = () => {
                     </div>
                   </div>
                   
+                  {/* Additional Contract Fields */}
+                  <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Contract Terms */}
+                    <div className="space-y-4">
+                      <h5 className="font-medium text-gray-900 border-b pb-2">📜 Contract Terms</h5>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Contract Period</label>
+                        <input
+                          type="text"
+                          name="contractPeriod"
+                          value={formData.contractPeriod || ''}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="e.g., 12 months"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Agreed KMs per Week</label>
+                        <input
+                          type="number"
+                          name="agreedKmsPerWeek"
+                          value={formData.agreedKmsPerWeek || ''}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="e.g., 1000"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Daily Rate (AUD)</label>
+                        <input
+                          type="number"
+                          name="dailyRate"
+                          value={formData.dailyRate || ''}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="e.g., 195"
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Additional Details */}
+                    <div className="space-y-4">
+                      <h5 className="font-medium text-gray-900 border-b pb-2">📋 Additional Details</h5>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Bond Amount (AUD)</label>
+                        <input
+                          type="number"
+                          name="bondAmount"
+                          value={formData.bondAmount || ''}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="e.g., 2000"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Late Fee Percentage</label>
+                        <input
+                          type="number"
+                          name="lateFeePercentage"
+                          value={formData.lateFeePercentage || '5'}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="5"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Notice Period (Weeks)</label>
+                        <input
+                          type="number"
+                          name="noticePeriodWeeks"
+                          value={formData.noticePeriodWeeks || '2'}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="2"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
                   {/* Contract Terms */}
                   <div className="mt-8 space-y-4">
                     <h5 className="font-medium text-gray-900 border-b pb-2">📜 Contract Terms & Conditions</h5>
@@ -452,17 +544,47 @@ const QRRentalApplication = () => {
                       
                       <div className="flex items-start space-x-2">
                         <span className="font-medium text-indigo-600">6.</span>
-                        <span>Lessee must give minimum 2 weeks notice before terminating the lease.</span>
+                        <span>Lessee must give minimum <strong>{formData.noticePeriodWeeks || '2'}</strong> weeks notice before terminating the lease.</span>
                       </div>
                       
                       <div className="flex items-start space-x-2">
                         <span className="font-medium text-indigo-600">7.</span>
-                        <span>Weekly rent must be paid in advance. 5% late fee applies for late payments.</span>
+                        <span>Weekly rent must be paid in advance. <strong>{formData.lateFeePercentage || '5'}%</strong> late fee applies for late payments.</span>
                       </div>
                       
                       <div className="flex items-start space-x-2">
                         <span className="font-medium text-indigo-600">8.</span>
                         <span>Vehicle must be maintained in roadworthy condition. Lessee responsible for tyre punctures and regular servicing.</span>
+                      </div>
+                      
+                      <div className="flex items-start space-x-2">
+                        <span className="font-medium text-indigo-600">9.</span>
+                        <span>Contract period: <strong>{formData.contractPeriod || '_____'}</strong> with option to extend by mutual agreement.</span>
+                      </div>
+                      
+                      <div className="flex items-start space-x-2">
+                        <span className="font-medium text-indigo-600">10.</span>
+                        <span>Agreed kilometers per week: <strong>{formData.agreedKmsPerWeek || '_____'}</strong> km. Lessee must notify for service when within 500km of marked odometer reading.</span>
+                      </div>
+                      
+                      <div className="flex items-start space-x-2">
+                        <span className="font-medium text-indigo-600">11.</span>
+                        <span>Daily rate: <strong>AU${formData.dailyRate || '_____'}</strong>/day. Bond amount: <strong>AU${formData.bondAmount || '_____'}</strong>.</span>
+                      </div>
+                      
+                      <div className="flex items-start space-x-2">
+                        <span className="font-medium text-indigo-600">12.</span>
+                        <span>Lessee is responsible for all liabilities during vehicle use, including accidents, damage, and third-party involvement.</span>
+                      </div>
+                      
+                      <div className="flex items-start space-x-2">
+                        <span className="font-medium text-indigo-600">13.</span>
+                        <span>Vehicle keys must be returned. If lost, lessee must provide genuine programmed key from vehicle dealership.</span>
+                      </div>
+                      
+                      <div className="flex items-start space-x-2">
+                        <span className="font-medium text-indigo-600">14.</span>
+                        <span>This agreement serves as a legal document for conflict resolution between parties.</span>
                       </div>
                     </div>
                   </div>

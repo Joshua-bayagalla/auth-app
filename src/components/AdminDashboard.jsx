@@ -14,7 +14,8 @@ import {
   CheckCircle,
   Clock,
   TrendingUp,
-  Shield
+  Shield,
+  X
 } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -43,24 +44,31 @@ const AdminDashboard = () => {
 
   const fetchData = async () => {
     try {
+      console.log('Fetching data...');
       const [vehiclesRes, driversRes, usersRes] = await Promise.all([
         fetch('/api/vehicles'),
         fetch('/api/drivers'),
         fetch('/api/users')
       ]);
 
+      console.log('Vehicles response:', vehiclesRes.status, vehiclesRes.ok);
       if (vehiclesRes.ok) {
         const vehiclesData = await vehiclesRes.json();
+        console.log('Vehicles data:', vehiclesData);
         setVehicles(vehiclesData);
       }
 
+      console.log('Drivers response:', driversRes.status, driversRes.ok);
       if (driversRes.ok) {
         const driversData = await driversRes.json();
+        console.log('Drivers data:', driversData);
         setDrivers(driversData);
       }
 
+      console.log('Users response:', usersRes.status, usersRes.ok);
       if (usersRes.ok) {
         const usersData = await usersRes.json();
+        console.log('Users data:', usersData);
         setUsers(usersData);
       }
     } catch (error) {
@@ -233,11 +241,13 @@ const AdminDashboard = () => {
   };
 
   const handleViewDriverDetails = (driver) => {
+    console.log('Viewing driver details:', driver);
     setSelectedDriver(driver);
     setShowDriverDetails(true);
   };
 
   const handleViewApplicationDetails = (application) => {
+    console.log('Viewing application details:', application);
     setSelectedDriver(application);
     setShowDriverDetails(true);
   };
@@ -1204,31 +1214,59 @@ const AdminDashboard = () => {
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">🚗 Vehicle & Contract</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="font-medium text-gray-700">Vehicle:</span>
-                    <span className="ml-2 text-gray-900">
-                      {selectedDriver.vehicleMake && selectedDriver.vehicleModel 
-                        ? `${selectedDriver.vehicleMake} ${selectedDriver.vehicleModel}`
-                        : 'No vehicle selected'
-                      }
-                    </span>
+                    <span className="font-medium text-gray-700">Vehicle Type:</span>
+                    <span className="ml-2 text-gray-900">{selectedDriver.vehicleType || 'Not specified'}</span>
                   </div>
-                  {selectedDriver.vehicleLicensePlate && (
-                    <div>
-                      <span className="font-medium text-gray-700">License Plate:</span>
-                      <span className="ml-2 text-gray-900">{selectedDriver.vehicleLicensePlate}</span>
-                    </div>
-                  )}
+                  <div>
+                    <span className="font-medium text-gray-700">Vehicle Registration:</span>
+                    <span className="ml-2 text-gray-900">{selectedDriver.vehicleRego || 'Not specified'}</span>
+                  </div>
                   <div>
                     <span className="font-medium text-gray-700">Contract Period:</span>
-                    <span className="ml-2 text-gray-900">{selectedDriver.contractPeriod}</span>
+                    <span className="ml-2 text-gray-900">{selectedDriver.contractPeriod || 'Not specified'}</span>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-700">Bond Amount:</span>
-                    <span className="ml-2 text-gray-900">${selectedDriver.bondAmount}</span>
+                    <span className="font-medium text-gray-700">Agreed KMs per Week:</span>
+                    <span className="ml-2 text-gray-900">{selectedDriver.agreedKmsPerWeek || 'Not specified'}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Daily Rate:</span>
+                    <span className="ml-2 text-gray-900">${selectedDriver.dailyRate || 'Not specified'}</span>
                   </div>
                   <div>
                     <span className="font-medium text-gray-700">Weekly Rent:</span>
-                    <span className="ml-2 text-gray-900">${selectedDriver.weeklyRent}</span>
+                    <span className="ml-2 text-gray-900">${selectedDriver.weeklyRent || 'Not specified'}</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Financial Terms */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">💰 Financial Terms</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-700">Security Bond:</span>
+                    <span className="ml-2 text-gray-900">${selectedDriver.securityBond || 'Not specified'}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Bond Amount:</span>
+                    <span className="ml-2 text-gray-900">${selectedDriver.bondAmount || 'Not specified'}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Insurance Excess (25+ years):</span>
+                    <span className="ml-2 text-gray-900">${selectedDriver.insuranceExcess25 || '1300'}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Insurance Excess (21-24 years):</span>
+                    <span className="ml-2 text-gray-900">${selectedDriver.insuranceExcess21 || '1800'}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Late Fee Percentage:</span>
+                    <span className="ml-2 text-gray-900">{selectedDriver.lateFeePercentage || '5'}%</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Notice Period:</span>
+                    <span className="ml-2 text-gray-900">{selectedDriver.noticePeriodWeeks || '2'} weeks</span>
                   </div>
                 </div>
               </div>
