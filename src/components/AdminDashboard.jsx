@@ -26,15 +26,14 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
+  const [showDriverDetails, setShowDriverDetails] = useState(false);
+  const [selectedDriver, setSelectedDriver] = useState(null);
   const [formData, setFormData] = useState({
     make: '',
     model: '',
     year: '',
     licensePlate: '',
     color: '',
-    dailyRate: '',
-    weeklyRate: '',
-    monthlyRate: '',
     photo: null
   });
 
@@ -110,8 +109,7 @@ const AdminDashboard = () => {
         setShowAddModal(false);
         setEditingVehicle(null);
         setFormData({
-          make: '', model: '', year: '', licensePlate: '', color: '',
-          dailyRate: '', weeklyRate: '', monthlyRate: '', photo: null
+          make: '', model: '', year: '', licensePlate: '', color: '', photo: null
         });
         fetchData();
       } else {
@@ -126,17 +124,14 @@ const AdminDashboard = () => {
 
   const handleEdit = (vehicle) => {
     setEditingVehicle(vehicle);
-    setFormData({
-      make: vehicle.make || '',
-      model: vehicle.model || '',
-      year: vehicle.year || '',
-      licensePlate: vehicle.licensePlate || '',
-      color: vehicle.color || '',
-      dailyRate: vehicle.dailyRate || '',
-      weeklyRate: vehicle.weeklyRate || '',
-      monthlyRate: vehicle.monthlyRate || '',
-      photo: null
-    });
+            setFormData({
+          make: vehicle.make || '',
+          model: vehicle.model || '',
+          year: vehicle.year || '',
+          licensePlate: vehicle.licensePlate || '',
+          color: vehicle.color || '',
+          photo: null
+        });
     setShowAddModal(true);
   };
 
@@ -235,6 +230,16 @@ const AdminDashboard = () => {
       console.error('Error:', error);
       alert('Error sending documents');
     }
+  };
+
+  const handleViewDriverDetails = (driver) => {
+    setSelectedDriver(driver);
+    setShowDriverDetails(true);
+  };
+
+  const handleViewApplicationDetails = (application) => {
+    setSelectedDriver(application);
+    setShowDriverDetails(true);
   };
 
   const getStats = () => {
@@ -475,8 +480,14 @@ const AdminDashboard = () => {
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <div className="space-y-2">
                             <button 
+                              onClick={() => handleViewApplicationDetails(application)}
+                              className="w-full px-3 py-2 bg-purple-600 text-white text-xs rounded-lg hover:bg-purple-700 transition-colors mb-2"
+                            >
+                              👁️ View Details
+                            </button>
+                            <button 
                               onClick={() => handleApplicationAction(application.id, 'approve')}
-                              className="w-full px-3 py-2 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors"
+                              className="w-full px-3 py-2 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors mb-2"
                             >
                               ✅ Approve
                             </button>
@@ -666,14 +677,20 @@ const AdminDashboard = () => {
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <div className="space-y-2">
                             <button 
+                              onClick={() => handleViewDriverDetails(driver)}
+                              className="w-full px-3 py-2 bg-purple-600 text-white text-xs rounded-lg hover:bg-purple-700 transition-colors mb-2"
+                            >
+                              👁️ View Details
+                            </button>
+                            <button 
                               onClick={() => handleEditDriver(driver)}
-                              className="w-full px-3 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors"
+                              className="w-full px-3 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors mb-2"
                             >
                               ✏️ Edit
                             </button>
                             <button 
                               onClick={() => handleDeleteDriver(driver.id)}
-                              className="w-full px-3 py-2 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors"
+                              className="w-full px-3 py-2 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors mb-2"
                             >
                               🗑️ Delete
                             </button>
@@ -1095,42 +1112,7 @@ const AdminDashboard = () => {
                   />
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Daily Rate *</label>
-                  <input
-                    type="number"
-                    name="dailyRate"
-                    value={formData.dailyRate}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Amount in AUD"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Weekly Rate</label>
-                  <input
-                    type="number"
-                    name="weeklyRate"
-                    value={formData.weeklyRate}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Amount in AUD"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Rate</label>
-                  <input
-                    type="number"
-                    name="monthlyRate"
-                    value={formData.monthlyRate}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Amount in AUD"
-                  />
-                </div>
+
                 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Photo</label>
@@ -1163,6 +1145,231 @@ const AdminDashboard = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Driver Details Modal */}
+      {showDriverDetails && selectedDriver && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {selectedDriver.status === 'pending_approval' ? 'Application Details' : 'Driver Details'}
+                </h2>
+                <button
+                  onClick={() => setShowDriverDetails(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Personal Information */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">👤 Personal Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-700">Name:</span>
+                    <span className="ml-2 text-gray-900">{selectedDriver.firstName} {selectedDriver.lastName}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Email:</span>
+                    <span className="ml-2 text-gray-900">{selectedDriver.email}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Phone:</span>
+                    <span className="ml-2 text-gray-900">{selectedDriver.phone}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Address:</span>
+                    <span className="ml-2 text-gray-900">{selectedDriver.address}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Emergency Contact:</span>
+                    <span className="ml-2 text-gray-900">{selectedDriver.emergencyContact}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Emergency Phone:</span>
+                    <span className="ml-2 text-gray-900">{selectedDriver.emergencyPhone}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Vehicle & Contract Information */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">🚗 Vehicle & Contract</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-700">Vehicle:</span>
+                    <span className="ml-2 text-gray-900">
+                      {selectedDriver.vehicleMake && selectedDriver.vehicleModel 
+                        ? `${selectedDriver.vehicleMake} ${selectedDriver.vehicleModel}`
+                        : 'No vehicle selected'
+                      }
+                    </span>
+                  </div>
+                  {selectedDriver.vehicleLicensePlate && (
+                    <div>
+                      <span className="font-medium text-gray-700">License Plate:</span>
+                      <span className="ml-2 text-gray-900">{selectedDriver.vehicleLicensePlate}</span>
+                    </div>
+                  )}
+                  <div>
+                    <span className="font-medium text-gray-700">Contract Period:</span>
+                    <span className="ml-2 text-gray-900">{selectedDriver.contractPeriod}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Bond Amount:</span>
+                    <span className="ml-2 text-gray-900">${selectedDriver.bondAmount}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Weekly Rent:</span>
+                    <span className="ml-2 text-gray-900">${selectedDriver.weeklyRent}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Documents Section */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">📄 Documents</h3>
+                <div className="space-y-3">
+                  {selectedDriver.licenseFront && (
+                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                      <div className="flex items-center space-x-2">
+                        <FileText className="w-5 h-5 text-blue-600" />
+                        <span className="text-sm font-medium">License Front</span>
+                      </div>
+                      <button
+                        onClick={() => window.open(`/uploads/${selectedDriver.licenseFront}`, '_blank')}
+                        className="px-3 py-1 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        📥 Download
+                      </button>
+                    </div>
+                  )}
+                  
+                  {selectedDriver.licenseBack && (
+                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                      <div className="flex items-center space-x-2">
+                        <FileText className="w-5 h-5 text-blue-600" />
+                        <span className="text-sm font-medium">License Back</span>
+                      </div>
+                      <button
+                        onClick={() => window.open(`/uploads/${selectedDriver.licenseBack}`, '_blank')}
+                        className="px-3 py-1 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        📥 Download
+                      </button>
+                    </div>
+                  )}
+                  
+                  {selectedDriver.bondProof && (
+                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                      <div className="flex items-center space-x-2">
+                        <FileText className="w-5 h-5 text-green-600" />
+                        <span className="text-sm font-medium">Bond Proof</span>
+                      </div>
+                      <button
+                        onClick={() => window.open(`/uploads/${selectedDriver.bondProof}`, '_blank')}
+                        className="px-3 py-1 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        📥 Download
+                      </button>
+                    </div>
+                  )}
+                  
+                  {selectedDriver.rentProof && (
+                    <div className="flex items-center space-x-2 p-3 bg-white rounded-lg border">
+                      <FileText className="w-5 h-5 text-green-600" />
+                      <span className="text-sm font-medium">Rent Proof</span>
+                      <button
+                        onClick={() => window.open(`/uploads/${selectedDriver.rentProof}`, '_blank')}
+                        className="px-3 py-1 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        📥 Download
+                      </button>
+                    </div>
+                  )}
+                  
+                  {selectedDriver.contractDocument && (
+                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                      <div className="flex items-center space-x-2">
+                        <FileText className="w-5 h-5 text-purple-600" />
+                        <span className="text-sm font-medium">Contract Document</span>
+                      </div>
+                      <button
+                        onClick={() => window.open(`/uploads/${selectedDriver.contractDocument}`, '_blank')}
+                        className="px-3 py-1 bg-purple-600 text-white text-xs rounded-lg hover:bg-purple-700 transition-colors"
+                      >
+                        📥 Download
+                      </button>
+                    </div>
+                  )}
+                  
+                  {!selectedDriver.licenseFront && !selectedDriver.licenseBack && !selectedDriver.bondProof && !selectedDriver.rentProof && !selectedDriver.contractDocument && (
+                    <p className="text-gray-500 text-sm">No documents uploaded yet.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Status & Dates */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">📅 Status & Dates</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-700">Status:</span>
+                    <span className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full ${
+                      selectedDriver.status === 'approved' ? 'bg-green-100 text-green-800' :
+                      selectedDriver.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {selectedDriver.status === 'pending_approval' ? 'Pending Approval' :
+                       selectedDriver.status === 'approved' ? 'Approved' : 'Rejected'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Created:</span>
+                    <span className="ml-2 text-gray-900">
+                      {selectedDriver.createdAt ? new Date(selectedDriver.createdAt).toLocaleDateString() : 'N/A'}
+                    </span>
+                  </div>
+                  {selectedDriver.nextRentDate && (
+                    <div>
+                      <span className="font-medium text-gray-700">Next Rent Date:</span>
+                      <span className="ml-2 text-gray-900">
+                        {new Date(selectedDriver.nextRentDate).toLocaleDateString()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200">
+              <div className="flex justify-end space-x-4">
+                <button
+                  onClick={() => setShowDriverDetails(false)}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Close
+                </button>
+                {selectedDriver.status === 'pending_approval' && (
+                  <button
+                    onClick={() => {
+                      setShowDriverDetails(false);
+                      handleApplicationAction(selectedDriver.id, 'approve');
+                    }}
+                    className="px-6 py-3 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition-colors"
+                  >
+                    ✅ Approve Application
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
