@@ -801,16 +801,14 @@ app.post('/api/vehicles', (req, res, next) => {
     } = req.body;
 
     // Validate required fields
-    if (!make || !model || !year || !licensePlate || !vin) {
-      return res.status(400).json({ error: 'Make, model, year, license plate, and VIN are required' });
+    if (!make || !model || !year || !licensePlate) {
+      return res.status(400).json({ error: 'Make, model, year, and license plate are required' });
     }
 
-    // Check for duplicate license plate or VIN
-    const existingVehicle = vehicles.find(v => 
-      v.licensePlate === licensePlate || v.vin === vin
-    );
+    // Check for duplicate license plate
+    const existingVehicle = vehicles.find(v => v.licensePlate === licensePlate);
     if (existingVehicle) {
-      return res.status(400).json({ error: 'Vehicle with this license plate or VIN already exists' });
+      return res.status(400).json({ error: 'Vehicle with this license plate already exists' });
     }
 
     // Process uploaded documents
@@ -842,14 +840,14 @@ app.post('/api/vehicles', (req, res, next) => {
       model,
       year,
       licensePlate,
-      vin,
+      vin: vin || null,
       bondAmount: bondAmount ? parseInt(bondAmount) : 0,
       rentPerWeek: rentPerWeek ? parseInt(rentPerWeek) : 0,
       currentMileage: currentMileage ? parseInt(currentMileage) : 0,
       odoMeter: odoMeter ? parseInt(odoMeter) : 0,
-      nextServiceDate,
+      nextServiceDate: nextServiceDate || null,
       vehicleType: vehicleType || 'sedan',
-      color,
+      color: color || '',
       fuelType: fuelType || 'petrol',
       transmission: transmission || 'automatic',
       status: status || 'available',
@@ -858,7 +856,7 @@ app.post('/api/vehicles', (req, res, next) => {
       photoPath: req.files && req.files.vehiclePhoto ? 'memory' : null,
       photoName: req.files && req.files.vehiclePhoto ? req.files.vehiclePhoto[0].originalname : null,
       photoSize: req.files && req.files.vehiclePhoto ? req.files.vehiclePhoto[0].size : null,
-      documents,
+      documents: documents || [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -900,16 +898,16 @@ app.put('/api/vehicles/:id', uploadVehiclePhoto.single('vehiclePhoto'), async (r
     } = req.body;
 
     // Validate required fields
-    if (!make || !model || !year || !licensePlate || !vin) {
-      return res.status(400).json({ error: 'Make, model, year, license plate, and VIN are required' });
+    if (!make || !model || !year || !licensePlate) {
+      return res.status(400).json({ error: 'Make, model, year, and license plate are required' });
     }
 
-    // Check for duplicate license plate or VIN (excluding current vehicle)
+    // Check for duplicate license plate (excluding current vehicle)
     const existingVehicle = vehicles.find(v => 
-      v.id !== vehicleId && (v.licensePlate === licensePlate || v.vin === vin)
+      v.id !== vehicleId && v.licensePlate === licensePlate
     );
     if (existingVehicle) {
-      return res.status(400).json({ error: 'Vehicle with this license plate or VIN already exists' });
+      return res.status(400).json({ error: 'Vehicle with this license plate already exists' });
     }
 
     // Update vehicle data
@@ -919,18 +917,18 @@ app.put('/api/vehicles/:id', uploadVehiclePhoto.single('vehiclePhoto'), async (r
       model,
       year,
       licensePlate,
-      vin,
-      bondAmount: bondAmount ? parseInt(bondAmount) : 0,
-      rentPerWeek: rentPerWeek ? parseInt(rentPerWeek) : 0,
-      currentMileage: currentMileage ? parseInt(currentMileage) : 0,
-      odoMeter: odoMeter ? parseInt(odoMeter) : 0,
-      nextServiceDate,
-      vehicleType: vehicleType || 'sedan',
-      color,
-      fuelType: fuelType || 'petrol',
-      transmission: transmission || 'automatic',
-      status: status || 'available',
-      ownerName: ownerName || '',
+      vin: vin || vehicles[vehicleIndex].vin,
+      bondAmount: bondAmount ? parseInt(bondAmount) : vehicles[vehicleIndex].bondAmount || 0,
+      rentPerWeek: rentPerWeek ? parseInt(rentPerWeek) : vehicles[vehicleIndex].rentPerWeek || 0,
+      currentMileage: currentMileage ? parseInt(currentMileage) : vehicles[vehicleIndex].currentMileage || 0,
+      odoMeter: odoMeter ? parseInt(odoMeter) : vehicles[vehicleIndex].odoMeter || 0,
+      nextServiceDate: nextServiceDate || vehicles[vehicleIndex].nextServiceDate,
+      vehicleType: vehicleType || vehicles[vehicleIndex].vehicleType || 'sedan',
+      color: color || vehicles[vehicleIndex].color || '',
+      fuelType: fuelType || vehicles[vehicleIndex].fuelType || 'petrol',
+      transmission: transmission || vehicles[vehicleIndex].transmission || 'automatic',
+      status: status || vehicles[vehicleIndex].status || 'available',
+      ownerName: ownerName || vehicles[vehicleIndex].ownerName || '',
       updatedAt: new Date().toISOString()
     };
 
@@ -2082,8 +2080,7 @@ app.post('/api/rental-applications', uploadRentalApplication.fields([
       contractPeriod,
       bondAmount: parseInt(bondAmount),
       weeklyRent: parseInt(weeklyRent),
-      contractAgreed: true,
-      termsAgreed: true,
+      contractAgreement: true,
       status: 'pending_approval',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -2094,12 +2091,22 @@ app.post('/api/rental-applications', uploadRentalApplication.fields([
       vehicleModel,
       vehicleLicensePlate,
       
+      // New contract fields
+      vehicleType,
+      vehicleRego,
+      securityBond: securityBond ? parseInt(securityBond) : null,
+      insuranceExcess25: insuranceExcess25 ? parseInt(insuranceExcess25) : 1300,
+      insuranceExcess21: insuranceExcess21 ? parseInt(insuranceExcess21) : 1800,
+      agreedKmsPerWeek: agreedKmsPerWeek ? parseInt(agreedKmsPerWeek) : null,
+      dailyRate: dailyRate ? parseInt(dailyRate) : null,
+      lateFeePercentage: lateFeePercentage ? parseInt(lateFeePercentage) : 5,
+      noticePeriodWeeks: noticePeriodWeeks ? parseInt(noticePeriodWeeks) : 2,
+      
       // Document URLs
       licenseFrontUrl: `data:${req.files.licenseFront[0].mimetype};base64,${req.files.licenseFront[0].buffer.toString('base64')}`,
       licenseBackUrl: `data:${req.files.licenseBack[0].mimetype};base64,${req.files.licenseBack[0].buffer.toString('base64')}`,
       bondProofUrl: `data:${req.files.bondProof[0].mimetype};base64,${req.files.bondProof[0].buffer.toString('base64')}`,
       rentProofUrl: `data:${req.files.rentProof[0].mimetype};base64,${req.files.rentProof[0].buffer.toString('base64')}`,
-      contractDocumentUrl: `data:${req.files.contractDocument[0].mimetype};base64,${req.files.contractDocument[0].buffer.toString('base64')}`,
       
       // Documents array for compatibility
       documents: [
@@ -2126,14 +2133,14 @@ app.post('/api/rental-applications', uploadRentalApplication.fields([
           documentType: 'rent_proof',
           fileName: req.files.rentProof[0].originalname,
           fileUrl: `data:${req.files.rentProof[0].mimetype};base64,${req.files.rentProof[0].buffer.toString('base64')}`
-        },
-        {
-          id: 5,
-          documentType: 'contract_document',
-          fileName: req.files.contractDocument[0].originalname,
-          fileUrl: `data:${req.files.contractDocument[0].mimetype};base64,${req.files.contractDocument[0].buffer.toString('base64')}`
         }
-      ]
+      ],
+      
+      // Document file names for admin view
+      licenseFront: req.files.licenseFront[0].originalname,
+      licenseBack: req.files.licenseBack[0].originalname,
+      bondProof: req.files.bondProof[0].originalname,
+      rentProof: req.files.rentProof[0].originalname
     };
 
     // Add to drivers array (for compatibility with existing system)

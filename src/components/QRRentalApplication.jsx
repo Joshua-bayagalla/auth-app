@@ -761,6 +761,7 @@ const QRRentalApplication = () => {
                       <Camera className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                       <input
                         type="file"
+                        name="licenseFront"
                         accept="image/*,.pdf"
                         onChange={(e) => handleFileUpload(e, 'licenseFront')}
                         className="hidden"
@@ -783,6 +784,7 @@ const QRRentalApplication = () => {
                       <Camera className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                       <input
                         type="file"
+                        name="licenseBack"
                         accept="image/*,.pdf"
                         onChange={(e) => handleFileUpload(e, 'licenseBack')}
                         className="hidden"
@@ -807,6 +809,7 @@ const QRRentalApplication = () => {
                       <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                       <input
                         type="file"
+                        name="bondProof"
                         accept="image/*,.pdf"
                         onChange={(e) => handleFileUpload(e, 'bondProof')}
                         className="hidden"
@@ -829,6 +832,7 @@ const QRRentalApplication = () => {
                       <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                       <input
                         type="file"
+                        name="rentProof"
                         accept="image/*,.pdf"
                         onChange={(e) => handleFileUpload(e, 'rentProof')}
                         className="hidden"
