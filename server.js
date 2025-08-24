@@ -2014,8 +2014,7 @@ app.post('/api/rental-applications', uploadRentalApplication.fields([
   { name: 'licenseFront', maxCount: 1 },
   { name: 'licenseBack', maxCount: 1 },
   { name: 'bondProof', maxCount: 1 },
-  { name: 'rentProof', maxCount: 1 },
-  { name: 'contractDocument', maxCount: 1 }
+  { name: 'rentProof', maxCount: 1 }
 ]), (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     return res.status(400).json({ error: `File upload error: ${err.message}` });
@@ -2036,12 +2035,21 @@ app.post('/api/rental-applications', uploadRentalApplication.fields([
       contractPeriod,
       bondAmount,
       weeklyRent,
-      contractAgreed,
-      termsAgreed,
+      contractAgreement,
       vehicleId,
       vehicleMake,
       vehicleModel,
-      vehicleLicensePlate
+      vehicleLicensePlate,
+      // New contract fields
+      vehicleType,
+      vehicleRego,
+      securityBond,
+      insuranceExcess25,
+      insuranceExcess21,
+      agreedKmsPerWeek,
+      dailyRate,
+      lateFeePercentage,
+      noticePeriodWeeks
     } = req.body;
 
     // Validate required fields
@@ -2051,13 +2059,13 @@ app.post('/api/rental-applications', uploadRentalApplication.fields([
       return res.status(400).json({ error: 'All fields are required' });
     }
 
-    if (!contractAgreed || !termsAgreed) {
-      return res.status(400).json({ error: 'Contract and terms must be agreed to' });
+    if (!contractAgreement) {
+      return res.status(400).json({ error: 'Contract agreement must be accepted' });
     }
 
     // Validate file uploads
     if (!req.files || !req.files.licenseFront || !req.files.licenseBack || 
-        !req.files.bondProof || !req.files.rentProof || !req.files.contractDocument) {
+        !req.files.bondProof || !req.files.rentProof) {
       return res.status(400).json({ error: 'All documents are required' });
     }
 
@@ -2152,6 +2160,10 @@ app.post('/api/rental-applications', uploadRentalApplication.fields([
               <p><strong>Contract Period:</strong> ${contractPeriod}</p>
               <p><strong>Bond Amount:</strong> $${bondAmount}</p>
               <p><strong>Weekly Rent:</strong> $${weeklyRent}</p>
+              ${vehicleType ? `<p><strong>Vehicle Type:</strong> ${vehicleType}</p>` : ''}
+              ${vehicleRego ? `<p><strong>Vehicle Registration:</strong> ${vehicleRego}</p>` : ''}
+              ${securityBond ? `<p><strong>Security Bond:</strong> $${securityBond}</p>` : ''}
+              ${dailyRate ? `<p><strong>Daily Rate:</strong> $${dailyRate}</p>` : ''}
               ${vehicleMake ? `<p><strong>Vehicle:</strong> ${vehicleMake} ${vehicleModel} (${vehicleLicensePlate})</p>` : ''}
             </div>
             
