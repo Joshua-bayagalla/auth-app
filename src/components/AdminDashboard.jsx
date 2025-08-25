@@ -552,9 +552,9 @@ const AdminDashboard = () => {
                       <button
                             onClick={() => handleUpdateVehicleStatus(vehicle, vehicle.status === 'maintenance' ? 'available' : 'maintenance')}
                             className="ml-3 px-2 py-1 text-xs rounded-md border hover:bg-gray-50"
-                            title={vehicle.status === 'maintenance' ? 'Mark Available' : 'Mark Maintenance'}
+                            title={vehicle.status === 'maintenance' ? 'Mark as Available' : 'Mark as Maintenance'}
                               >
-                            {vehicle.status === 'maintenance' ? 'Available' : 'Maintenance'}
+                            {vehicle.status === 'maintenance' ? 'Mark as Available' : 'Mark as Maintenance'}
                               </button>
                         </td>
                       </tr>
@@ -588,7 +588,7 @@ const AdminDashboard = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{v.licensePlate}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{v.nextServiceDate || '—'}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <button onClick={() => handleUpdateVehicleStatus(v, 'available')} className="px-3 py-1 text-[12px] rounded-md bg-green-600 text-white hover:bg-green-700">Mark Available</button>
+                          <button onClick={() => handleUpdateVehicleStatus(v, 'available')} className="px-3 py-1 text-[12px] rounded-md bg-green-600 text-white hover:bg-green-700">Mark as Available</button>
                         </td>
                       </tr>
                     ))}

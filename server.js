@@ -922,10 +922,39 @@ app.post('/api/vehicles', (req, res, next) => {
 app.put('/api/vehicles/:id', uploadVehiclePhoto.single('vehiclePhoto'), async (req, res) => {
   try {
     const vehicleId = parseInt(req.params.id);
-    const vehicleIndex = vehicles.findIndex(v => v.id === vehicleId);
     
-    if (vehicleIndex === -1) {
-      return res.status(404).json({ error: 'Vehicle not found' });
+    // Try database first, fallback to in-memory
+    let vehicle = null;
+    let vehicleIndex = -1;
+    
+    const vehiclesCollection = getVehiclesCollection();
+    if (vehiclesCollection) {
+      try {
+        vehicle = await vehiclesCollection.findOne({ id: vehicleId });
+        if (!vehicle) {
+          // Fallback to in-memory
+          vehicleIndex = vehicles.findIndex(v => v.id === vehicleId);
+          if (vehicleIndex === -1) {
+            return res.status(404).json({ error: 'Vehicle not found' });
+          }
+          vehicle = vehicles[vehicleIndex];
+        }
+      } catch (dbError) {
+        console.error('Database error:', dbError);
+        // Fallback to in-memory
+        vehicleIndex = vehicles.findIndex(v => v.id === vehicleId);
+        if (vehicleIndex === -1) {
+          return res.status(404).json({ error: 'Vehicle not found' });
+        }
+        vehicle = vehicles[vehicleIndex];
+      }
+    } else {
+      // Use in-memory storage
+      vehicleIndex = vehicles.findIndex(v => v.id === vehicleId);
+      if (vehicleIndex === -1) {
+        return res.status(404).json({ error: 'Vehicle not found' });
+      }
+      vehicle = vehicles[vehicleIndex];
     }
 
     const {
@@ -949,31 +978,31 @@ app.put('/api/vehicles/:id', uploadVehiclePhoto.single('vehiclePhoto'), async (r
 
     // Update vehicle data
     const updatedVehicle = {
-      ...vehicles[vehicleIndex],
+      ...vehicle,
       make,
       model,
       year,
       licensePlate,
-      vin: vin || vehicles[vehicleIndex].vin,
-      bondAmount: bondAmount ? parseInt(bondAmount) : vehicles[vehicleIndex].bondAmount || 0,
-      rentPerWeek: rentPerWeek ? parseInt(rentPerWeek) : vehicles[vehicleIndex].rentPerWeek || 0,
-      currentMileage: currentMileage ? parseInt(currentMileage) : vehicles[vehicleIndex].currentMileage || 0,
-      odoMeter: odoMeter ? parseInt(odoMeter) : vehicles[vehicleIndex].odoMeter || 0,
-      nextServiceDate: nextServiceDate || vehicles[vehicleIndex].nextServiceDate,
-      vehicleType: vehicleType || vehicles[vehicleIndex].vehicleType || 'sedan',
-      color: color || vehicles[vehicleIndex].color || '',
-      fuelType: fuelType || vehicles[vehicleIndex].fuelType || 'petrol',
-      transmission: transmission || vehicles[vehicleIndex].transmission || 'automatic',
-      status: status || vehicles[vehicleIndex].status || 'available',
-      ownerName: ownerName || vehicles[vehicleIndex].ownerName || '',
+      vin: vin || vehicle.vin,
+      bondAmount: bondAmount ? parseInt(bondAmount) : vehicle.bondAmount || 0,
+      rentPerWeek: rentPerWeek ? parseInt(rentPerWeek) : vehicle.rentPerWeek || 0,
+      currentMileage: currentMileage ? parseInt(currentMileage) : vehicle.currentMileage || 0,
+      odoMeter: odoMeter ? parseInt(odoMeter) : vehicle.odoMeter || 0,
+      nextServiceDate: nextServiceDate || vehicle.nextServiceDate,
+      vehicleType: vehicleType || vehicle.vehicleType || 'sedan',
+      color: color || vehicle.color || '',
+      fuelType: fuelType || vehicle.fuelType || 'petrol',
+      transmission: transmission || vehicle.transmission || 'automatic',
+      status: status || vehicle.status || 'available',
+      ownerName: ownerName || vehicle.ownerName || '',
       updatedAt: new Date().toISOString()
     };
 
     // Handle photo update
     if (req.file) {
       // Delete old photo if exists
-      if (vehicles[vehicleIndex].photoPath && fs.existsSync(vehicles[vehicleIndex].photoPath)) {
-        fs.unlinkSync(vehicles[vehicleIndex].photoPath);
+      if (vehicle.photoPath && fs.existsSync(vehicle.photoPath)) {
+        fs.unlinkSync(vehicle.photoPath);
       }
       
       // Update with new photo
@@ -983,8 +1012,28 @@ app.put('/api/vehicles/:id', uploadVehiclePhoto.single('vehiclePhoto'), async (r
       updatedVehicle.photoSize = req.file.size;
     }
 
-    vehicles[vehicleIndex] = updatedVehicle;
-    saveData(users, verificationTokens, vehicles, drivers);
+    // Update in database or in-memory
+    if (vehiclesCollection) {
+      try {
+        await vehiclesCollection.updateOne(
+          { id: vehicleId },
+          { $set: updatedVehicle }
+        );
+      } catch (dbError) {
+        console.error('Database update error:', dbError);
+        // Fallback to in-memory update
+        if (vehicleIndex !== -1) {
+          vehicles[vehicleIndex] = updatedVehicle;
+          saveData(users, verificationTokens, vehicles, drivers);
+        }
+      }
+    } else {
+      // Update in-memory
+      if (vehicleIndex !== -1) {
+        vehicles[vehicleIndex] = updatedVehicle;
+        saveData(users, verificationTokens, vehicles, drivers);
+      }
+    }
     
     console.log('Vehicle updated:', updatedVehicle);
     res.json({ message: 'Vehicle updated successfully', vehicle: updatedVehicle });
