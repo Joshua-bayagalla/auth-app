@@ -20,7 +20,7 @@ import {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('vehicles');
+  const [activeTab, setActiveTab] = useState('applications');
   const [vehicles, setVehicles] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [users, setUsers] = useState([]);
@@ -652,7 +652,7 @@ const AdminDashboard = () => {
       case 'drivers':
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Driver Management</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Total Drivers</h2>
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
