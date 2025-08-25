@@ -27,8 +27,26 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
+  const [showAddDriver, setShowAddDriver] = useState(false);
   const [showDriverDetails, setShowDriverDetails] = useState(false);
   const [selectedDriver, setSelectedDriver] = useState(null);
+  const [driverForm, setDriverForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    licenseNumber: '',
+    licenseExpiry: '',
+    address: '',
+    emergencyContact: '',
+    emergencyPhone: '',
+    selectedVehicleId: '',
+    contractStartDate: '',
+    contractEndDate: '',
+    contractPeriod: '',
+    bondAmount: '1000',
+    weeklyRent: '200',
+  });
   const [formData, setFormData] = useState({
     make: '',
     model: '',
@@ -48,12 +66,16 @@ const AdminDashboard = () => {
     ownerName: '',
     photo: null,
     vehiclePhoto: null,
+    contractDoc: null,
+    contractExpiry: '',
+    redBookDoc: null,
+    redBookExpiry: '',
     registrationDoc: null,
     registrationExpiry: '',
     insuranceDoc: null,
     insuranceExpiry: '',
-    roadworthyDoc: null,
-    roadworthyExpiry: ''
+    cpvDoc: null,
+    cpvExpiry: ''
   });
 
   useEffect(() => {
@@ -109,7 +131,7 @@ const AdminDashboard = () => {
 
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
-    if (name === 'vehiclePhoto' || name === 'registrationDoc' || name === 'insuranceDoc' || name === 'roadworthyDoc') {
+    if (name === 'vehiclePhoto' || name === 'contractDoc' || name === 'redBookDoc' || name === 'registrationDoc' || name === 'insuranceDoc' || name === 'cpvDoc') {
       setFormData(prev => ({
         ...prev,
         [name]: files ? files[0] : null
@@ -153,26 +175,18 @@ const AdminDashboard = () => {
       }
       
       // Add document files if they exist
-      if (formData.registrationDoc) {
-        formDataToSend.append('registrationDoc', formData.registrationDoc);
-      }
-      if (formData.insuranceDoc) {
-        formDataToSend.append('insuranceDoc', formData.insuranceDoc);
-      }
-      if (formData.roadworthyDoc) {
-        formDataToSend.append('roadworthyDoc', formData.roadworthyDoc);
-      }
-      
+      if (formData.contractDoc) formDataToSend.append('contractDoc', formData.contractDoc);
+      if (formData.redBookDoc) formDataToSend.append('redBookDoc', formData.redBookDoc);
+      if (formData.registrationDoc) formDataToSend.append('registrationDoc', formData.registrationDoc);
+      if (formData.insuranceDoc) formDataToSend.append('insuranceDoc', formData.insuranceDoc);
+      if (formData.cpvDoc) formDataToSend.append('cpvDoc', formData.cpvDoc);
+
       // Add expiry dates
-      if (formData.registrationExpiry) {
-        formDataToSend.append('registrationExpiry', formData.registrationExpiry);
-      }
-      if (formData.insuranceExpiry) {
-        formDataToSend.append('insuranceExpiry', formData.insuranceExpiry);
-      }
-      if (formData.roadworthyExpiry) {
-        formDataToSend.append('roadworthyExpiry', formData.roadworthyExpiry);
-      }
+      if (formData.contractExpiry) formDataToSend.append('contractExpiry', formData.contractExpiry);
+      if (formData.redBookExpiry) formDataToSend.append('redBookExpiry', formData.redBookExpiry);
+      if (formData.registrationExpiry) formDataToSend.append('registrationExpiry', formData.registrationExpiry);
+      if (formData.insuranceExpiry) formDataToSend.append('insuranceExpiry', formData.insuranceExpiry);
+      if (formData.cpvExpiry) formDataToSend.append('cpvExpiry', formData.cpvExpiry);
 
       const url = editingVehicle 
         ? `/api/vehicles/${editingVehicle.id}` 
@@ -192,8 +206,12 @@ const AdminDashboard = () => {
           make: '', model: '', year: '', licensePlate: '', vin: '', bondAmount: '1000', rentPerWeek: '200', 
           currentMileage: '', odoMeter: '', nextServiceDate: '', vehicleType: 'sedan', color: '', 
           fuelType: 'petrol', transmission: 'automatic', status: 'available', ownerName: '', 
-          photo: null, vehiclePhoto: null, registrationDoc: null, registrationExpiry: '', 
-          insuranceDoc: null, insuranceExpiry: '', roadworthyDoc: null, roadworthyExpiry: ''
+          photo: null, vehiclePhoto: null,
+          contractDoc: null, contractExpiry: '',
+          redBookDoc: null, redBookExpiry: '',
+          registrationDoc: null, registrationExpiry: '',
+          insuranceDoc: null, insuranceExpiry: '',
+          cpvDoc: null, cpvExpiry: ''
         });
         fetchData();
       } else {
@@ -227,12 +245,16 @@ const AdminDashboard = () => {
           ownerName: vehicle.ownerName || '',
           photo: null,
           vehiclePhoto: null,
+          contractDoc: null,
+          contractExpiry: vehicle.contractExpiry || '',
+          redBookDoc: null,
+          redBookExpiry: vehicle.redBookExpiry || '',
           registrationDoc: null,
           registrationExpiry: vehicle.registrationExpiry || '',
           insuranceDoc: null,
           insuranceExpiry: vehicle.insuranceExpiry || '',
-          roadworthyDoc: null,
-          roadworthyExpiry: vehicle.roadworthyExpiry || ''
+          cpvDoc: null,
+          cpvExpiry: vehicle.cpvExpiry || ''
         });
     setShowAddModal(true);
   };
@@ -366,9 +388,11 @@ const AdminDashboard = () => {
     }).length + vehicles.filter(v => {
       // Check for vehicle documents expiring in next 30 days
       const today = new Date();
-      return (v.registrationExpiry && new Date(v.registrationExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.registrationExpiry) > today) ||
+      return (v.contractExpiry && new Date(v.contractExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.contractExpiry) > today) ||
+             (v.redBookExpiry && new Date(v.redBookExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.redBookExpiry) > today) ||
+             (v.registrationExpiry && new Date(v.registrationExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.registrationExpiry) > today) ||
              (v.insuranceExpiry && new Date(v.insuranceExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.insuranceExpiry) > today) ||
-             (v.roadworthyExpiry && new Date(v.roadworthyExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.roadworthyExpiry) > today);
+             (v.cpvExpiry && new Date(v.cpvExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.cpvExpiry) > today);
     }).length;
 
     return {
@@ -722,22 +746,34 @@ const AdminDashboard = () => {
                       const today = new Date();
                       const documents = [];
                       
+                      if (vehicle.contractExpiry && new Date(vehicle.contractExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(vehicle.contractExpiry) > today) {
+                        documents.push({
+                          type: 'Car Contract',
+                          expiry: vehicle.contractExpiry
+                        });
+                      }
+                      if (vehicle.redBookExpiry && new Date(vehicle.redBookExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(vehicle.redBookExpiry) > today) {
+                        documents.push({
+                          type: 'Red Book Inspection',
+                          expiry: vehicle.redBookExpiry
+                        });
+                      }
                       if (vehicle.registrationExpiry && new Date(vehicle.registrationExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(vehicle.registrationExpiry) > today) {
                         documents.push({
-                          type: 'Registration',
+                          type: 'Car Registration',
                           expiry: vehicle.registrationExpiry
                         });
                       }
                       if (vehicle.insuranceExpiry && new Date(vehicle.insuranceExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(vehicle.insuranceExpiry) > today) {
                         documents.push({
-                          type: 'Insurance',
+                          type: 'Car Insurance',
                           expiry: vehicle.insuranceExpiry
                         });
                       }
-                      if (vehicle.roadworthyExpiry && new Date(vehicle.roadworthyExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(vehicle.roadworthyExpiry) > today) {
+                      if (vehicle.cpvExpiry && new Date(vehicle.cpvExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(vehicle.cpvExpiry) > today) {
                         documents.push({
-                          type: 'Roadworthy Certificate',
-                          expiry: vehicle.roadworthyExpiry
+                          type: 'CPV Registration',
+                          expiry: vehicle.cpvExpiry
                         });
                       }
                       
@@ -788,7 +824,16 @@ const AdminDashboard = () => {
       case 'drivers':
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Total Drivers</h2>
+            <div className="flex items-center justify-between px-4 py-3">
+              <h2 className="text-2xl font-bold text-gray-900">Total Drivers</h2>
+              <button
+                onClick={() => setShowAddDriver(true)}
+                className="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors flex items-center space-x-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Driver</span>
+              </button>
+            </div>
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -1459,69 +1504,49 @@ const AdminDashboard = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Registration Document</label>
-                  <input
-                    type="file"
-                    name="registrationDoc"
-                    onChange={handleInputChange}
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Car Contract</label>
+                  <input type="file" name="contractDoc" onChange={handleInputChange} accept=".pdf,.jpg,.jpeg,.png" className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Contract Expiry Date</label>
+                  <input type="date" name="contractExpiry" value={formData.contractExpiry} onChange={handleInputChange} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Red Book Inspection</label>
+                  <input type="file" name="redBookDoc" onChange={handleInputChange} accept=".pdf,.jpg,.jpeg,.png" className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Red Book Expiry Date</label>
+                  <input type="date" name="redBookExpiry" value={formData.redBookExpiry} onChange={handleInputChange} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Car Registration</label>
+                  <input type="file" name="registrationDoc" onChange={handleInputChange} accept=".pdf,.jpg,.jpeg,.png" className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Registration Expiry Date</label>
-                  <input
-                    type="date"
-                    name="registrationExpiry"
-                    value={formData.registrationExpiry}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
+                  <input type="date" name="registrationExpiry" value={formData.registrationExpiry} onChange={handleInputChange} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                 </div>
-                
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Insurance Document</label>
-                  <input
-                    type="file"
-                    name="insuranceDoc"
-                    onChange={handleInputChange}
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Car Insurance</label>
+                  <input type="file" name="insuranceDoc" onChange={handleInputChange} accept=".pdf,.jpg,.jpeg,.png" className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                 </div>
-                
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Insurance Expiry Date</label>
-                  <input
-                    type="date"
-                    name="insuranceExpiry"
-                    value={formData.insuranceExpiry}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
+                  <input type="date" name="insuranceExpiry" value={formData.insuranceExpiry} onChange={handleInputChange} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                 </div>
-                
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Roadworthy Certificate</label>
-                  <input
-                    type="file"
-                    name="roadworthyDoc"
-                    onChange={handleInputChange}
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">CPV Registration</label>
+                  <input type="file" name="cpvDoc" onChange={handleInputChange} accept=".pdf,.jpg,.jpeg,.png" className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                 </div>
-                
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Roadworthy Expiry Date</label>
-                  <input
-                    type="date"
-                    name="roadworthyExpiry"
-                    value={formData.roadworthyExpiry}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">CPV Expiry Date</label>
+                  <input type="date" name="cpvExpiry" value={formData.cpvExpiry} onChange={handleInputChange} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                 </div>
               </div>
               
@@ -1549,6 +1574,114 @@ const AdminDashboard = () => {
       )}
 
       {/* Driver Details Modal */}
+      {/* Add Driver Modal */}
+      {showAddDriver && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full p-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Add Driver</h2>
+              <button onClick={() => setShowAddDriver(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const response = await fetch('/api/drivers', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(driverForm)
+                });
+                if (response.ok) {
+                  setShowAddDriver(false);
+                  setDriverForm({
+                    firstName: '', lastName: '', email: '', phone: '', licenseNumber: '', licenseExpiry: '',
+                    address: '', emergencyContact: '', emergencyPhone: '', selectedVehicleId: '',
+                    contractStartDate: '', contractEndDate: '', contractPeriod: '', bondAmount: '1000', weeklyRent: '200'
+                  });
+                  fetchData();
+                } else {
+                  const err = await response.json();
+                  alert(err.error || 'Failed to add driver');
+                }
+              }}
+              className="space-y-6"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.firstName} onChange={(e)=>setDriverForm({...driverForm, firstName:e.target.value})} required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.lastName} onChange={(e)=>setDriverForm({...driverForm, lastName:e.target.value})} required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                  <input type="email" className="w-full px-4 py-3 border rounded-xl" value={driverForm.email} onChange={(e)=>setDriverForm({...driverForm, email:e.target.value})} required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone *</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.phone} onChange={(e)=>setDriverForm({...driverForm, phone:e.target.value})} required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">License Number *</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.licenseNumber} onChange={(e)=>setDriverForm({...driverForm, licenseNumber:e.target.value})} required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">License Expiry</label>
+                  <input type="date" className="w-full px-4 py-3 border rounded-xl" value={driverForm.licenseExpiry} onChange={(e)=>setDriverForm({...driverForm, licenseExpiry:e.target.value})} />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.address} onChange={(e)=>setDriverForm({...driverForm, address:e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Emergency Contact</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.emergencyContact} onChange={(e)=>setDriverForm({...driverForm, emergencyContact:e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Emergency Phone</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.emergencyPhone} onChange={(e)=>setDriverForm({...driverForm, emergencyPhone:e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Assign Vehicle</label>
+                  <select className="w-full px-4 py-3 border rounded-xl" value={driverForm.selectedVehicleId} onChange={(e)=>setDriverForm({...driverForm, selectedVehicleId:e.target.value})}>
+                    <option value="">None</option>
+                    {vehicles.map(v => (
+                      <option key={v.id} value={v.id}>{v.make} {v.model} • {v.licensePlate}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Contract Start</label>
+                  <input type="date" className="w-full px-4 py-3 border rounded-xl" value={driverForm.contractStartDate} onChange={(e)=>setDriverForm({...driverForm, contractStartDate:e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Contract End</label>
+                  <input type="date" className="w-full px-4 py-3 border rounded-xl" value={driverForm.contractEndDate} onChange={(e)=>setDriverForm({...driverForm, contractEndDate:e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Contract Period</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.contractPeriod} onChange={(e)=>setDriverForm({...driverForm, contractPeriod:e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Bond Amount ($)</label>
+                  <input type="number" className="w-full px-4 py-3 border rounded-xl" value={driverForm.bondAmount} onChange={(e)=>setDriverForm({...driverForm, bondAmount:e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Weekly Rent ($)</label>
+                  <input type="number" className="w-full px-4 py-3 border rounded-xl" value={driverForm.weeklyRent} onChange={(e)=>setDriverForm({...driverForm, weeklyRent:e.target.value})} />
+                </div>
+              </div>
+              <div className="flex justify-end space-x-4">
+                <button type="button" onClick={()=>setShowAddDriver(false)} className="px-6 py-3 border rounded-xl">Cancel</button>
+                <button type="submit" className="px-6 py-3 bg-green-600 text-white rounded-xl">Save Driver</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       {showDriverDetails && selectedDriver && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">

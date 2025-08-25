@@ -765,7 +765,7 @@ app.post('/api/vehicles', (req, res, next) => {
         } else {
           cb(new Error('Only JPG, PNG, WEBP image files are allowed for vehicle photos!'));
         }
-      } else if (file.fieldname === 'registrationDoc' || file.fieldname === 'insuranceDoc' || file.fieldname === 'roadworthyDoc') {
+      } else if ([ 'contractDoc', 'redBookDoc', 'registrationDoc', 'insuranceDoc', 'cpvDoc' ].includes(file.fieldname)) {
         // Allow PDF, DOC, DOCX, JPG, PNG for vehicle documents
         const allowedTypes = /jpeg|jpg|png|pdf|doc|docx/;
         const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -782,9 +782,11 @@ app.post('/api/vehicles', (req, res, next) => {
     }
   }).fields([
     { name: 'vehiclePhoto', maxCount: 1 },
+    { name: 'contractDoc', maxCount: 1 },
+    { name: 'redBookDoc', maxCount: 1 },
     { name: 'registrationDoc', maxCount: 1 },
     { name: 'insuranceDoc', maxCount: 1 },
-    { name: 'roadworthyDoc', maxCount: 1 }
+    { name: 'cpvDoc', maxCount: 1 }
   ]);
 
   vehicleUpload(req, res, (err) => {
@@ -799,8 +801,8 @@ app.post('/api/vehicles', (req, res, next) => {
     const {
       make, model, year, licensePlate, vin, bondAmount, rentPerWeek,
       currentMileage, odoMeter, nextServiceDate, vehicleType, color,
-      fuelType, transmission, status, ownerName, registrationExpiry,
-      insuranceExpiry, roadworthyExpiry
+      fuelType, transmission, status, ownerName,
+      contractExpiry, redBookExpiry, registrationExpiry, insuranceExpiry, cpvExpiry
     } = req.body;
 
     // Validate required fields
@@ -817,6 +819,24 @@ app.post('/api/vehicles', (req, res, next) => {
     // Process uploaded vehicle documents
     const vehicleDocuments = {};
     if (req.files) {
+      if (req.files.contractDoc) {
+        vehicleDocuments.contractDoc = {
+          fileName: req.files.contractDoc[0].originalname,
+          fileUrl: `data:${req.files.contractDoc[0].mimetype};base64,${req.files.contractDoc[0].buffer.toString('base64')}`,
+          fileSize: req.files.contractDoc[0].size,
+          mimeType: req.files.contractDoc[0].mimetype,
+          uploadedAt: new Date().toISOString()
+        };
+      }
+      if (req.files.redBookDoc) {
+        vehicleDocuments.redBookDoc = {
+          fileName: req.files.redBookDoc[0].originalname,
+          fileUrl: `data:${req.files.redBookDoc[0].mimetype};base64,${req.files.redBookDoc[0].buffer.toString('base64')}`,
+          fileSize: req.files.redBookDoc[0].size,
+          mimeType: req.files.redBookDoc[0].mimetype,
+          uploadedAt: new Date().toISOString()
+        };
+      }
       if (req.files.registrationDoc) {
         vehicleDocuments.registrationDoc = {
           fileName: req.files.registrationDoc[0].originalname,
@@ -835,12 +855,12 @@ app.post('/api/vehicles', (req, res, next) => {
           uploadedAt: new Date().toISOString()
         };
       }
-      if (req.files.roadworthyDoc) {
-        vehicleDocuments.roadworthyDoc = {
-          fileName: req.files.roadworthyDoc[0].originalname,
-          fileUrl: `data:${req.files.roadworthyDoc[0].mimetype};base64,${req.files.roadworthyDoc[0].buffer.toString('base64')}`,
-          fileSize: req.files.roadworthyDoc[0].size,
-          mimeType: req.files.roadworthyDoc[0].mimetype,
+      if (req.files.cpvDoc) {
+        vehicleDocuments.cpvDoc = {
+          fileName: req.files.cpvDoc[0].originalname,
+          fileUrl: `data:${req.files.cpvDoc[0].mimetype};base64,${req.files.cpvDoc[0].buffer.toString('base64')}`,
+          fileSize: req.files.cpvDoc[0].size,
+          mimeType: req.files.cpvDoc[0].mimetype,
           uploadedAt: new Date().toISOString()
         };
       }
@@ -868,9 +888,11 @@ app.post('/api/vehicles', (req, res, next) => {
       photoPath: req.files && req.files.vehiclePhoto ? 'memory' : null,
       photoName: req.files && req.files.vehiclePhoto ? req.files.vehiclePhoto[0].originalname : null,
       photoSize: req.files && req.files.vehiclePhoto ? req.files.vehiclePhoto[0].size : null,
+      contractExpiry: contractExpiry || null,
+      redBookExpiry: redBookExpiry || null,
       registrationExpiry: registrationExpiry || null,
       insuranceExpiry: insuranceExpiry || null,
-      roadworthyExpiry: roadworthyExpiry || null,
+      cpvExpiry: cpvExpiry || null,
       vehicleDocuments: vehicleDocuments || {},
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
