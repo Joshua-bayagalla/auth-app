@@ -928,7 +928,33 @@ const AdminDashboard = () => {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4 mb-8">
+          <div 
+            className="bg-gradient-to-br from-violet-500 to-violet-600 rounded-2xl p-4 text-white cursor-pointer hover:from-violet-600 hover:to-violet-700 transition-all duration-200 transform hover:scale-105"
+            onClick={() => setActiveTab('applications')}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">New Applications</p>
+                <p className="text-2xl font-bold">{stats.pendingApplications}</p>
+              </div>
+              <FileText className="w-8 h-8 opacity-80" />
+            </div>
+          </div>
+          
+          <div 
+            className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl p-4 text-white cursor-pointer hover:from-rose-600 hover:to-rose-700 transition-all duration-200 transform hover:scale-105"
+            onClick={() => setActiveTab('drivers')}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm opacity-90">Total Drivers</p>
+                <p className="text-2xl font-bold">{stats.totalDrivers}</p>
+              </div>
+              <Users className="w-8 h-8 opacity-80" />
+            </div>
+          </div>
+          
           <div 
             className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-4 text-white cursor-pointer hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105"
             onClick={() => setActiveTab('vehicles')}
@@ -939,32 +965,6 @@ const AdminDashboard = () => {
                 <p className="text-2xl font-bold">{stats.totalVehicles}</p>
               </div>
               <Car className="w-8 h-8 opacity-80" />
-            </div>
-          </div>
-          
-          <div 
-            className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-4 text-white cursor-pointer hover:from-green-600 hover:to-green-700 transition-all duration-200 transform hover:scale-105"
-            onClick={() => setActiveTab('vehicles')}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm opacity-90">Available</p>
-                <p className="text-2xl font-bold">{stats.availableVehicles}</p>
-              </div>
-              <CheckCircle className="w-8 h-8 opacity-80" />
-            </div>
-          </div>
-          
-          <div 
-            className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-4 text-white cursor-pointer hover:from-purple-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105"
-            onClick={() => setActiveTab('vehicles')}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm opacity-90">Rented</p>
-                <p className="text-2xl font-bold">{stats.rentedVehicles}</p>
-              </div>
-              <TrendingUp className="w-8 h-8 opacity-80" />
             </div>
           </div>
           
@@ -982,19 +982,6 @@ const AdminDashboard = () => {
           </div>
           
           <div 
-            className="bg-gradient-to-br from-violet-500 to-violet-600 rounded-2xl p-4 text-white cursor-pointer hover:from-violet-600 hover:to-violet-700 transition-all duration-200 transform hover:scale-105"
-            onClick={() => setActiveTab('applications')}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm opacity-90">New Applications</p>
-                <p className="text-2xl font-bold">{stats.pendingApplications}</p>
-              </div>
-              <FileText className="w-8 h-8 opacity-80" />
-            </div>
-          </div>
-          
-          <div 
             className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl p-4 text-white cursor-pointer hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 transform hover:scale-105"
             onClick={() => setActiveTab('alerts')}
           >
@@ -1007,18 +994,16 @@ const AdminDashboard = () => {
             </div>
           </div>
           
-
-          
           <div 
-            className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl p-4 text-white cursor-pointer hover:from-rose-600 hover:to-rose-700 transition-all duration-200 transform hover:scale-105"
-            onClick={() => setActiveTab('drivers')}
+            className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-4 text-white cursor-pointer hover:from-green-600 hover:to-green-700 transition-all duration-200 transform hover:scale-105"
+            onClick={() => setActiveTab('payments')}
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm opacity-90">Total Drivers</p>
-                <p className="text-2xl font-bold">{stats.totalDrivers}</p>
+                <p className="text-sm opacity-90">Payments</p>
+                <p className="text-2xl font-bold">{stats.totalPayments}</p>
               </div>
-              <Users className="w-8 h-8 opacity-80" />
+              <DollarSign className="w-8 h-8 opacity-80" />
             </div>
           </div>
         </div>
@@ -1026,6 +1011,30 @@ const AdminDashboard = () => {
         {/* Unified Tab Navigation */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-2 shadow-lg border border-white/20 mb-8">
           <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
+            <button
+              onClick={() => setActiveTab('applications')}
+              className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                activeTab === 'applications'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              <FileText className="w-5 h-5" />
+              <span>New Applications</span>
+            </button>
+            
+            <button
+              onClick={() => setActiveTab('drivers')}
+              className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                activeTab === 'drivers'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              <Users className="w-5 h-5" />
+              <span>Total Drivers</span>
+            </button>
+            
             <button
               onClick={() => setActiveTab('vehicles')}
               className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
@@ -1051,18 +1060,6 @@ const AdminDashboard = () => {
             </button>
             
             <button
-              onClick={() => setActiveTab('applications')}
-              className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-                activeTab === 'applications'
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-              }`}
-            >
-              <FileText className="w-5 h-5" />
-              <span>Applications</span>
-            </button>
-            
-            <button
               onClick={() => setActiveTab('alerts')}
               className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
                 activeTab === 'alerts'
@@ -1075,15 +1072,15 @@ const AdminDashboard = () => {
             </button>
             
             <button
-              onClick={() => setActiveTab('drivers')}
+              onClick={() => setActiveTab('payments')}
               className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-                activeTab === 'drivers'
+                activeTab === 'payments'
                   ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
-              <Users className="w-5 h-5" />
-              <span>Drivers</span>
+              <DollarSign className="w-5 h-5" />
+              <span>Payments</span>
             </button>
           </div>
         </div>
