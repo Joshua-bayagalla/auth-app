@@ -34,7 +34,18 @@ const AdminDashboard = () => {
     model: '',
     year: '',
     licensePlate: '',
+    vin: '',
+    bondAmount: '1000',
+    rentPerWeek: '200',
+    currentMileage: '',
+    odoMeter: '',
+    nextServiceDate: '',
+    vehicleType: 'sedan',
     color: '',
+    fuelType: 'petrol',
+    transmission: 'automatic',
+    status: 'available',
+    ownerName: '',
     photo: null,
     vehiclePhoto: null
   });
@@ -112,6 +123,19 @@ const AdminDashboard = () => {
       if (formData.licensePlate) formDataToSend.append('licensePlate', formData.licensePlate);
       if (formData.color) formDataToSend.append('color', formData.color);
       
+      // Add additional fields
+      if (formData.vin) formDataToSend.append('vin', formData.vin);
+      if (formData.bondAmount) formDataToSend.append('bondAmount', formData.bondAmount);
+      if (formData.rentPerWeek) formDataToSend.append('rentPerWeek', formData.rentPerWeek);
+      if (formData.currentMileage) formDataToSend.append('currentMileage', formData.currentMileage);
+      if (formData.odoMeter) formDataToSend.append('odoMeter', formData.odoMeter);
+      if (formData.nextServiceDate) formDataToSend.append('nextServiceDate', formData.nextServiceDate);
+      if (formData.vehicleType) formDataToSend.append('vehicleType', formData.vehicleType);
+      if (formData.fuelType) formDataToSend.append('fuelType', formData.fuelType);
+      if (formData.transmission) formDataToSend.append('transmission', formData.transmission);
+      if (formData.status) formDataToSend.append('status', formData.status);
+      if (formData.ownerName) formDataToSend.append('ownerName', formData.ownerName);
+      
       // Add vehicle photo if exists
       if (formData.vehiclePhoto) {
         formDataToSend.append('vehiclePhoto', formData.vehiclePhoto);
@@ -132,7 +156,10 @@ const AdminDashboard = () => {
         setShowAddModal(false);
         setEditingVehicle(null);
         setFormData({
-          make: '', model: '', year: '', licensePlate: '', color: '', photo: null, vehiclePhoto: null
+          make: '', model: '', year: '', licensePlate: '', vin: '', bondAmount: '1000', rentPerWeek: '200', 
+          currentMileage: '', odoMeter: '', nextServiceDate: '', vehicleType: 'sedan', color: '', 
+          fuelType: 'petrol', transmission: 'automatic', status: 'available', ownerName: '', 
+          photo: null, vehiclePhoto: null
         });
         fetchData();
       } else {
@@ -152,7 +179,18 @@ const AdminDashboard = () => {
           model: vehicle.model || '',
           year: vehicle.year || '',
           licensePlate: vehicle.licensePlate || '',
+          vin: vehicle.vin || '',
+          bondAmount: vehicle.bondAmount || '1000',
+          rentPerWeek: vehicle.rentPerWeek || '200',
+          currentMileage: vehicle.currentMileage || '',
+          odoMeter: vehicle.odoMeter || '',
+          nextServiceDate: vehicle.nextServiceDate || '',
+          vehicleType: vehicle.vehicleType || 'sedan',
           color: vehicle.color || '',
+          fuelType: vehicle.fuelType || 'petrol',
+          transmission: vehicle.transmission || 'automatic',
+          status: vehicle.status || 'available',
+          ownerName: vehicle.ownerName || '',
           photo: null,
           vehiclePhoto: null
         });
@@ -1138,7 +1176,143 @@ const AdminDashboard = () => {
                   />
                 </div>
                 
-
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">VIN</label>
+                  <input
+                    type="text"
+                    name="vin"
+                    value={formData.vin}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., 1HGBH41JXMN109186"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Rent Per Week ($)</label>
+                  <input
+                    type="number"
+                    name="rentPerWeek"
+                    value={formData.rentPerWeek}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., 200"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Current Mileage</label>
+                  <input
+                    type="number"
+                    name="currentMileage"
+                    value={formData.currentMileage}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., 50000"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Odometer</label>
+                  <input
+                    type="number"
+                    name="odoMeter"
+                    value={formData.odoMeter}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., 50000"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Next Service Date</label>
+                  <input
+                    type="date"
+                    name="nextServiceDate"
+                    value={formData.nextServiceDate}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Type</label>
+                  <select
+                    name="vehicleType"
+                    value={formData.vehicleType}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="sedan">Sedan</option>
+                    <option value="suv">SUV</option>
+                    <option value="hatchback">Hatchback</option>
+                    <option value="wagon">Wagon</option>
+                    <option value="coupe">Coupe</option>
+                    <option value="convertible">Convertible</option>
+                    <option value="pickup">Pickup</option>
+                    <option value="van">Van</option>
+                    <option value="truck">Truck</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Fuel Type</label>
+                  <select
+                    name="fuelType"
+                    value={formData.fuelType}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="petrol">Petrol</option>
+                    <option value="diesel">Diesel</option>
+                    <option value="electric">Electric</option>
+                    <option value="hybrid">Hybrid</option>
+                    <option value="lpg">LPG</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Transmission</label>
+                  <select
+                    name="transmission"
+                    value={formData.transmission}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="automatic">Automatic</option>
+                    <option value="manual">Manual</option>
+                    <option value="cvt">CVT</option>
+                    <option value="semi-auto">Semi-Automatic</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="available">Available</option>
+                    <option value="rented">Rented</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="reserved">Reserved</option>
+                    <option value="out_of_service">Out of Service</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Owner Name</label>
+                  <input
+                    type="text"
+                    name="ownerName"
+                    value={formData.ownerName}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., John Doe"
+                  />
+                </div>
                 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Photo</label>
