@@ -613,21 +613,33 @@ const AdminDashboard = () => {
                             </div>
                             <div>
                               <span className="font-medium text-gray-900">Documents:</span><br/>
-                              <div className="flex flex-wrap gap-1 mt-1">
+                              <div className="flex flex-wrap gap-2 mt-1">
                                 {application.licenseFront && (
-                                  <span className="inline-flex items-center px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                                  <button
+                                    type="button"
+                                    onClick={() => window.open(`/uploads/${application.licenseFront}`, '_blank')}
+                                    className="inline-flex items-center px-2.5 py-1.5 text-xs bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200 transition-colors"
+                                  >
                                     📄 License
-                                  </span>
+                                  </button>
                                 )}
                                 {application.bondProof && (
-                                  <span className="inline-flex items-center px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+                                  <button
+                                    type="button"
+                                    onClick={() => window.open(`/uploads/${application.bondProof}`, '_blank')}
+                                    className="inline-flex items-center px-2.5 py-1.5 text-xs bg-green-100 text-green-800 rounded-full hover:bg-green-200 transition-colors"
+                                  >
                                     💰 Bond
-                                  </span>
+                                  </button>
                                 )}
                                 {application.rentProof && (
-                                  <span className="inline-flex items-center px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded-full">
+                                  <button
+                                    type="button"
+                                    onClick={() => window.open(`/uploads/${application.rentProof}`, '_blank')}
+                                    className="inline-flex items-center px-2.5 py-1.5 text-xs bg-purple-100 text-purple-800 rounded-full hover:bg-purple-200 transition-colors"
+                                  >
                                     💳 Rent
-                                  </span>
+                                  </button>
                                 )}
                               </div>
                             </div>
