@@ -636,65 +636,65 @@ const AdminDashboard = () => {
                             </div>
                             <div>
                               <span className="font-medium text-gray-900">Documents:</span>
-                              <div className="mt-2 grid grid-cols-3 gap-2 max-w-[360px]">
+                              <div className="mt-2 grid grid-cols-3 gap-1 max-w-[280px]">
                                 {/* License Preview */}
                                 { (application.licenseFrontUrl || application.licenseFront) && (
                                   ((application.licenseFrontUrl || application.licenseFront).startsWith('data:') || /\.(png|jpg|jpeg|webp)$/i.test(application.licenseFront || '')) ? (
-                                    <div className="rounded-lg overflow-hidden border">
+                                    <div className="rounded-md overflow-hidden border">
                                       <img
                                         src={(application.licenseFrontUrl || '').startsWith('data:') ? application.licenseFrontUrl : (application.licenseFront ? `/uploads/${application.licenseFront}` : '')}
                                         alt="License"
-                                        className="w-full h-20 object-cover"
+                                        className="w-full h-16 object-cover"
                                         onClick={() => openPreview(((application.licenseFrontUrl || '').startsWith('data:') ? application.licenseFrontUrl : (application.licenseFront ? `/uploads/${application.licenseFront}` : '')), 'License')}
                                       />
-                                      <div className="px-2 py-1 text-[10px] text-center bg-blue-50 text-blue-700">License</div>
+                                      <div className="px-1 py-0.5 text-[10px] text-center bg-blue-50 text-blue-700">Lic</div>
                                     </div>
                                   ) : (
                                     <button
                                       type="button"
                                       onClick={() => openPreview((application.licenseFrontUrl || `/uploads/${application.licenseFront}`), 'License')}
-                                      className="px-2 py-2 text-xs rounded-lg bg-blue-50 text-blue-700"
-                                    >📄 License (PDF)</button>
+                                      className="px-2 py-1 text-[11px] rounded-md bg-blue-50 text-blue-700"
+                                    >📄 Lic</button>
                                   )
                                 )}
                                 {/* Bond Preview */}
                                 {(application.bondProofUrl || application.bondProof) && (
                                   ((application.bondProofUrl || application.bondProof).startsWith('data:') || /\.(png|jpg|jpeg|webp)$/i.test(application.bondProof || '')) ? (
-                                    <div className="rounded-lg overflow-hidden border">
+                                    <div className="rounded-md overflow-hidden border">
                                       <img
                                         src={(application.bondProofUrl || '').startsWith('data:') ? application.bondProofUrl : (application.bondProof ? `/uploads/${application.bondProof}` : '')}
                                         alt="Bond"
-                                        className="w-full h-20 object-cover"
+                                        className="w-full h-16 object-cover"
                                         onClick={() => openPreview(((application.bondProofUrl || '').startsWith('data:') ? application.bondProofUrl : (application.bondProof ? `/uploads/${application.bondProof}` : '')), 'Bond Proof')}
                                       />
-                                      <div className="px-2 py-1 text-[10px] text-center bg-green-50 text-green-700">Bond</div>
+                                      <div className="px-1 py-0.5 text-[10px] text-center bg-green-50 text-green-700">Bond</div>
                                     </div>
                                   ) : (
                                     <button
                                       type="button"
                                       onClick={() => openPreview((application.bondProofUrl || `/uploads/${application.bondProof}`), 'Bond Proof')}
-                                      className="px-2 py-2 text-xs rounded-lg bg-green-50 text-green-700"
-                                    >💰 Bond (PDF)</button>
+                                      className="px-2 py-1 text-[11px] rounded-md bg-green-50 text-green-700"
+                                    >💰 Bond</button>
                                   )
                                 )}
                                 {/* Rent Preview */}
                                 {(application.rentProofUrl || application.rentProof) && (
                                   ((application.rentProofUrl || application.rentProof).startsWith('data:') || /\.(png|jpg|jpeg|webp)$/i.test(application.rentProof || '')) ? (
-                                    <div className="rounded-lg overflow-hidden border">
+                                    <div className="rounded-md overflow-hidden border">
                                       <img
                                         src={(application.rentProofUrl || '').startsWith('data:') ? application.rentProofUrl : (application.rentProof ? `/uploads/${application.rentProof}` : '')}
                                         alt="Rent"
-                                        className="w-full h-20 object-cover"
+                                        className="w-full h-16 object-cover"
                                         onClick={() => openPreview(((application.rentProofUrl || '').startsWith('data:') ? application.rentProofUrl : (application.rentProof ? `/uploads/${application.rentProof}` : '')), 'Rent Proof')}
                                       />
-                                      <div className="px-2 py-1 text-[10px] text-center bg-purple-50 text-purple-700">Rent</div>
+                                      <div className="px-1 py-0.5 text-[10px] text-center bg-purple-50 text-purple-700">Rent</div>
                                     </div>
                                   ) : (
                                     <button
                                       type="button"
                                       onClick={() => openPreview((application.rentProofUrl || `/uploads/${application.rentProof}`), 'Rent Proof')}
-                                      className="px-2 py-2 text-xs rounded-lg bg-purple-50 text-purple-700"
-                                    >💳 Rent (PDF)</button>
+                                      className="px-2 py-1 text-[11px] rounded-md bg-purple-50 text-purple-700"
+                                    >💳 Rent</button>
                                   )
                                 )}
                               </div>
