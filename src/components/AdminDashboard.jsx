@@ -54,6 +54,11 @@ const AdminDashboard = () => {
     fetchData();
   }, []);
 
+  // Force default tab to "applications" on initial mount
+  useEffect(() => {
+    setActiveTab('applications');
+  }, []);
+
   const fetchData = async () => {
     try {
       console.log('Fetching data...');
