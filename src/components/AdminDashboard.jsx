@@ -612,34 +612,67 @@ const AdminDashboard = () => {
                               </span>
                             </div>
                             <div>
-                              <span className="font-medium text-gray-900">Documents:</span><br/>
-                              <div className="flex flex-wrap gap-2 mt-1">
+                              <span className="font-medium text-gray-900">Documents:</span>
+                              <div className="mt-2 grid grid-cols-3 gap-2 max-w-[360px]">
+                                {/* License Preview */}
                                 {application.licenseFront && (
-                                  <button
-                                    type="button"
-                                    onClick={() => window.open(`/uploads/${application.licenseFront}`, '_blank')}
-                                    className="inline-flex items-center px-2.5 py-1.5 text-xs bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200 transition-colors"
-                                  >
-                                    📄 License
-                                  </button>
+                                  (application.licenseFront.startsWith('data:') || /\.(png|jpg|jpeg|webp)$/i.test(application.licenseFront)) ? (
+                                    <div className="rounded-lg overflow-hidden border">
+                                      <img
+                                        src={application.licenseFront.startsWith('data:') ? application.licenseFront : `/uploads/${application.licenseFront}`}
+                                        alt="License"
+                                        className="w-full h-20 object-cover"
+                                        onClick={() => window.open(application.licenseFront.startsWith('data:') ? application.licenseFront : `/uploads/${application.licenseFront}`, '_blank')}
+                                      />
+                                      <div className="px-2 py-1 text-[10px] text-center bg-blue-50 text-blue-700">License</div>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => window.open(`/uploads/${application.licenseFront}`, '_blank')}
+                                      className="px-2 py-2 text-xs rounded-lg bg-blue-50 text-blue-700"
+                                    >📄 License (PDF)</button>
+                                  )
                                 )}
+                                {/* Bond Preview */}
                                 {application.bondProof && (
-                                  <button
-                                    type="button"
-                                    onClick={() => window.open(`/uploads/${application.bondProof}`, '_blank')}
-                                    className="inline-flex items-center px-2.5 py-1.5 text-xs bg-green-100 text-green-800 rounded-full hover:bg-green-200 transition-colors"
-                                  >
-                                    💰 Bond
-                                  </button>
+                                  (application.bondProof.startsWith('data:') || /\.(png|jpg|jpeg|webp)$/i.test(application.bondProof)) ? (
+                                    <div className="rounded-lg overflow-hidden border">
+                                      <img
+                                        src={application.bondProof.startsWith('data:') ? application.bondProof : `/uploads/${application.bondProof}`}
+                                        alt="Bond"
+                                        className="w-full h-20 object-cover"
+                                        onClick={() => window.open(application.bondProof.startsWith('data:') ? application.bondProof : `/uploads/${application.bondProof}`, '_blank')}
+                                      />
+                                      <div className="px-2 py-1 text-[10px] text-center bg-green-50 text-green-700">Bond</div>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => window.open(`/uploads/${application.bondProof}`, '_blank')}
+                                      className="px-2 py-2 text-xs rounded-lg bg-green-50 text-green-700"
+                                    >💰 Bond (PDF)</button>
+                                  )
                                 )}
+                                {/* Rent Preview */}
                                 {application.rentProof && (
-                                  <button
-                                    type="button"
-                                    onClick={() => window.open(`/uploads/${application.rentProof}`, '_blank')}
-                                    className="inline-flex items-center px-2.5 py-1.5 text-xs bg-purple-100 text-purple-800 rounded-full hover:bg-purple-200 transition-colors"
-                                  >
-                                    💳 Rent
-                                  </button>
+                                  (application.rentProof.startsWith('data:') || /\.(png|jpg|jpeg|webp)$/i.test(application.rentProof)) ? (
+                                    <div className="rounded-lg overflow-hidden border">
+                                      <img
+                                        src={application.rentProof.startsWith('data:') ? application.rentProof : `/uploads/${application.rentProof}`}
+                                        alt="Rent"
+                                        className="w-full h-20 object-cover"
+                                        onClick={() => window.open(application.rentProof.startsWith('data:') ? application.rentProof : `/uploads/${application.rentProof}`, '_blank')}
+                                      />
+                                      <div className="px-2 py-1 text-[10px] text-center bg-purple-50 text-purple-700">Rent</div>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => window.open(`/uploads/${application.rentProof}`, '_blank')}
+                                      className="px-2 py-2 text-xs rounded-lg bg-purple-50 text-purple-700"
+                                    >💳 Rent (PDF)</button>
+                                  )
                                 )}
                               </div>
                             </div>
