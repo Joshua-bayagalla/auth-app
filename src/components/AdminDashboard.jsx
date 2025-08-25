@@ -49,6 +49,11 @@ const AdminDashboard = () => {
     contractPeriod: '',
     bondAmount: '1000',
     weeklyRent: '200',
+    licenseFront: null,
+    licenseBack: null,
+    bondProof: null,
+    rentProof: null,
+    contractDoc: null,
   });
   const [formData, setFormData] = useState({
     make: '',
@@ -495,8 +500,7 @@ const AdminDashboard = () => {
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Photo</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rates</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pricing</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
@@ -516,7 +520,7 @@ const AdminDashboard = () => {
                                 <Car className="w-8 h-8 text-gray-400" />
                               </div>
                             )}
-                          </div>
+                      </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
@@ -529,18 +533,8 @@ const AdminDashboard = () => {
                       </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          <div>Daily: ${vehicle.dailyRate}</div>
-                          <div>Weekly: ${vehicle.weeklyRate}</div>
-                          <div>Monthly: ${vehicle.monthlyRate}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            vehicle.status === 'available' ? 'bg-green-100 text-green-800' :
-                            vehicle.status === 'rented' ? 'bg-blue-100 text-blue-800' :
-                            'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {vehicle.status}
-                          </span>
+                          <div>Bond: ${vehicle.bondAmount || 0}</div>
+                          <div>Weekly: ${vehicle.rentPerWeek || 0}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
@@ -639,7 +633,7 @@ const AdminDashboard = () => {
                               <div>
                                 <div className="font-medium text-gray-900">
                                   🚗 {application.vehicleMake} {application.vehicleModel}
-            </div>
+                  </div>
                                 {application.vehicleLicensePlate && (
                                   <div className="text-gray-600">Plate: {application.vehicleLicensePlate}</div>
                                 )}
@@ -649,7 +643,7 @@ const AdminDashboard = () => {
                                 {application.vehicleYear && (
                                   <div className="text-gray-600">Year: {application.vehicleYear}</div>
                                 )}
-              </div>
+                  </div>
             ) : (
                               <span className="text-gray-400">No vehicle selected</span>
                             )}
@@ -658,7 +652,7 @@ const AdminDashboard = () => {
                               <div>💳 Bond: ${application.bondAmount}</div>
                               <div>💰 Weekly: ${application.weeklyRent}</div>
                 </div>
-                            </div>
+              </div>
                           </td>
                         <td className="hidden xl:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">
                           <div className="space-y-2 text-xs">
@@ -667,13 +661,13 @@ const AdminDashboard = () => {
                               <span className="text-gray-600">
                                 {application.createdAt ? new Date(application.createdAt).toLocaleDateString() : 'N/A'}
                                 </span>
-                              </div>
+            </div>
                             <div>
                               <span className="font-medium text-gray-900">Next Rent Date:</span><br/>
                               <span className="text-gray-600">
                                 {application.nextRentDate ? new Date(application.nextRentDate).toLocaleDateString() : 'Weekly'}
                               </span>
-                              </div>
+                </div>
                             <div>
                               <span className="font-medium text-gray-900">Documents:</span>
                               <div className="mt-2 grid grid-cols-3 gap-1 max-w-[280px]">
@@ -688,8 +682,8 @@ const AdminDashboard = () => {
                                         onClick={() => openPreview(((application.licenseFrontUrl || '').startsWith('data:') ? application.licenseFrontUrl : (application.licenseFront ? `/uploads/${application.licenseFront}` : '')), 'License')}
                                       />
                                       <div className="px-1 py-0.5 text-[10px] text-center bg-blue-50 text-blue-700">Lic</div>
-                                </div>
-                                  ) : (
+              </div>
+            ) : (
                                     <button
                                       type="button"
                                       onClick={() => openPreview((application.licenseFrontUrl || `/uploads/${application.licenseFront}`), 'License')}
@@ -708,7 +702,7 @@ const AdminDashboard = () => {
                                         onClick={() => openPreview(((application.bondProofUrl || '').startsWith('data:') ? application.bondProofUrl : (application.bondProof ? `/uploads/${application.bondProof}` : '')), 'Bond Proof')}
                                       />
                                       <div className="px-1 py-0.5 text-[10px] text-center bg-green-50 text-green-700">Bond</div>
-                                    </div>
+                </div>
                                   ) : (
                                     <button
                                       type="button"
@@ -742,27 +736,12 @@ const AdminDashboard = () => {
                             </div>
                           </td>
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                          <div className="space-y-2">
-                              <button
-                              onClick={() => handleViewApplicationDetails(application)}
-                              className="w-full px-3 py-2 bg-purple-600 text-white text-xs rounded-lg hover:bg-purple-700 transition-colors mb-2"
-                              >
-                              👁️ View Details
-                              </button>
-                              <button
-                              onClick={() => handleApplicationAction(application.id, 'approve')}
-                              className="w-full px-3 py-2 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors mb-2"
-                              >
-                              ✅ Approve
-                              </button>
-                              <button
-                              onClick={() => handleApplicationAction(application.id, 'reject')}
-                              className="w-full px-3 py-2 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors"
-                              >
-                              ❌ Reject
-                              </button>
-                            </div>
-                          </td>
+                          <div className="flex flex-col gap-1 min-w-[120px]">
+                            <button onClick={() => handleViewApplicationDetails(application)} className="px-2 py-1 text-[11px] rounded-md bg-purple-600 text-white hover:bg-purple-700">View</button>
+                            <button onClick={() => handleApplicationAction(application.id, 'approve')} className="px-2 py-1 text-[11px] rounded-md bg-green-600 text-white hover:bg-green-700">Approve</button>
+                            <button onClick={() => handleApplicationAction(application.id, 'reject')} className="px-2 py-1 text-[11px] rounded-md bg-red-600 text-white hover:bg-red-700">Reject</button>
+                          </div>
+                        </td>
                         </tr>
                       ))}
                     </tbody>
@@ -777,18 +756,18 @@ const AdminDashboard = () => {
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-900">Expiry Alerts</h2>
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-              <div className="overflow-x-auto">
+                <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
+                    <thead className="bg-gray-50">
+                      <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Document</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expiry Date</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Days Left</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
                     {/* Driver Documents */}
                     {drivers.filter(d => d.documents && d.documents.some(doc => {
                       const expiryDate = new Date(doc.expiryDate);
@@ -817,8 +796,8 @@ const AdminDashboard = () => {
                               <div className="flex items-center">
                                 <AlertTriangle className="w-4 h-4 text-yellow-500 mr-2" />
                                 <span className="text-sm font-medium text-gray-900">{doc.documentType}</span>
-            </div>
-                            </td>
+                            </div>
+                          </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {driver.firstName} {driver.lastName} (Driver)
                             </td>
@@ -832,8 +811,8 @@ const AdminDashboard = () => {
                                 'bg-yellow-100 text-yellow-800'
                               }`}>
                                 {diffDays} days
-                              </span>
-                            </td>
+                                </span>
+                          </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                               <button className="text-blue-600 hover:text-blue-900">
                                 Send Reminder
@@ -896,7 +875,7 @@ const AdminDashboard = () => {
                               <div className="flex items-center">
                                 <AlertTriangle className="w-4 h-4 text-yellow-500 mr-2" />
                                 <span className="text-sm font-medium text-gray-900">{doc.type}</span>
-              </div>
+                            </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {vehicle.make} {vehicle.model} (Vehicle)
@@ -917,15 +896,15 @@ const AdminDashboard = () => {
                               <button className="text-blue-600 hover:text-blue-900">
                                 Send Reminder
                               </button>
-                            </td>
-                          </tr>
+                          </td>
+                        </tr>
                         );
                       });
                     })}
-                  </tbody>
-                </table>
-                      </div>
-                  </div>
+                    </tbody>
+                  </table>
+            </div>
+              </div>
           </div>
         );
 
@@ -959,18 +938,18 @@ const AdminDashboard = () => {
                       <tr key={driver.id} className="hover:bg-gray-50">
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <div className="space-y-2">
-                      <div>
+                    <div>
                               <div className="text-sm font-medium text-gray-900">
                                 {driver.firstName} {driver.lastName}
-                      </div>
+                    </div>
                               <div className="text-xs text-gray-500">
                                 ID: {driver.id}
-                              </div>
-                            </div>
+                      </div>
+                  </div>
                             <div className="text-xs text-gray-600">
                               <div>📧 {driver.email}</div>
                               <div>📱 {driver.phone}</div>
-                            </div>
+                      </div>
                           </div>
                         </td>
                         <td className="hidden md:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">
@@ -1019,41 +998,21 @@ const AdminDashboard = () => {
                               <span className="text-gray-600">
                                 {driver.nextRentDate ? new Date(driver.nextRentDate).toLocaleDateString() : 'Weekly'}
                               </span>
-                            </div>
+                    </div>
                             <div>
                               <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                                 Active
                               </span>
-                            </div>
+                </div>
                           </div>
                         </td>
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                          <div className="space-y-2">
-                      <button
-                              onClick={() => handleViewDriverDetails(driver)}
-                              className="w-full px-3 py-2 bg-purple-600 text-white text-xs rounded-lg hover:bg-purple-700 transition-colors mb-2"
-                      >
-                              👁️ View Details
-                      </button>
-                          <button
-                              onClick={() => handleEditDriver(driver)}
-                              className="w-full px-3 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors mb-2"
-                      >
-                              ✏️ Edit
-                      </button>
-                      <button
-                              onClick={() => handleDeleteDriver(driver.id)}
-                              className="w-full px-3 py-2 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors mb-2"
-                      >
-                              🗑️ Delete
-                      </button>
-                            <button 
-                              onClick={() => handleSendDocuments(driver)}
-                              className="w-full px-3 py-2 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors"
-                            >
-                              📧 Send Docs
-                            </button>
-                    </div>
+                          <div className="flex flex-col gap-1 min-w-[120px]">
+                            <button onClick={() => handleViewDriverDetails(driver)} className="px-2 py-1 text-[11px] rounded-md bg-purple-600 text-white hover:bg-purple-700">View</button>
+                            <button onClick={() => handleEditDriver(driver)} className="px-2 py-1 text-[11px] rounded-md bg-blue-600 text-white hover:bg-blue-700">Edit</button>
+                            <button onClick={() => handleDeleteDriver(driver.id)} className="px-2 py-1 text-[11px] rounded-md bg-red-600 text-white hover:bg-red-700">Delete</button>
+                            <button onClick={() => handleSendDocuments(driver)} className="px-2 py-1 text-[11px] rounded-md bg-green-600 text-white hover:bg-green-700">Send Docs</button>
+                          </div>
                         </td>
                       </tr>
               ))}
@@ -1695,17 +1654,16 @@ const AdminDashboard = () => {
             <form
               onSubmit={async (e) => {
                 e.preventDefault();
-                const response = await fetch('/api/drivers', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(driverForm)
-                });
+                const fd = new FormData();
+                Object.entries(driverForm).forEach(([k,v]) => { if (v) fd.append(k, v); });
+                const response = await fetch('/api/drivers', { method: 'POST', body: fd });
                 if (response.ok) {
                   setShowAddDriver(false);
                   setDriverForm({
                     firstName: '', lastName: '', email: '', phone: '', licenseNumber: '', licenseExpiry: '',
                     address: '', emergencyContact: '', emergencyPhone: '', selectedVehicleId: '',
-                    contractStartDate: '', contractEndDate: '', contractPeriod: '', bondAmount: '1000', weeklyRent: '200'
+                    contractStartDate: '', contractEndDate: '', contractPeriod: '', bondAmount: '1000', weeklyRent: '200',
+                    licenseFront: null, licenseBack: null, bondProof: null, rentProof: null, contractDoc: null
                   });
                   fetchData();
                 } else {
@@ -1716,6 +1674,28 @@ const AdminDashboard = () => {
               className="space-y-6"
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">License Front</label>
+                    <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, licenseFront: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">License Back</label>
+                    <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, licenseBack: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Bond Proof</label>
+                    <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, bondProof: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Rent Proof</label>
+                    <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, rentProof: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Contract Document</label>
+                    <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, contractDoc: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
+                  </div>
+                </div>
                     <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
                   <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.firstName} onChange={(e)=>setDriverForm({...driverForm, firstName:e.target.value})} required />
