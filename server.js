@@ -1115,7 +1115,7 @@ app.post('/api/drivers', (req, res, next) => {
     }
     next();
   });
-}, (req, res) => {
+}, async (req, res) => {
   try {
     const {
       firstName,
@@ -1144,10 +1144,28 @@ app.post('/api/drivers', (req, res, next) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Check if driver with same email or license number already exists
-    const existingDriver = drivers.find(d => 
-      d.email === email || d.licenseNumber === licenseNumber
-    );
+    // Try database first, fallback to in-memory
+    const driversCollection = getDriversCollection();
+    let existingDriver = null;
+    
+    if (driversCollection) {
+      try {
+        existingDriver = await driversCollection.findOne({ 
+          $or: [{ email }, { licenseNumber }] 
+        });
+      } catch (dbError) {
+        console.error('Database error:', dbError);
+        // Fallback to in-memory check
+        existingDriver = drivers.find(d => 
+          d.email === email || d.licenseNumber === licenseNumber
+        );
+      }
+    } else {
+      // Use in-memory storage
+      existingDriver = drivers.find(d => 
+        d.email === email || d.licenseNumber === licenseNumber
+      );
+    }
     
     if (existingDriver) {
       return res.status(400).json({ error: 'Driver with this email or license number already exists' });
@@ -1155,7 +1173,21 @@ app.post('/api/drivers', (req, res, next) => {
 
     // Check if selected vehicle exists and is available
     if (selectedVehicleId) {
-      const selectedVehicle = vehicles.find(v => v.id === parseInt(selectedVehicleId));
+      const vehiclesCollection = getVehiclesCollection();
+      let selectedVehicle = null;
+      
+      if (vehiclesCollection) {
+        try {
+          selectedVehicle = await vehiclesCollection.findOne({ id: parseInt(selectedVehicleId) });
+        } catch (dbError) {
+          console.error('Database error:', dbError);
+          // Fallback to in-memory
+          selectedVehicle = vehicles.find(v => v.id === parseInt(selectedVehicleId));
+        }
+      } else {
+        selectedVehicle = vehicles.find(v => v.id === parseInt(selectedVehicleId));
+      }
+      
       if (!selectedVehicle) {
         return res.status(400).json({ error: 'Selected vehicle not found' });
       }
@@ -1213,18 +1245,56 @@ app.post('/api/drivers', (req, res, next) => {
       updatedAt: new Date().toISOString()
     };
 
-    drivers.push(newDriver);
+    // Save to database or in-memory
+    if (driversCollection) {
+      try {
+        await driversCollection.insertOne(newDriver);
+      } catch (dbError) {
+        console.error('Database save error:', dbError);
+        // Fallback to in-memory
+        drivers.push(newDriver);
+        saveData(users, verificationTokens, vehicles, drivers);
+      }
+    } else {
+      // Use in-memory storage
+      drivers.push(newDriver);
+      saveData(users, verificationTokens, vehicles, drivers);
+    }
     
     // Update vehicle status if assigned
     if (selectedVehicleId) {
-      const vehicleIndex = vehicles.findIndex(v => v.id === parseInt(selectedVehicleId));
-      if (vehicleIndex !== -1) {
-        vehicles[vehicleIndex].status = 'assigned';
-        vehicles[vehicleIndex].assignedDriverId = newDriver.id;
+      const vehiclesCollection = getVehiclesCollection();
+      if (vehiclesCollection) {
+        try {
+          await vehiclesCollection.updateOne(
+            { id: parseInt(selectedVehicleId) },
+            { 
+              $set: { 
+                status: 'assigned', 
+                assignedDriverId: newDriver.id 
+              } 
+            }
+          );
+        } catch (dbError) {
+          console.error('Database vehicle update error:', dbError);
+          // Fallback to in-memory
+          const vehicleIndex = vehicles.findIndex(v => v.id === parseInt(selectedVehicleId));
+          if (vehicleIndex !== -1) {
+            vehicles[vehicleIndex].status = 'assigned';
+            vehicles[vehicleIndex].assignedDriverId = newDriver.id;
+            saveData(users, verificationTokens, vehicles, drivers);
+          }
+        }
+      } else {
+        // Use in-memory storage
+        const vehicleIndex = vehicles.findIndex(v => v.id === parseInt(selectedVehicleId));
+        if (vehicleIndex !== -1) {
+          vehicles[vehicleIndex].status = 'assigned';
+          vehicles[vehicleIndex].assignedDriverId = newDriver.id;
+          saveData(users, verificationTokens, vehicles, drivers);
+        }
       }
     }
-    
-    saveData(users, verificationTokens, vehicles, drivers);
 
     console.log('Driver added:', newDriver);
     res.status(201).json({ message: 'Driver added successfully', driver: newDriver });
@@ -1234,18 +1304,51 @@ app.post('/api/drivers', (req, res, next) => {
   }
 });
 
-app.get('/api/drivers', (req, res) => {
+app.get('/api/drivers', async (req, res) => {
   try {
-    // Include vehicle details for each driver
-    const driversWithVehicles = drivers.map(driver => {
-      const vehicle = driver.selectedVehicleId ? 
-        vehicles.find(v => v.id === driver.selectedVehicleId) : null;
-      return {
-        ...driver,
-        vehicle
-      };
-    });
-    res.json(driversWithVehicles);
+    const driversCollection = getDriversCollection();
+    const vehiclesCollection = getVehiclesCollection();
+    
+    if (driversCollection && vehiclesCollection) {
+      try {
+        const driversFromDB = await driversCollection.find({}).toArray();
+        const vehiclesFromDB = await vehiclesCollection.find({}).toArray();
+        
+        // Include vehicle details for each driver
+        const driversWithVehicles = driversFromDB.map(driver => {
+          const vehicle = driver.selectedVehicleId ? 
+            vehiclesFromDB.find(v => v.id === driver.selectedVehicleId) : null;
+          return {
+            ...driver,
+            vehicle
+          };
+        });
+        res.json(driversWithVehicles);
+      } catch (dbError) {
+        console.error('Database error:', dbError);
+        // Fallback to in-memory
+        const driversWithVehicles = drivers.map(driver => {
+          const vehicle = driver.selectedVehicleId ? 
+            vehicles.find(v => v.id === driver.selectedVehicleId) : null;
+          return {
+            ...driver,
+            vehicle
+          };
+        });
+        res.json(driversWithVehicles);
+      }
+    } else {
+      // Use in-memory storage
+      const driversWithVehicles = drivers.map(driver => {
+        const vehicle = driver.selectedVehicleId ? 
+          vehicles.find(v => v.id === driver.selectedVehicleId) : null;
+        return {
+          ...driver,
+          vehicle
+        };
+      });
+      res.json(driversWithVehicles);
+    }
   } catch (error) {
     console.error('Error fetching drivers:', error);
     res.status(500).json({ error: 'Internal server error' });
