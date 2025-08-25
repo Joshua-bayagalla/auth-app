@@ -32,19 +32,24 @@ const QRRentalApplication = () => {
     emergencyContact: '',
     emergencyPhone: '',
     
+    // Vehicle Details
+    make: '',
+    model: '',
+    color: '',
+    year: '',
+    licensePlate: '',
+    
     // Contract Details
     weeklyRent: '',
-    
-    // New Contract Fields
     vehicleType: '',
     vehicleRego: '',
     contractPeriod: '',
     securityBond: '',
-    bondAmount: '',
+    bondAmount: '1000',
     insuranceExcess25: '1300',
     insuranceExcess21: '1800',
-    agreedKmsPerWeek: '',
-    dailyRate: '',
+    agreedKmsPerWeek: '1000',
+    dailyRate: '28',
     lateFeePercentage: '5',
     noticePeriodWeeks: '2',
     
@@ -336,6 +341,71 @@ const QRRentalApplication = () => {
                       <h5 className="font-medium text-gray-900 border-b pb-2">🚗 Vehicle Details</h5>
                       
                       <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Make *</label>
+                        <input
+                          type="text"
+                          name="make"
+                          value={formData.make || ''}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="e.g., Toyota"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Model *</label>
+                        <input
+                          type="text"
+                          name="model"
+                          value={formData.model || ''}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="e.g., Camry"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Color *</label>
+                        <input
+                          type="text"
+                          name="color"
+                          value={formData.color || ''}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="e.g., Silver"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Year *</label>
+                        <input
+                          type="number"
+                          name="year"
+                          value={formData.year || ''}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="e.g., 2020"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">License Plate *</label>
+                        <input
+                          type="text"
+                          name="licensePlate"
+                          value={formData.licensePlate || ''}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                          placeholder="e.g., ABC123"
+                        />
+                      </div>
+                      
+                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Type</label>
                         <select
                           name="vehicleType"
@@ -377,11 +447,6 @@ const QRRentalApplication = () => {
                           placeholder="e.g., 195"
                         />
                       </div>
-                    </div>
-                    
-                    {/* Financial Terms */}
-                    <div className="space-y-4">
-                      <h5 className="font-medium text-gray-900 border-b pb-2">💰 Financial Terms</h5>
                       
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Security Bond (AUD)</label>
@@ -395,37 +460,8 @@ const QRRentalApplication = () => {
                           placeholder="e.g., 2000"
                         />
                       </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Insurance Excess - 25+ years (AUD)</label>
-                        <input
-                          type="number"
-                          name="insuranceExcess25"
-                          value={formData.insuranceExcess25 || '1300'}
-                          onChange={handleInputChange}
-                          required
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="1300"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Insurance Excess - 21-24 years (AUD)</label>
-                        <input
-                          type="number"
-                          name="insuranceExcess21"
-                          value={formData.insuranceExcess21 || '1800'}
-                          onChange={handleInputChange}
-                          required
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="1800"
-                        />
-                      </div>
                     </div>
-                  </div>
-                  
-                  {/* Additional Contract Fields */}
-                  <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
                     {/* Contract Terms */}
                     <div className="space-y-4">
                       <h5 className="font-medium text-gray-900 border-b pb-2">📜 Contract Terms</h5>
@@ -440,49 +476,6 @@ const QRRentalApplication = () => {
                           required
                           className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                           placeholder="e.g., 12 months"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Agreed KMs per Week</label>
-                        <input
-                          type="number"
-                          name="agreedKmsPerWeek"
-                          value={formData.agreedKmsPerWeek || ''}
-                          onChange={handleInputChange}
-                          required
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="e.g., 1000"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Daily Rate (AUD)</label>
-                        <input
-                          type="number"
-                          name="dailyRate"
-                          value={formData.dailyRate || ''}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="e.g., 195"
-                        />
-                      </div>
-                    </div>
-                    
-                    {/* Additional Details */}
-                    <div className="space-y-4">
-                      <h5 className="font-medium text-gray-900 border-b pb-2">📋 Additional Details</h5>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Bond Amount (AUD)</label>
-                        <input
-                          type="number"
-                          name="bondAmount"
-                          value={formData.bondAmount || ''}
-                          onChange={handleInputChange}
-                          required
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="e.g., 2000"
                         />
                       </div>
                       
@@ -512,6 +505,8 @@ const QRRentalApplication = () => {
                     </div>
                   </div>
                   
+
+                  
                   {/* Contract Terms */}
                   <div className="mt-8 space-y-4">
                     <h5 className="font-medium text-gray-900 border-b pb-2">📜 Contract Terms & Conditions</h5>
@@ -519,7 +514,7 @@ const QRRentalApplication = () => {
                     <div className="bg-white rounded-xl p-4 space-y-3 text-sm">
                       <div className="flex items-start space-x-2">
                         <span className="font-medium text-indigo-600">1.</span>
-                        <span>The Lessor will rent out a <strong>{formData.vehicleType || '_____'}</strong> (Rego: <strong>{formData.vehicleRego || '_____'}</strong>) to the Lessee. Weekly rent: <strong>AU${formData.weeklyRent || '_____'}/Week</strong></span>
+                        <span>The Lessor will rent out a <strong>{formData.make || '_____'}</strong> <strong>{formData.model || '_____'}</strong> <strong>{formData.color || '_____'}</strong> <strong>{formData.year || '_____'}</strong> (License: <strong>{formData.licensePlate || '_____'}</strong>) to the Lessee. Weekly rent: <strong>AU${formData.weeklyRent || '_____'}/Week</strong></span>
                       </div>
                       
                       <div className="flex items-start space-x-2">
@@ -564,12 +559,12 @@ const QRRentalApplication = () => {
                       
                       <div className="flex items-start space-x-2">
                         <span className="font-medium text-indigo-600">10.</span>
-                        <span>Agreed kilometers per week: <strong>{formData.agreedKmsPerWeek || '_____'}</strong> km. Lessee must notify for service when within 500km of marked odometer reading.</span>
+                        <span>Agreed kilometers per week: <strong>{formData.agreedKmsPerWeek || '1000'}</strong> km. Lessee must notify for service when within 500km of marked odometer reading.</span>
                       </div>
                       
                       <div className="flex items-start space-x-2">
                         <span className="font-medium text-indigo-600">11.</span>
-                        <span>Daily rate: <strong>AU${formData.dailyRate || '_____'}</strong>/day. Bond amount: <strong>AU${formData.bondAmount || '_____'}</strong>.</span>
+                        <span>Daily rate: <strong>AU${formData.dailyRate || '28'}</strong>/day. Bond amount: <strong>AU${formData.bondAmount || '1000'}</strong>.</span>
                       </div>
                       
                       <div className="flex items-start space-x-2">
