@@ -569,15 +569,37 @@ const AdminDashboard = () => {
       case 'maintenance':
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Maintenance Management</h2>
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <div className="text-center text-gray-500">
-                <Wrench className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <p>No maintenance records found</p>
-                <p className="text-sm">Maintenance tracking will be available soon</p>
+            <h2 className="text-2xl font-bold text-gray-900">Maintenance</h2>
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plate</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Next Service</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {vehicles.filter(v => v.status === 'maintenance').map(v => (
+                      <tr key={v.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{v.make} {v.model}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{v.licensePlate}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{v.nextServiceDate || '—'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <button onClick={() => handleUpdateVehicleStatus(v, 'available')} className="px-3 py-1 text-[12px] rounded-md bg-green-600 text-white hover:bg-green-700">Mark Available</button>
+                        </td>
+                      </tr>
+                    ))}
+                    {vehicles.filter(v => v.status === 'maintenance').length === 0 && (
+                      <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500">No vehicles in maintenance</td></tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
-                  </div>
+          </div>
         );
 
       case 'applications':
