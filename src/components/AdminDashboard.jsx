@@ -30,6 +30,9 @@ const AdminDashboard = () => {
   const [showAddDriver, setShowAddDriver] = useState(false);
   const [showDriverDetails, setShowDriverDetails] = useState(false);
   const [selectedDriver, setSelectedDriver] = useState(null);
+  const [showDocPreview, setShowDocPreview] = useState(false);
+  const [previewDocUrl, setPreviewDocUrl] = useState('');
+  const [previewDocTitle, setPreviewDocTitle] = useState('');
   const [driverForm, setDriverForm] = useState({
     firstName: '',
     lastName: '',
@@ -368,6 +371,26 @@ const AdminDashboard = () => {
     setShowDriverDetails(true);
   };
 
+  const openPreview = (url, title) => {
+    if (!url) return;
+    setPreviewDocUrl(url);
+    setPreviewDocTitle(title || 'Document');
+    setShowDocPreview(true);
+  };
+
+  const downloadFile = (url, filename) => {
+    try {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename || 'document';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      window.open(url, '_blank');
+    }
+  };
+
   const getStats = () => {
     const totalVehicles = vehicles.length;
     const availableVehicles = vehicles.filter(v => v.status === 'available').length;
@@ -622,14 +645,14 @@ const AdminDashboard = () => {
                                         src={(application.licenseFrontUrl || '').startsWith('data:') ? application.licenseFrontUrl : (application.licenseFront ? `/uploads/${application.licenseFront}` : '')}
                                         alt="License"
                                         className="w-full h-20 object-cover"
-                                        onClick={() => window.open(((application.licenseFrontUrl || '').startsWith('data:') ? application.licenseFrontUrl : (application.licenseFront ? `/uploads/${application.licenseFront}` : '')), '_blank')}
+                                        onClick={() => openPreview(((application.licenseFrontUrl || '').startsWith('data:') ? application.licenseFrontUrl : (application.licenseFront ? `/uploads/${application.licenseFront}` : '')), 'License')}
                                       />
                                       <div className="px-2 py-1 text-[10px] text-center bg-blue-50 text-blue-700">License</div>
                                     </div>
                                   ) : (
                                     <button
                                       type="button"
-                                      onClick={() => window.open((application.licenseFrontUrl || `/uploads/${application.licenseFront}`), '_blank')}
+                                      onClick={() => openPreview((application.licenseFrontUrl || `/uploads/${application.licenseFront}`), 'License')}
                                       className="px-2 py-2 text-xs rounded-lg bg-blue-50 text-blue-700"
                                     >📄 License (PDF)</button>
                                   )
@@ -642,14 +665,14 @@ const AdminDashboard = () => {
                                         src={(application.bondProofUrl || '').startsWith('data:') ? application.bondProofUrl : (application.bondProof ? `/uploads/${application.bondProof}` : '')}
                                         alt="Bond"
                                         className="w-full h-20 object-cover"
-                                        onClick={() => window.open(((application.bondProofUrl || '').startsWith('data:') ? application.bondProofUrl : (application.bondProof ? `/uploads/${application.bondProof}` : '')), '_blank')}
+                                        onClick={() => openPreview(((application.bondProofUrl || '').startsWith('data:') ? application.bondProofUrl : (application.bondProof ? `/uploads/${application.bondProof}` : '')), 'Bond Proof')}
                                       />
                                       <div className="px-2 py-1 text-[10px] text-center bg-green-50 text-green-700">Bond</div>
                                     </div>
                                   ) : (
                                     <button
                                       type="button"
-                                      onClick={() => window.open((application.bondProofUrl || `/uploads/${application.bondProof}`), '_blank')}
+                                      onClick={() => openPreview((application.bondProofUrl || `/uploads/${application.bondProof}`), 'Bond Proof')}
                                       className="px-2 py-2 text-xs rounded-lg bg-green-50 text-green-700"
                                     >💰 Bond (PDF)</button>
                                   )
@@ -662,14 +685,14 @@ const AdminDashboard = () => {
                                         src={(application.rentProofUrl || '').startsWith('data:') ? application.rentProofUrl : (application.rentProof ? `/uploads/${application.rentProof}` : '')}
                                         alt="Rent"
                                         className="w-full h-20 object-cover"
-                                        onClick={() => window.open(((application.rentProofUrl || '').startsWith('data:') ? application.rentProofUrl : (application.rentProof ? `/uploads/${application.rentProof}` : '')), '_blank')}
+                                        onClick={() => openPreview(((application.rentProofUrl || '').startsWith('data:') ? application.rentProofUrl : (application.rentProof ? `/uploads/${application.rentProof}` : '')), 'Rent Proof')}
                                       />
                                       <div className="px-2 py-1 text-[10px] text-center bg-purple-50 text-purple-700">Rent</div>
                                     </div>
                                   ) : (
                                     <button
                                       type="button"
-                                      onClick={() => window.open((application.rentProofUrl || `/uploads/${application.rentProof}`), '_blank')}
+                                      onClick={() => openPreview((application.rentProofUrl || `/uploads/${application.rentProof}`), 'Rent Proof')}
                                       className="px-2 py-2 text-xs rounded-lg bg-purple-50 text-purple-700"
                                     >💳 Rent (PDF)</button>
                                   )
@@ -1842,80 +1865,55 @@ const AdminDashboard = () => {
               <div className="bg-gray-50 rounded-xl p-4">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">📄 Documents</h3>
                 <div className="space-y-3">
-                  {selectedDriver.licenseFront && (
+                  {(selectedDriver.licenseFrontUrl || selectedDriver.licenseFront) && (
                     <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
                       <div className="flex items-center space-x-2">
                         <FileText className="w-5 h-5 text-blue-600" />
                         <span className="text-sm font-medium">License Front</span>
                       </div>
-                      <button
-                        onClick={() => window.open(`/uploads/${selectedDriver.licenseFront}`, '_blank')}
-                        className="px-3 py-1 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        📥 Download
-                      </button>
+                      <div className="space-x-2">
+                        <button onClick={() => openPreview((selectedDriver.licenseFrontUrl || `/uploads/${selectedDriver.licenseFront}`), 'License Front')} className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-lg hover:bg-blue-100 transition-colors">Preview</button>
+                        <button onClick={() => downloadFile((selectedDriver.licenseFrontUrl || `/uploads/${selectedDriver.licenseFront}`), selectedDriver.licenseFront || 'license-front')} className="px-3 py-1 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors">📥 Download</button>
+                      </div>
                     </div>
                   )}
-                  
-                  {selectedDriver.licenseBack && (
+                  {(selectedDriver.licenseBackUrl || selectedDriver.licenseBack) && (
                     <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
                       <div className="flex items-center space-x-2">
                         <FileText className="w-5 h-5 text-blue-600" />
                         <span className="text-sm font-medium">License Back</span>
                       </div>
-                      <button
-                        onClick={() => window.open(`/uploads/${selectedDriver.licenseBack}`, '_blank')}
-                        className="px-3 py-1 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        📥 Download
-                      </button>
+                      <div className="space-x-2">
+                        <button onClick={() => openPreview((selectedDriver.licenseBackUrl || `/uploads/${selectedDriver.licenseBack}`), 'License Back')} className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-lg hover:bg-blue-100 transition-colors">Preview</button>
+                        <button onClick={() => downloadFile((selectedDriver.licenseBackUrl || `/uploads/${selectedDriver.licenseBack}`), selectedDriver.licenseBack || 'license-back')} className="px-3 py-1 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors">📥 Download</button>
+                      </div>
                     </div>
                   )}
-                  
-                  {selectedDriver.bondProof && (
+                  {(selectedDriver.bondProofUrl || selectedDriver.bondProof) && (
                     <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
                       <div className="flex items-center space-x-2">
                         <FileText className="w-5 h-5 text-green-600" />
                         <span className="text-sm font-medium">Bond Proof</span>
                       </div>
-                      <button
-                        onClick={() => window.open(`/uploads/${selectedDriver.bondProof}`, '_blank')}
-                        className="px-3 py-1 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors"
-                      >
-                        📥 Download
-                      </button>
+                      <div className="space-x-2">
+                        <button onClick={() => openPreview((selectedDriver.bondProofUrl || `/uploads/${selectedDriver.bondProof}`), 'Bond Proof')} className="px-3 py-1 bg-green-50 text-green-700 text-xs rounded-lg hover:bg-green-100 transition-colors">Preview</button>
+                        <button onClick={() => downloadFile((selectedDriver.bondProofUrl || `/uploads/${selectedDriver.bondProof}`), selectedDriver.bondProof || 'bond-proof')} className="px-3 py-1 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors">📥 Download</button>
+                      </div>
                     </div>
                   )}
-                  
-                  {selectedDriver.rentProof && (
-                    <div className="flex items-center space-x-2 p-3 bg-white rounded-lg border">
-                      <FileText className="w-5 h-5 text-green-600" />
-                      <span className="text-sm font-medium">Rent Proof</span>
-                      <button
-                        onClick={() => window.open(`/uploads/${selectedDriver.rentProof}`, '_blank')}
-                        className="px-3 py-1 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition-colors"
-                      >
-                        📥 Download
-                      </button>
-                    </div>
-                  )}
-                  
-                  {selectedDriver.contractDocument && (
+                  {(selectedDriver.rentProofUrl || selectedDriver.rentProof) && (
                     <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
                       <div className="flex items-center space-x-2">
                         <FileText className="w-5 h-5 text-purple-600" />
-                        <span className="text-sm font-medium">Contract Document</span>
+                        <span className="text-sm font-medium">Rent Proof</span>
                       </div>
-                      <button
-                        onClick={() => window.open(`/uploads/${selectedDriver.contractDocument}`, '_blank')}
-                        className="px-3 py-1 bg-purple-600 text-white text-xs rounded-lg hover:bg-purple-700 transition-colors"
-                      >
-                        📥 Download
-                      </button>
+                      <div className="space-x-2">
+                        <button onClick={() => openPreview((selectedDriver.rentProofUrl || `/uploads/${selectedDriver.rentProof}`), 'Rent Proof')} className="px-3 py-1 bg-purple-50 text-purple-700 text-xs rounded-lg hover:bg-purple-100 transition-colors">Preview</button>
+                        <button onClick={() => downloadFile((selectedDriver.rentProofUrl || `/uploads/${selectedDriver.rentProof}`), selectedDriver.rentProof || 'rent-proof')} className="px-3 py-1 bg-purple-600 text-white text-xs rounded-lg hover:bg-purple-700 transition-colors">📥 Download</button>
+                      </div>
                     </div>
                   )}
-                  
-                  {!selectedDriver.licenseFront && !selectedDriver.licenseBack && !selectedDriver.bondProof && !selectedDriver.rentProof && !selectedDriver.contractDocument && (
+                  {!selectedDriver.licenseFrontUrl && !selectedDriver.licenseFront && !selectedDriver.licenseBackUrl && !selectedDriver.licenseBack && !selectedDriver.bondProofUrl && !selectedDriver.bondProof && !selectedDriver.rentProofUrl && !selectedDriver.rentProof && (
                     <p className="text-gray-500 text-sm">No documents uploaded yet.</p>
                   )}
                 </div>
@@ -1974,6 +1972,26 @@ const AdminDashboard = () => {
                   </button>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showDocPreview && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowDocPreview(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden" onClick={(e)=>e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold">{previewDocTitle}</h3>
+              <div className="space-x-2">
+                <button onClick={() => downloadFile(previewDocUrl, previewDocTitle)} className="px-3 py-1 bg-blue-600 text-white text-xs rounded-lg">📥 Download</button>
+                <button onClick={() => setShowDocPreview(false)} className="px-3 py-1 border rounded-lg">Close</button>
+              </div>
+            </div>
+            <div className="p-4 bg-gray-50">
+              {previewDocUrl.startsWith('data:application/pdf') ? (
+                <iframe src={previewDocUrl} title="document" className="w-full h-[70vh]" />
+              ) : (
+                <img src={previewDocUrl} alt="document" className="max-h-[75vh] w-auto mx-auto object-contain" />
+              )}
             </div>
           </div>
         </div>
