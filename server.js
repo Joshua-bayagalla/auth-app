@@ -1042,7 +1042,31 @@ app.delete('/api/vehicles/:id', (req, res) => {
 });
 
 // Driver management endpoints
-app.post('/api/drivers', (req, res) => {
+// Multer for admin-added driver uploads
+const uploadDriverDocs = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = /jpeg|jpg|png|webp|pdf/;
+    if (allowed.test(file.mimetype)) return cb(null, true);
+    return cb(new Error('Only images or PDFs allowed'));
+  }
+}).fields([
+  { name: 'licenseFront', maxCount: 1 },
+  { name: 'licenseBack', maxCount: 1 },
+  { name: 'bondProof', maxCount: 1 },
+  { name: 'rentProof', maxCount: 1 },
+  { name: 'contractDoc', maxCount: 1 },
+]);
+
+app.post('/api/drivers', (req, res, next) => {
+  uploadDriverDocs(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+    next();
+  });
+}, (req, res) => {
   try {
     const {
       firstName,
@@ -1091,6 +1115,23 @@ app.post('/api/drivers', (req, res) => {
       }
     }
 
+    // Document URLs if uploaded
+    const licenseFrontUrl = req.files?.licenseFront?.[0]
+      ? `data:${req.files.licenseFront[0].mimetype};base64,${req.files.licenseFront[0].buffer.toString('base64')}`
+      : null;
+    const licenseBackUrl = req.files?.licenseBack?.[0]
+      ? `data:${req.files.licenseBack[0].mimetype};base64,${req.files.licenseBack[0].buffer.toString('base64')}`
+      : null;
+    const bondProofUrl = req.files?.bondProof?.[0]
+      ? `data:${req.files.bondProof[0].mimetype};base64,${req.files.bondProof[0].buffer.toString('base64')}`
+      : null;
+    const rentProofUrl = req.files?.rentProof?.[0]
+      ? `data:${req.files.rentProof[0].mimetype};base64,${req.files.rentProof[0].buffer.toString('base64')}`
+      : null;
+    const contractDocUrl = req.files?.contractDoc?.[0]
+      ? `data:${req.files.contractDoc[0].mimetype};base64,${req.files.contractDoc[0].buffer.toString('base64')}`
+      : null;
+
     // Create new driver
     const newDriver = {
       id: Date.now(),
@@ -1112,6 +1153,12 @@ app.post('/api/drivers', (req, res) => {
       contractSigned: contractSigned || false,
       paymentReceiptUploaded: paymentReceiptUploaded || false,
       paymentReceiptUrl: paymentReceiptUrl || null,
+      // Uploaded documents (admin-entered driver)
+      licenseFrontUrl,
+      licenseBackUrl,
+      bondProofUrl,
+      rentProofUrl,
+      contractDocUrl,
       status: status || 'pending',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
