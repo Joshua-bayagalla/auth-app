@@ -615,61 +615,61 @@ const AdminDashboard = () => {
                               <span className="font-medium text-gray-900">Documents:</span>
                               <div className="mt-2 grid grid-cols-3 gap-2 max-w-[360px]">
                                 {/* License Preview */}
-                                {application.licenseFront && (
-                                  (application.licenseFront.startsWith('data:') || /\.(png|jpg|jpeg|webp)$/i.test(application.licenseFront)) ? (
+                                { (application.licenseFrontUrl || application.licenseFront) && (
+                                  ((application.licenseFrontUrl || application.licenseFront).startsWith('data:') || /\.(png|jpg|jpeg|webp)$/i.test(application.licenseFront || '')) ? (
                                     <div className="rounded-lg overflow-hidden border">
                                       <img
-                                        src={application.licenseFront.startsWith('data:') ? application.licenseFront : `/uploads/${application.licenseFront}`}
+                                        src={(application.licenseFrontUrl || '').startsWith('data:') ? application.licenseFrontUrl : (application.licenseFront ? `/uploads/${application.licenseFront}` : '')}
                                         alt="License"
                                         className="w-full h-20 object-cover"
-                                        onClick={() => window.open(application.licenseFront.startsWith('data:') ? application.licenseFront : `/uploads/${application.licenseFront}`, '_blank')}
+                                        onClick={() => window.open(((application.licenseFrontUrl || '').startsWith('data:') ? application.licenseFrontUrl : (application.licenseFront ? `/uploads/${application.licenseFront}` : '')), '_blank')}
                                       />
                                       <div className="px-2 py-1 text-[10px] text-center bg-blue-50 text-blue-700">License</div>
                                     </div>
                                   ) : (
                                     <button
                                       type="button"
-                                      onClick={() => window.open(`/uploads/${application.licenseFront}`, '_blank')}
+                                      onClick={() => window.open((application.licenseFrontUrl || `/uploads/${application.licenseFront}`), '_blank')}
                                       className="px-2 py-2 text-xs rounded-lg bg-blue-50 text-blue-700"
                                     >📄 License (PDF)</button>
                                   )
                                 )}
                                 {/* Bond Preview */}
-                                {application.bondProof && (
-                                  (application.bondProof.startsWith('data:') || /\.(png|jpg|jpeg|webp)$/i.test(application.bondProof)) ? (
+                                {(application.bondProofUrl || application.bondProof) && (
+                                  ((application.bondProofUrl || application.bondProof).startsWith('data:') || /\.(png|jpg|jpeg|webp)$/i.test(application.bondProof || '')) ? (
                                     <div className="rounded-lg overflow-hidden border">
                                       <img
-                                        src={application.bondProof.startsWith('data:') ? application.bondProof : `/uploads/${application.bondProof}`}
+                                        src={(application.bondProofUrl || '').startsWith('data:') ? application.bondProofUrl : (application.bondProof ? `/uploads/${application.bondProof}` : '')}
                                         alt="Bond"
                                         className="w-full h-20 object-cover"
-                                        onClick={() => window.open(application.bondProof.startsWith('data:') ? application.bondProof : `/uploads/${application.bondProof}`, '_blank')}
+                                        onClick={() => window.open(((application.bondProofUrl || '').startsWith('data:') ? application.bondProofUrl : (application.bondProof ? `/uploads/${application.bondProof}` : '')), '_blank')}
                                       />
                                       <div className="px-2 py-1 text-[10px] text-center bg-green-50 text-green-700">Bond</div>
                                     </div>
                                   ) : (
                                     <button
                                       type="button"
-                                      onClick={() => window.open(`/uploads/${application.bondProof}`, '_blank')}
+                                      onClick={() => window.open((application.bondProofUrl || `/uploads/${application.bondProof}`), '_blank')}
                                       className="px-2 py-2 text-xs rounded-lg bg-green-50 text-green-700"
                                     >💰 Bond (PDF)</button>
                                   )
                                 )}
                                 {/* Rent Preview */}
-                                {application.rentProof && (
-                                  (application.rentProof.startsWith('data:') || /\.(png|jpg|jpeg|webp)$/i.test(application.rentProof)) ? (
+                                {(application.rentProofUrl || application.rentProof) && (
+                                  ((application.rentProofUrl || application.rentProof).startsWith('data:') || /\.(png|jpg|jpeg|webp)$/i.test(application.rentProof || '')) ? (
                                     <div className="rounded-lg overflow-hidden border">
                                       <img
-                                        src={application.rentProof.startsWith('data:') ? application.rentProof : `/uploads/${application.rentProof}`}
+                                        src={(application.rentProofUrl || '').startsWith('data:') ? application.rentProofUrl : (application.rentProof ? `/uploads/${application.rentProof}` : '')}
                                         alt="Rent"
                                         className="w-full h-20 object-cover"
-                                        onClick={() => window.open(application.rentProof.startsWith('data:') ? application.rentProof : `/uploads/${application.rentProof}`, '_blank')}
+                                        onClick={() => window.open(((application.rentProofUrl || '').startsWith('data:') ? application.rentProofUrl : (application.rentProof ? `/uploads/${application.rentProof}` : '')), '_blank')}
                                       />
                                       <div className="px-2 py-1 text-[10px] text-center bg-purple-50 text-purple-700">Rent</div>
                                     </div>
                                   ) : (
                                     <button
                                       type="button"
-                                      onClick={() => window.open(`/uploads/${application.rentProof}`, '_blank')}
+                                      onClick={() => window.open((application.rentProofUrl || `/uploads/${application.rentProof}`), '_blank')}
                                       className="px-2 py-2 text-xs rounded-lg bg-purple-50 text-purple-700"
                                     >💳 Rent (PDF)</button>
                                   )
