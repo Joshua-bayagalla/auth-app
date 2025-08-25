@@ -483,30 +483,6 @@ const QRRentalApplication = () => {
                           placeholder="e.g., 12 months"
                         />
                       </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Late Fee Percentage</label>
-                        <input
-                          type="number"
-                          name="lateFeePercentage"
-                          value={formData.lateFeePercentage || '5'}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="5"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Notice Period (Weeks)</label>
-                        <input
-                          type="number"
-                          name="noticePeriodWeeks"
-                          value={formData.noticePeriodWeeks || '2'}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                          placeholder="2"
-                        />
-                      </div>
                     </div>
                   </div>
                   
@@ -514,77 +490,138 @@ const QRRentalApplication = () => {
                   
                   {/* Contract Terms */}
                   <div className="mt-8 space-y-4">
-                    <h5 className="font-medium text-gray-900 border-b pb-2">📜 Contract Terms & Conditions</h5>
+                    <h5 className="font-medium text-gray-900 border-b pb-2">📜 SK Car Rental Agreement</h5>
                     
-                    <div className="bg-white rounded-xl p-4 space-y-3 text-sm">
-                      <div className="flex items-start space-x-2">
-                        <span className="font-medium text-indigo-600">1.</span>
-                        <span>The Lessor will rent out a <strong>{formData.make || '_____'}</strong> <strong>{formData.model || '_____'}</strong> <strong>{formData.color || '_____'}</strong> <strong>{formData.year || '_____'}</strong> (License: <strong>{formData.licensePlate || '_____'}</strong>) to the Lessee. Weekly rent: <strong>AU${formData.weeklyRent || '_____'}/Week</strong></span>
+                    <div className="bg-white rounded-xl p-6 space-y-4 text-sm leading-relaxed">
+                      <div className="text-center font-semibold text-lg text-gray-900 mb-4">
+                        SK Car Rental Agreement
                       </div>
                       
-                      <div className="flex items-start space-x-2">
-                        <span className="font-medium text-indigo-600">2.</span>
-                        <span>Security bond of <strong>AU${formData.securityBond || '_____'}</strong> must be deposited in advance and is refundable upon vehicle return in undisputed condition.</span>
+                      <p className="text-gray-700">
+                        This rental agreement has been made between two parties; hereafter called party-1 (Owner/Lessor of the Car) residing at <strong>SK Car Rental, Victoria, Australia</strong> and contact number <strong>+61411766786</strong> and Party-2 (The Lessee) named as <strong>{formData.firstName || '_____'} {formData.lastName || '_____'}</strong> holder of the driving licence <strong>{formData.licensePlate || '_____'}</strong> residing at <strong>{formData.address || '_____'}</strong>.
+                      </p>
+                      
+                      <p className="text-gray-700">
+                        This agreement has been agreed, understood, and signed on <strong>{new Date().toLocaleDateString()}</strong> at <strong>Victoria, Australia</strong> under the following terms and conditions:
+                      </p>
+                      
+                      <div className="space-y-3">
+                        <div className="flex items-start space-x-2">
+                          <span className="font-medium text-indigo-600">1.</span>
+                          <span>The Lessor (SK Car Rental) will rent out his/her <strong>{formData.vehicleType || 'Sedan'}</strong> (Rego: <strong>{formData.vehicleRego || '_____'}</strong>) to The Lessee (<strong>{formData.firstName || '_____'} {formData.lastName || '_____'}</strong>) in clean and road worthy condition with marked fuel level in accordance with pictures of the car taken at the time of the handover on the weekly rent <strong>AU${formData.weeklyRent || '_____'}/Week</strong>.</span>
+                        </div>
+                        
+                        <div className="flex items-start space-x-2">
+                          <span className="font-medium text-indigo-600">2.</span>
+                          <span>The lessee will deposit security bond in advance of <strong>AU${formData.securityBond || '_____'}</strong> (As a security deposit to the lessor). The security bond amount will be refundable at the time of return of the vehicle in the undisputed condition including body, seats and interior in the best condition referring to the initial photos.</span>
+                        </div>
+                        
+                        <div className="flex items-start space-x-2">
+                          <span className="font-medium text-indigo-600">3.</span>
+                          <span>Insurance Excess (driver on fault) at and above 25 years driver is <strong>AU${formData.insuranceExcess25 || '1300'}</strong>, but in case of 21-24 years it will be <strong>AU${formData.insuranceExcess21 || '1800'}</strong>. According to car insurance policy if driver is on fault, then replacement car or income loss will not be covered in the policy and the driver will be required to pay Excess as per the insurance policy. The security deposit will be forfeited to maintain the running expenses of the vehicle if it takes more than two weeks to be fixed.</span>
+                        </div>
+                        
+                        <div className="flex items-start space-x-2">
+                          <span className="font-medium text-indigo-600">4.</span>
+                          <span>Glass and Glass screen are not protected under insurance policy standards and if any damage happened due to any reason, driver will be responsible to get it fixed. It is highly advisable that do not drive close to concrete vehicles for your and vehicle safety.</span>
+                        </div>
+                        
+                        <div className="flex items-start space-x-2">
+                          <span className="font-medium text-indigo-600">5.</span>
+                          <span>In case of collision with Cyclist or pedestrian, initially driver must pay the Excess fee to fix the car, does not matter who is on fault. If the insurance recovered all repairing expenses from third party so driver will get his money back.</span>
+                        </div>
+                        
+                        <div className="flex items-start space-x-2">
+                          <span className="font-medium text-indigo-600">6.</span>
+                          <span>Two weeks no information, update and due delays or what soever it may be, the lessor will be entitled report stolen car.</span>
+                        </div>
+                        
+                        <div className="flex items-start space-x-2">
+                          <span className="font-medium text-indigo-600">7.</span>
+                          <span>During of the use of the car all responsibilities of any accident or damage to the vehicle or any third-party involvement, the lessee will be responsible for all liabilities whatsoever it may be.</span>
+                        </div>
+                        
+                        <div className="flex items-start space-x-2">
+                          <span className="font-medium text-indigo-600">8.</span>
+                          <span>The lessee will use the car for rideshare ONLY under his name and shall not handover the car to anyone else.</span>
+                        </div>
+                        
+                        <div className="flex items-start space-x-2">
+                          <span className="font-medium text-indigo-600">9.</span>
+                          <span>The lessee will provide details to add his name in the insurance policy as additional driver.</span>
+                        </div>
+                        
+                        <div className="flex items-start space-x-2">
+                          <span className="font-medium text-indigo-600">10.</span>
+                          <span>It is the lessor's responsibility to arrange all the documentation and inspection paperwork before the initial pick up of the vehicle, however; during the use of the car, the lessee must ensure the vehicle is taken to service/inspection/repair appointments whenever & wherever it is required. The lessor provides the vehicle in a roadworthy condition, however; if tyres puncture/burst during the possession of the vehicle with the lessee, it will be his/her responsibility to fix the tyre/s to a roadworthy condition.</span>
+                        </div>
+                        
+                        <div className="flex items-start space-x-2">
+                          <span className="font-medium text-indigo-600">11.</span>
+                          <span>The lessor will provide a genuine key for the vehicle, and it is the responsibility of the lessee to return the same key; however, if the original key is misplaced, it is the lessee's responsibility to provide a genuine and programmed key from the vehicle make dealership.</span>
+                        </div>
+                        
+                        <div className="flex items-start space-x-2">
+                          <span className="font-medium text-indigo-600">12.</span>
+                          <span>This lease term is <strong>{formData.contractPeriod || '_____'}</strong> and it extendable with mutual agreement of both parties.</span>
+                        </div>
+                        
+                        <div className="flex items-start space-x-2">
+                          <span className="font-medium text-indigo-600">13.</span>
+                          <span>The lessee will notify to the lessor to book the service with 500 km variation on either side of the odometer marked on the screen by the mechanic.</span>
+                        </div>
+                        
+                        <div className="flex items-start space-x-2">
+                          <span className="font-medium text-indigo-600">14.</span>
+                          <span>The lessee will be required to give minimum <strong>{formData.noticePeriodWeeks || '2'}</strong> weeks advance notice prior to the termination of the lease. The notice will be considered only if all dues are cleared on the day of notice.</span>
+                        </div>
+                        
+                        <div className="flex items-start space-x-2">
+                          <span className="font-medium text-indigo-600">15.</span>
+                          <span>If the vehicle is returned with shorter notice period, or in un sanitized or messy condition then the security deposit will be adjusted according to the notice.</span>
+                        </div>
+                        
+                        <div className="flex items-start space-x-2">
+                          <span className="font-medium text-indigo-600">16.</span>
+                          <span>The lessee can use the vehicle only for the legal activities in accordance with the law and only under his name as a registered driver for rideshare purpose in Victoria state only. It is lessee responsibility to inform the owner before traveling out of Victoria and the rent will be <strong>AU${formData.dailyRate || '28'}/day</strong>. The vehicle cannot be used for any person whose name is not included in the insurance.</span>
+                        </div>
+                        
+                        <div className="flex items-start space-x-2">
+                          <span className="font-medium text-indigo-600">17.</span>
+                          <span>In case of any conflict, this agreement will be used as a legal document to deal with as agreed both the parties.</span>
+                        </div>
+                        
+                        <div className="flex items-start space-x-2">
+                          <span className="font-medium text-indigo-600">18.</span>
+                          <span>Each week rent will be paid in advance. Late rent will be charge with <strong>{formData.lateFeePercentage || '5'}%</strong> late fee.</span>
+                        </div>
+                        
+                        <div className="flex items-start space-x-2">
+                          <span className="font-medium text-indigo-600">19.</span>
+                          <span>Agreed Kms per week or for each service: <strong>{formData.agreedKmsPerWeek || '1000'} Kms</strong>.</span>
+                        </div>
                       </div>
                       
-                      <div className="flex items-start space-x-2">
-                        <span className="font-medium text-indigo-600">3.</span>
-                        <span>Insurance excess: <strong>AU${formData.insuranceExcess25 || '1300'}</strong> for drivers 25+ years, <strong>AU${formData.insuranceExcess21 || '1800'}</strong> for drivers 21-24 years.</span>
+                      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-gray-200">
+                        <div>
+                          <p className="font-medium text-gray-900 mb-2">Lessor</p>
+                          <p className="text-gray-700">Name: <strong>SK Car Rental</strong></p>
+                          <p className="text-gray-700">Signature: _________________</p>
+                          <p className="text-gray-700">Dated: <strong>{new Date().toLocaleDateString()}</strong></p>
+                        </div>
+                        
+                        <div>
+                          <p className="font-medium text-gray-900 mb-2">Lessee</p>
+                          <p className="text-gray-700">Name: <strong>{formData.firstName || '_____'} {formData.lastName || '_____'}</strong></p>
+                          <p className="text-gray-700">Signature: _________________</p>
+                          <p className="text-gray-700">Dated: <strong>{new Date().toLocaleDateString()}</strong></p>
+                        </div>
                       </div>
                       
-                      <div className="flex items-start space-x-2">
-                        <span className="font-medium text-indigo-600">4.</span>
-                        <span>Glass and glass screen damage are not covered under insurance. Driver is responsible for all glass repairs.</span>
-                      </div>
-                      
-                      <div className="flex items-start space-x-2">
-                        <span className="font-medium text-indigo-600">5.</span>
-                        <span>Vehicle can only be used for rideshare purposes under the lessee's name in Victoria state only.</span>
-                      </div>
-                      
-                      <div className="flex items-start space-x-2">
-                        <span className="font-medium text-indigo-600">6.</span>
-                        <span>Lessee must give minimum <strong>{formData.noticePeriodWeeks || '2'}</strong> weeks notice before terminating the lease.</span>
-                      </div>
-                      
-                      <div className="flex items-start space-x-2">
-                        <span className="font-medium text-indigo-600">7.</span>
-                        <span>Weekly rent must be paid in advance. <strong>{formData.lateFeePercentage || '5'}%</strong> late fee applies for late payments.</span>
-                      </div>
-                      
-                      <div className="flex items-start space-x-2">
-                        <span className="font-medium text-indigo-600">8.</span>
-                        <span>Vehicle must be maintained in roadworthy condition. Lessee responsible for tyre punctures and regular servicing.</span>
-                      </div>
-                      
-                      <div className="flex items-start space-x-2">
-                        <span className="font-medium text-indigo-600">9.</span>
-                        <span>Contract period: <strong>{formData.contractPeriod || '_____'}</strong> with option to extend by mutual agreement.</span>
-                      </div>
-                      
-                      <div className="flex items-start space-x-2">
-                        <span className="font-medium text-indigo-600">10.</span>
-                        <span>Agreed kilometers per week: <strong>{formData.agreedKmsPerWeek || '1000'}</strong> km. Lessee must notify for service when within 500km of marked odometer reading.</span>
-                      </div>
-                      
-                      <div className="flex items-start space-x-2">
-                        <span className="font-medium text-indigo-600">11.</span>
-                        <span>Daily rate: <strong>AU${formData.dailyRate || '28'}</strong>/day. Bond amount: <strong>AU${formData.bondAmount || '1000'}</strong>.</span>
-                      </div>
-                      
-                      <div className="flex items-start space-x-2">
-                        <span className="font-medium text-indigo-600">12.</span>
-                        <span>Lessee is responsible for all liabilities during vehicle use, including accidents, damage, and third-party involvement.</span>
-                      </div>
-                      
-                      <div className="flex items-start space-x-2">
-                        <span className="font-medium text-indigo-600">13.</span>
-                        <span>Vehicle keys must be returned. If lost, lessee must provide genuine programmed key from vehicle dealership.</span>
-                      </div>
-                      
-                      <div className="flex items-start space-x-2">
-                        <span className="font-medium text-indigo-600">14.</span>
-                        <span>This agreement serves as a legal document for conflict resolution between parties.</span>
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <p className="font-medium text-gray-900 mb-2">Witness</p>
+                        <p className="text-gray-700">Name: _________________</p>
+                        <p className="text-gray-700">Signature: _________________</p>
                       </div>
                     </div>
                   </div>
