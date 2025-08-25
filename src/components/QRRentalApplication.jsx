@@ -335,7 +335,7 @@ const QRRentalApplication = () => {
                 <div className="bg-gray-50 rounded-xl p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-6">📋 Contract Details</h3>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Vehicle Information */}
                     <div className="space-y-4">
                       <h5 className="font-medium text-gray-900 border-b pb-2">🚗 Vehicle Details</h5>
@@ -404,6 +404,11 @@ const QRRentalApplication = () => {
                           placeholder="e.g., ABC123"
                         />
                       </div>
+                    </div>
+                    
+                    {/* Additional Vehicle Details */}
+                    <div className="space-y-4">
+                      <h5 className="font-medium text-gray-900 border-b pb-2">📋 Additional Details</h5>
                       
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle Type</label>
@@ -615,128 +620,116 @@ const QRRentalApplication = () => {
                 <h2 className="text-2xl font-bold text-gray-900">Payment Information</h2>
               </div>
               
-              {/* Highlighted Bank Details */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl p-8 border-2 border-blue-200 mb-8">
-                <h3 className="text-xl font-bold text-blue-900 mb-6 text-center">🏦 Payment Methods</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Business Account - For Weekly Rent */}
-                  <div className="bg-white rounded-xl p-6 border-2 border-blue-400 shadow-lg">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center">
-                        <CreditCard className="w-6 h-6 text-blue-600 mr-2" />
-                        <h4 className="text-lg font-semibold text-blue-900">💰 Weekly Rent Payment</h4>
-                      </div>
-                      <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">Business Account</span>
+              {/* Bond Payment Section */}
+              <div className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-2xl p-8 border-2 border-green-200 mb-6">
+                <h3 className="text-xl font-bold text-green-900 mb-6 text-center">💳 Bond Payment</h3>
+                
+                {/* Bond Payment Details */}
+                <div className="bg-white rounded-xl p-6 border-2 border-green-400 shadow-lg mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center">
+                      <Upload className="w-6 h-6 text-green-600 mr-2" />
+                      <h4 className="text-lg font-semibold text-green-900">PAYID Payment</h4>
                     </div>
-                    <div className="space-y-3 text-sm">
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">Account Name:</span>
-                        <span className="text-blue-900 font-semibold">Kamboh logistics pty ltd</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">BSB:</span>
-                        <span className="text-blue-900 font-semibold">083004</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">Account Number:</span>
-                        <span className="text-blue-900 font-semibold">787900650</span>
-                      </div>
-                    </div>
-                    <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <p className="text-blue-800 text-sm font-medium">💡 <strong>Use this Business Account to pay your weekly rent amount</strong></p>
-                      <p className="text-blue-700 text-xs mt-1">Transfer the weekly rent amount specified in your contract</p>
-                    </div>
+                    <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">PAYID</span>
                   </div>
-
-                  {/* PAYID - For Bond Amount */}
-                  <div className="bg-white rounded-xl p-6 border-2 border-green-400 shadow-lg">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center">
-                        <Upload className="w-6 h-6 text-green-600 mr-2" />
-                        <h4 className="text-lg font-semibold text-green-900">💳 Bond Payment</h4>
-                      </div>
-                      <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">PAYID</span>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">Mobile:</span>
+                      <span className="text-green-900 font-semibold">+61411766786</span>
                     </div>
-                    <div className="space-y-3 text-sm">
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">Mobile:</span>
-                        <span className="text-green-900 font-semibold">+61411766786</span>
-                      </div>
-                      <p className="text-xs text-gray-600 mt-2">Use this for instant payments</p>
-                    </div>
-                    <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
-                      <p className="text-green-800 text-sm font-medium">💡 <strong>Use PAYID to pay your bond amount (one-time payment)</strong></p>
-                      <p className="text-green-700 text-xs mt-1">Transfer the bond amount specified in your contract as a one-time payment</p>
-                    </div>
+                    <p className="text-xs text-gray-600 mt-2">Use this for instant payments</p>
                   </div>
-                </div>
-              </div>
-              
-              {/* Contract Details */}
-              <div className="bg-gray-50 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Contract Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Contract Period *</label>
-                    <input
-                      type="text"
-                      name="contractPeriod"
-                      value={formData.contractPeriod}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                      placeholder="e.g., 6 months"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Bond Amount *</label>
-                    <div className="space-y-2">
-                      <input
-                        type="number"
-                        name="bondAmount"
-                        value={formData.bondAmount}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                        placeholder="Amount in AUD"
-                      />
-                      <p className="text-xs text-green-600 font-medium">💳 Pay via PAYID (one-time payment)</p>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Weekly Rent *</label>
-                    <div className="space-y-2">
-                      <input
-                        type="number"
-                        name="weeklyRent"
-                        value={formData.weeklyRent}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                        placeholder="Amount in AUD"
-                      />
-                      <p className="text-xs text-blue-600 font-medium">🏦 Pay via Business Account (weekly)</p>
-                    </div>
+                  <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
+                    <p className="text-green-800 text-sm font-medium">💡 <strong>Use PAYID to pay your bond amount (one-time payment)</strong></p>
+                    <p className="text-green-700 text-xs mt-1">Transfer the bond amount specified in your contract as a one-time payment</p>
                   </div>
                 </div>
                 
-                {/* Payment Summary */}
-                <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-xl border border-blue-200">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-3">📋 Payment Summary</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-center space-x-2">
-                      <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
-                      <span className="text-gray-700"><strong>Business Account:</strong> Weekly rent payments</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="w-3 h-3 bg-green-500 rounded-full"></span>
-                      <span className="text-gray-700"><strong>PAYID:</strong> Bond amount (one-time)</span>
-                    </div>
+                {/* Bond Payment Upload */}
+                <div className="bg-white rounded-xl p-6 border-2 border-green-400 shadow-lg">
+                  <h4 className="text-lg font-semibold text-green-900 mb-4">📤 Bond Payment Proof</h4>
+                  <div className="border-2 border-dashed border-green-300 rounded-xl p-6 text-center hover:border-green-400 transition-colors">
+                    <Upload className="w-8 h-8 text-green-400 mx-auto mb-2" />
+                    <input
+                      type="file"
+                      name="bondProof"
+                      accept="image/*,.pdf"
+                      onChange={(e) => handleFileUpload(e, 'bondProof')}
+                      className="hidden"
+                      id="bondProof"
+                      required
+                    />
+                    <label htmlFor="bondProof" className="cursor-pointer">
+                      <p className="text-sm text-gray-600">Click to upload bond payment receipt</p>
+                      <p className="text-xs text-gray-500 mt-1">JPG, PNG, PDF up to 10MB</p>
+                    </label>
                   </div>
+                  {formData.bondProof && (
+                    <p className="text-sm text-green-600 mt-2">✓ {formData.bondProof.name}</p>
+                  )}
                 </div>
               </div>
+              
+              {/* Weekly Rent Payment Section */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl p-8 border-2 border-blue-200 mb-8">
+                <h3 className="text-xl font-bold text-blue-900 mb-6 text-center">💰 Weekly Rent Payment</h3>
+                
+                {/* Weekly Rent Payment Details */}
+                <div className="bg-white rounded-xl p-6 border-2 border-blue-400 shadow-lg mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center">
+                      <CreditCard className="w-6 h-6 text-blue-600 mr-2" />
+                      <h4 className="text-lg font-semibold text-blue-900">Business Account</h4>
+                    </div>
+                    <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">Business Account</span>
+                  </div>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">Account Name:</span>
+                      <span className="text-blue-900 font-semibold">Kamboh logistics pty ltd</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">BSB:</span>
+                      <span className="text-blue-900 font-semibold">083004</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">Account Number:</span>
+                      <span className="text-blue-900 font-semibold">787900650</span>
+                    </div>
+                  </div>
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-blue-800 text-sm font-medium">💡 <strong>Use this Business Account to pay your weekly rent amount</strong></p>
+                    <p className="text-blue-700 text-xs mt-1">Transfer the weekly rent amount specified in your contract</p>
+                  </div>
+                </div>
+                
+                {/* Weekly Rent Payment Upload */}
+                <div className="bg-white rounded-xl p-6 border-2 border-blue-400 shadow-lg">
+                  <h4 className="text-lg font-semibold text-blue-900 mb-4">📤 Weekly Rent Payment Proof</h4>
+                  <div className="border-2 border-dashed border-blue-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
+                    <Upload className="w-8 h-8 text-blue-400 mx-auto mb-2" />
+                    <input
+                      type="file"
+                      name="rentProof"
+                      accept="image/*,.pdf"
+                      onChange={(e) => handleFileUpload(e, 'rentProof')}
+                      className="hidden"
+                      id="rentProof"
+                      required
+                    />
+                    <label htmlFor="rentProof" className="cursor-pointer">
+                      <p className="text-sm text-gray-600">Click to upload weekly rent payment receipt</p>
+                      <p className="text-xs text-gray-500 mt-1">JPG, PNG, PDF up to 10MB</p>
+                    </label>
+                  </div>
+                  {formData.rentProof && (
+                    <p className="text-sm text-blue-600 mt-2">✓ {formData.rentProof.name}</p>
+                  )}
+                </div>
+              </div>
+              
+
             </div>
           )}
 
@@ -796,54 +789,7 @@ const QRRentalApplication = () => {
                     )}
                   </div>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Bond Payment Proof *</label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
-                      <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <input
-                        type="file"
-                        name="bondProof"
-                        accept="image/*,.pdf"
-                        onChange={(e) => handleFileUpload(e, 'bondProof')}
-                        className="hidden"
-                        id="bondProof"
-                        required
-                      />
-                      <label htmlFor="bondProof" className="cursor-pointer">
-                        <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
-                        <p className="text-xs text-gray-500 mt-1">Payment receipt screenshot</p>
-                      </label>
-                    </div>
-                    {formData.bondProof && (
-                      <p className="text-sm text-green-600 mt-2">✓ {formData.bondProof.name}</p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Rent Payment Proof *</label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors">
-                      <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <input
-                        type="file"
-                        name="rentProof"
-                        accept="image/*,.pdf"
-                        onChange={(e) => handleFileUpload(e, 'rentProof')}
-                        className="hidden"
-                        id="rentProof"
-                        required
-                      />
-                      <label htmlFor="rentProof" className="cursor-pointer">
-                        <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
-                        <p className="text-xs text-gray-500 mt-1">Payment receipt screenshot</p>
-                      </label>
-                    </div>
-                    {formData.rentProof && (
-                      <p className="text-sm text-green-600 mt-2">✓ {formData.rentProof.name}</p>
-                    )}
-                  </div>
-                </div>
+
               </div>
             </div>
           )}
