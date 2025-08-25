@@ -47,7 +47,13 @@ const AdminDashboard = () => {
     status: 'available',
     ownerName: '',
     photo: null,
-    vehiclePhoto: null
+    vehiclePhoto: null,
+    registrationDoc: null,
+    registrationExpiry: '',
+    insuranceDoc: null,
+    insuranceExpiry: '',
+    roadworthyDoc: null,
+    roadworthyExpiry: ''
   });
 
   useEffect(() => {
@@ -103,10 +109,10 @@ const AdminDashboard = () => {
 
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
-    if (name === 'vehiclePhoto') {
+    if (name === 'vehiclePhoto' || name === 'registrationDoc' || name === 'insuranceDoc' || name === 'roadworthyDoc') {
       setFormData(prev => ({
         ...prev,
-        vehiclePhoto: files ? files[0] : null
+        [name]: files ? files[0] : null
       }));
     } else {
       setFormData(prev => ({
@@ -145,6 +151,28 @@ const AdminDashboard = () => {
       if (formData.vehiclePhoto) {
         formDataToSend.append('vehiclePhoto', formData.vehiclePhoto);
       }
+      
+      // Add document files if they exist
+      if (formData.registrationDoc) {
+        formDataToSend.append('registrationDoc', formData.registrationDoc);
+      }
+      if (formData.insuranceDoc) {
+        formDataToSend.append('insuranceDoc', formData.insuranceDoc);
+      }
+      if (formData.roadworthyDoc) {
+        formDataToSend.append('roadworthyDoc', formData.roadworthyDoc);
+      }
+      
+      // Add expiry dates
+      if (formData.registrationExpiry) {
+        formDataToSend.append('registrationExpiry', formData.registrationExpiry);
+      }
+      if (formData.insuranceExpiry) {
+        formDataToSend.append('insuranceExpiry', formData.insuranceExpiry);
+      }
+      if (formData.roadworthyExpiry) {
+        formDataToSend.append('roadworthyExpiry', formData.roadworthyExpiry);
+      }
 
       const url = editingVehicle 
         ? `/api/vehicles/${editingVehicle.id}` 
@@ -164,7 +192,8 @@ const AdminDashboard = () => {
           make: '', model: '', year: '', licensePlate: '', vin: '', bondAmount: '1000', rentPerWeek: '200', 
           currentMileage: '', odoMeter: '', nextServiceDate: '', vehicleType: 'sedan', color: '', 
           fuelType: 'petrol', transmission: 'automatic', status: 'available', ownerName: '', 
-          photo: null, vehiclePhoto: null
+          photo: null, vehiclePhoto: null, registrationDoc: null, registrationExpiry: '', 
+          insuranceDoc: null, insuranceExpiry: '', roadworthyDoc: null, roadworthyExpiry: ''
         });
         fetchData();
       } else {
@@ -197,7 +226,13 @@ const AdminDashboard = () => {
           status: vehicle.status || 'available',
           ownerName: vehicle.ownerName || '',
           photo: null,
-          vehiclePhoto: null
+          vehiclePhoto: null,
+          registrationDoc: null,
+          registrationExpiry: vehicle.registrationExpiry || '',
+          insuranceDoc: null,
+          insuranceExpiry: vehicle.insuranceExpiry || '',
+          roadworthyDoc: null,
+          roadworthyExpiry: vehicle.roadworthyExpiry || ''
         });
     setShowAddModal(true);
   };
@@ -328,6 +363,12 @@ const AdminDashboard = () => {
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         return diffDays <= 30 && diffDays > 0;
       });
+    }).length + vehicles.filter(v => {
+      // Check for vehicle documents expiring in next 30 days
+      const today = new Date();
+      return (v.registrationExpiry && new Date(v.registrationExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.registrationExpiry) > today) ||
+             (v.insuranceExpiry && new Date(v.insuranceExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.insuranceExpiry) > today) ||
+             (v.roadworthyExpiry && new Date(v.roadworthyExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.roadworthyExpiry) > today);
     }).length;
 
     return {
@@ -515,6 +556,12 @@ const AdminDashboard = () => {
                                 {application.vehicleLicensePlate && (
                                   <div className="text-gray-600">Plate: {application.vehicleLicensePlate}</div>
                                 )}
+                                {application.vehicleColor && (
+                                  <div className="text-gray-600">Color: {application.vehicleColor}</div>
+                                )}
+                                {application.vehicleYear && (
+                                  <div className="text-gray-600">Year: {application.vehicleYear}</div>
+                                )}
                               </div>
                             ) : (
                               <span className="text-gray-400">No vehicle selected</span>
@@ -541,8 +588,24 @@ const AdminDashboard = () => {
                               </span>
                             </div>
                             <div>
-                              <span className="font-medium text-gray-900">Payment Status:</span><br/>
-                              <span className="text-green-600 font-medium">Bond Paid</span>
+                              <span className="font-medium text-gray-900">Documents:</span><br/>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {application.licenseFront && (
+                                  <span className="inline-flex items-center px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                                    📄 License
+                                  </span>
+                                )}
+                                {application.bondProof && (
+                                  <span className="inline-flex items-center px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+                                    💰 Bond
+                                  </span>
+                                )}
+                                {application.rentProof && (
+                                  <span className="inline-flex items-center px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded-full">
+                                    💳 Rent
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -594,6 +657,7 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
+                    {/* Driver Documents */}
                     {drivers.filter(d => d.documents && d.documents.some(doc => {
                       const expiryDate = new Date(doc.expiryDate);
                       const today = new Date();
@@ -616,7 +680,7 @@ const AdminDashboard = () => {
                         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                         
                         return (
-                          <tr key={`${driver.id}-${doc.id}`} className="hover:bg-gray-50">
+                          <tr key={`driver-${driver.id}-${doc.id}`} className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center">
                                 <AlertTriangle className="w-4 h-4 text-yellow-500 mr-2" />
@@ -624,7 +688,74 @@ const AdminDashboard = () => {
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {driver.firstName} {driver.lastName}
+                              {driver.firstName} {driver.lastName} (Driver)
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {expiryDate.toLocaleDateString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                diffDays <= 7 ? 'bg-red-100 text-red-800' :
+                                diffDays <= 14 ? 'bg-orange-100 text-orange-800' :
+                                'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {diffDays} days
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <button className="text-blue-600 hover:text-blue-900">
+                                Send Reminder
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      });
+                    })}
+                    
+                    {/* Vehicle Documents */}
+                    {vehicles.filter(v => {
+                      const today = new Date();
+                      return (v.registrationExpiry && new Date(v.registrationExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.registrationExpiry) > today) ||
+                             (v.insuranceExpiry && new Date(v.insuranceExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.insuranceExpiry) > today) ||
+                             (v.roadworthyExpiry && new Date(v.roadworthyExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.roadworthyExpiry) > today);
+                    }).map((vehicle) => {
+                      const today = new Date();
+                      const documents = [];
+                      
+                      if (vehicle.registrationExpiry && new Date(vehicle.registrationExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(vehicle.registrationExpiry) > today) {
+                        documents.push({
+                          type: 'Registration',
+                          expiry: vehicle.registrationExpiry
+                        });
+                      }
+                      if (vehicle.insuranceExpiry && new Date(vehicle.insuranceExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(vehicle.insuranceExpiry) > today) {
+                        documents.push({
+                          type: 'Insurance',
+                          expiry: vehicle.insuranceExpiry
+                        });
+                      }
+                      if (vehicle.roadworthyExpiry && new Date(vehicle.roadworthyExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(vehicle.roadworthyExpiry) > today) {
+                        documents.push({
+                          type: 'Roadworthy Certificate',
+                          expiry: vehicle.roadworthyExpiry
+                        });
+                      }
+                      
+                      return documents.map((doc) => {
+                        const expiryDate = new Date(doc.expiry);
+                        const diffTime = expiryDate - today;
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        
+                        return (
+                          <tr key={`vehicle-${vehicle.id}-${doc.type}`} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <AlertTriangle className="w-4 h-4 text-yellow-500 mr-2" />
+                                <span className="text-sm font-medium text-gray-900">{doc.type}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {vehicle.make} {vehicle.model} (Vehicle)
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {expiryDate.toLocaleDateString()}
@@ -1324,6 +1455,72 @@ const AdminDashboard = () => {
                     onChange={handleInputChange}
                     accept="image/*"
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Registration Document</label>
+                  <input
+                    type="file"
+                    name="registrationDoc"
+                    onChange={handleInputChange}
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Registration Expiry Date</label>
+                  <input
+                    type="date"
+                    name="registrationExpiry"
+                    value={formData.registrationExpiry}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Insurance Document</label>
+                  <input
+                    type="file"
+                    name="insuranceDoc"
+                    onChange={handleInputChange}
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Insurance Expiry Date</label>
+                  <input
+                    type="date"
+                    name="insuranceExpiry"
+                    value={formData.insuranceExpiry}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Roadworthy Certificate</label>
+                  <input
+                    type="file"
+                    name="roadworthyDoc"
+                    onChange={handleInputChange}
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Roadworthy Expiry Date</label>
+                  <input
+                    type="date"
+                    name="roadworthyExpiry"
+                    value={formData.roadworthyExpiry}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
               </div>

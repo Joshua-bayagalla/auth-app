@@ -765,8 +765,8 @@ app.post('/api/vehicles', (req, res, next) => {
         } else {
           cb(new Error('Only JPG, PNG, WEBP image files are allowed for vehicle photos!'));
         }
-      } else if (file.fieldname === 'documents') {
-        // Allow PDF, DOC, DOCX, JPG, PNG for documents
+      } else if (file.fieldname === 'registrationDoc' || file.fieldname === 'insuranceDoc' || file.fieldname === 'roadworthyDoc') {
+        // Allow PDF, DOC, DOCX, JPG, PNG for vehicle documents
         const allowedTypes = /jpeg|jpg|png|pdf|doc|docx/;
         const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
         const mimetype = allowedTypes.test(file.mimetype);
@@ -774,7 +774,7 @@ app.post('/api/vehicles', (req, res, next) => {
         if (mimetype && extname) {
           return cb(null, true);
         } else {
-          cb(new Error('Only PDF, DOC, DOCX, JPG, PNG files are allowed for documents!'));
+          cb(new Error('Only PDF, DOC, DOCX, JPG, PNG files are allowed for vehicle documents!'));
         }
       } else {
         cb(null, true);
@@ -782,7 +782,9 @@ app.post('/api/vehicles', (req, res, next) => {
     }
   }).fields([
     { name: 'vehiclePhoto', maxCount: 1 },
-    { name: 'documents', maxCount: 10 }
+    { name: 'registrationDoc', maxCount: 1 },
+    { name: 'insuranceDoc', maxCount: 1 },
+    { name: 'roadworthyDoc', maxCount: 1 }
   ]);
 
   vehicleUpload(req, res, (err) => {
@@ -797,7 +799,8 @@ app.post('/api/vehicles', (req, res, next) => {
     const {
       make, model, year, licensePlate, vin, bondAmount, rentPerWeek,
       currentMileage, odoMeter, nextServiceDate, vehicleType, color,
-      fuelType, transmission, status, ownerName
+      fuelType, transmission, status, ownerName, registrationExpiry,
+      insuranceExpiry, roadworthyExpiry
     } = req.body;
 
     // Validate required fields
@@ -811,27 +814,36 @@ app.post('/api/vehicles', (req, res, next) => {
       return res.status(400).json({ error: 'Vehicle with this license plate already exists' });
     }
 
-    // Process uploaded documents
-    const documents = [];
-    if (req.files && req.files.documents) {
-      req.files.documents.forEach((file, index) => {
-        const documentType = req.body[`documentType_${index}`] || 'other';
-        const expiryDate = req.body[`expiryDate_${index}`] || null;
-        
-        documents.push({
-          id: Date.now() + index,
-          documentType,
-          fileName: file.originalname,
-          fileUrl: `data:${file.mimetype};base64,${file.buffer.toString('base64')}`,
-          filePath: 'memory',
-          fileSize: file.size,
-          mimeType: file.mimetype,
-          expiryDate,
-          uploadedBy: 'admin',
-          uploadedAt: new Date().toISOString(),
-          status: 'active'
-        });
-      });
+    // Process uploaded vehicle documents
+    const vehicleDocuments = {};
+    if (req.files) {
+      if (req.files.registrationDoc) {
+        vehicleDocuments.registrationDoc = {
+          fileName: req.files.registrationDoc[0].originalname,
+          fileUrl: `data:${req.files.registrationDoc[0].mimetype};base64,${req.files.registrationDoc[0].buffer.toString('base64')}`,
+          fileSize: req.files.registrationDoc[0].size,
+          mimeType: req.files.registrationDoc[0].mimetype,
+          uploadedAt: new Date().toISOString()
+        };
+      }
+      if (req.files.insuranceDoc) {
+        vehicleDocuments.insuranceDoc = {
+          fileName: req.files.insuranceDoc[0].originalname,
+          fileUrl: `data:${req.files.insuranceDoc[0].mimetype};base64,${req.files.insuranceDoc[0].buffer.toString('base64')}`,
+          fileSize: req.files.insuranceDoc[0].size,
+          mimeType: req.files.insuranceDoc[0].mimetype,
+          uploadedAt: new Date().toISOString()
+        };
+      }
+      if (req.files.roadworthyDoc) {
+        vehicleDocuments.roadworthyDoc = {
+          fileName: req.files.roadworthyDoc[0].originalname,
+          fileUrl: `data:${req.files.roadworthyDoc[0].mimetype};base64,${req.files.roadworthyDoc[0].buffer.toString('base64')}`,
+          fileSize: req.files.roadworthyDoc[0].size,
+          mimeType: req.files.roadworthyDoc[0].mimetype,
+          uploadedAt: new Date().toISOString()
+        };
+      }
     }
 
     const newVehicle = {
@@ -856,7 +868,10 @@ app.post('/api/vehicles', (req, res, next) => {
       photoPath: req.files && req.files.vehiclePhoto ? 'memory' : null,
       photoName: req.files && req.files.vehiclePhoto ? req.files.vehiclePhoto[0].originalname : null,
       photoSize: req.files && req.files.vehiclePhoto ? req.files.vehiclePhoto[0].size : null,
-      documents: documents || [],
+      registrationExpiry: registrationExpiry || null,
+      insuranceExpiry: insuranceExpiry || null,
+      roadworthyExpiry: roadworthyExpiry || null,
+      vehicleDocuments: vehicleDocuments || {},
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
