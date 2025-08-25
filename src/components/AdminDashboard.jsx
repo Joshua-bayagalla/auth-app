@@ -15,7 +15,8 @@ import {
   Clock,
   TrendingUp,
   Shield,
-  X
+  X,
+  User
 } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -777,21 +778,29 @@ const AdminDashboard = () => {
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-900">Expiry Alerts</h2>
+            
+            {/* Driver Document Alerts */}
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                <div className="overflow-x-auto">
+              <div className="px-6 py-4 border-b border-gray-200 bg-blue-50">
+                <h3 className="text-lg font-semibold text-blue-900 flex items-center">
+                  <User className="w-5 h-5 mr-2" />
+                  Driver Document Alerts
+                </h3>
+              </div>
+              <div className="overflow-x-auto">
                 <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
+                  <thead className="bg-gray-50">
+                    <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Document</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Driver</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expiry Date</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Days Left</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                    {/* Driver Documents */}
-                    {drivers.filter(d => d.documents && d.documents.some(doc => {
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {drivers.filter(d => d.status === 'approved' && d.documents && d.documents.some(doc => {
                       const expiryDate = new Date(doc.expiryDate);
                       const today = new Date();
                       const diffTime = expiryDate - today;
@@ -818,10 +827,14 @@ const AdminDashboard = () => {
                               <div className="flex items-center">
                                 <AlertTriangle className="w-4 h-4 text-yellow-500 mr-2" />
                                 <span className="text-sm font-medium text-gray-900">{doc.documentType}</span>
-                            </div>
-                          </td>
+                              </div>
+                            </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {driver.firstName} {driver.lastName} (Driver)
+                              <div className="font-medium">{driver.firstName} {driver.lastName}</div>
+                              <div className="text-xs text-gray-500">ID: {driver.id}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {driver.vehicleMake} {driver.vehicleModel}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {expiryDate.toLocaleDateString()}
@@ -833,8 +846,8 @@ const AdminDashboard = () => {
                                 'bg-yellow-100 text-yellow-800'
                               }`}>
                                 {diffDays} days
-                                </span>
-                          </td>
+                              </span>
+                            </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                               <button className="text-blue-600 hover:text-blue-900">
                                 Send Reminder
@@ -844,13 +857,48 @@ const AdminDashboard = () => {
                         );
                       });
                     })}
-                    
-                    {/* Vehicle Documents */}
+                    {drivers.filter(d => d.status === 'approved' && d.documents && d.documents.some(doc => {
+                      const expiryDate = new Date(doc.expiryDate);
+                      const today = new Date();
+                      const diffTime = expiryDate - today;
+                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                      return diffDays <= 30 && diffDays > 0;
+                    })).length === 0 && (
+                      <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">No driver document alerts</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Vehicle Document Alerts */}
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200 bg-orange-50">
+                <h3 className="text-lg font-semibold text-orange-900 flex items-center">
+                  <Car className="w-5 h-5 mr-2" />
+                  Vehicle Document Alerts
+                </h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Document</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plate</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expiry Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Days Left</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
                     {vehicles.filter(v => {
                       const today = new Date();
-                      return (v.registrationExpiry && new Date(v.registrationExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.registrationExpiry) > today) ||
+                      return (v.contractExpiry && new Date(v.contractExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.contractExpiry) > today) ||
+                             (v.redBookExpiry && new Date(v.redBookExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.redBookExpiry) > today) ||
+                             (v.registrationExpiry && new Date(v.registrationExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.registrationExpiry) > today) ||
                              (v.insuranceExpiry && new Date(v.insuranceExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.insuranceExpiry) > today) ||
-                             (v.roadworthyExpiry && new Date(v.roadworthyExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.roadworthyExpiry) > today);
+                             (v.cpvExpiry && new Date(v.cpvExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.cpvExpiry) > today);
                     }).map((vehicle) => {
                       const today = new Date();
                       const documents = [];
@@ -897,10 +945,14 @@ const AdminDashboard = () => {
                               <div className="flex items-center">
                                 <AlertTriangle className="w-4 h-4 text-yellow-500 mr-2" />
                                 <span className="text-sm font-medium text-gray-900">{doc.type}</span>
-                            </div>
+                              </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {vehicle.make} {vehicle.model} (Vehicle)
+                              <div className="font-medium">{vehicle.make} {vehicle.model}</div>
+                              <div className="text-xs text-gray-500">{vehicle.vehicleType}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {vehicle.licensePlate}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {expiryDate.toLocaleDateString()}
@@ -912,21 +964,31 @@ const AdminDashboard = () => {
                                 'bg-yellow-100 text-yellow-800'
                               }`}>
                                 {diffDays} days
-                          </span>
+                              </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                               <button className="text-blue-600 hover:text-blue-900">
                                 Send Reminder
                               </button>
-                          </td>
-                        </tr>
+                            </td>
+                          </tr>
                         );
                       });
                     })}
-                    </tbody>
-                  </table>
-            </div>
+                    {vehicles.filter(v => {
+                      const today = new Date();
+                      return (v.contractExpiry && new Date(v.contractExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.contractExpiry) > today) ||
+                             (v.redBookExpiry && new Date(v.redBookExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.redBookExpiry) > today) ||
+                             (v.registrationExpiry && new Date(v.registrationExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.registrationExpiry) > today) ||
+                             (v.insuranceExpiry && new Date(v.insuranceExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.insuranceExpiry) > today) ||
+                             (v.cpvExpiry && new Date(v.cpvExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.cpvExpiry) > today);
+                    }).length === 0 && (
+                      <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">No vehicle document alerts</td></tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
+            </div>
           </div>
         );
 
@@ -1049,80 +1111,133 @@ const AdminDashboard = () => {
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-900">Payment Management</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Total Revenue</h3>
-                  <DollarSign className="w-8 h-8 text-green-600" />
-              </div>
-                <div className="text-3xl font-bold text-green-600">
-                  ${drivers.filter(d => d.status === 'approved').reduce((sum, d) => sum + (d.weeklyRent || 0), 0)}
-                </div>
-                <p className="text-sm text-gray-500 mt-2">Weekly rental income</p>
-            </div>
             
+            {/* Payment Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Pending Payments</h3>
-                  <Clock className="w-8 h-8 text-yellow-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">Total Bond Received</h3>
+                  <DollarSign className="w-8 h-8 text-blue-600" />
                 </div>
-                <div className="text-3xl font-bold text-yellow-600">
-                  {drivers.filter(d => d.status === 'pending_approval').length}
+                <div className="text-3xl font-bold text-blue-600">
+                  ${drivers.filter(d => d.status === 'approved').reduce((sum, d) => sum + (parseInt(d.bondAmount) || 0), 0)}
+                </div>
+                <p className="text-sm text-gray-500 mt-2">Security deposits collected</p>
               </div>
-                <p className="text-sm text-gray-500 mt-2">Applications awaiting approval</p>
+              
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Weekly Rent Income</h3>
+                  <DollarSign className="w-8 h-8 text-green-600" />
+                </div>
+                <div className="text-3xl font-bold text-green-600">
+                  ${drivers.filter(d => d.status === 'approved').reduce((sum, d) => sum + (parseInt(d.weeklyRent) || 0), 0)}
+                </div>
+                <p className="text-sm text-gray-500 mt-2">Per week from all rentals</p>
               </div>
               
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">Active Rentals</h3>
-                  <CheckCircle className="w-8 h-8 text-blue-600" />
-                      </div>
-                <div className="text-3xl font-bold text-blue-600">
+                  <CheckCircle className="w-8 h-8 text-purple-600" />
+                </div>
+                <div className="text-3xl font-bold text-purple-600">
                   {drivers.filter(d => d.status === 'approved').length}
                 </div>
                 <p className="text-sm text-gray-500 mt-2">Currently active contracts</p>
-                          </div>
-                        </div>
+              </div>
+              
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Pending Applications</h3>
+                  <Clock className="w-8 h-8 text-yellow-600" />
+                </div>
+                <div className="text-3xl font-bold text-yellow-600">
+                  {drivers.filter(d => d.status === 'pending_approval').length}
+                </div>
+                <p className="text-sm text-gray-500 mt-2">Awaiting approval</p>
+              </div>
+            </div>
 
+            {/* Detailed Payment Table */}
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Recent Payments</h3>
-                                  </div>
+                <h3 className="text-lg font-semibold text-gray-900">Vehicle Payment Details</h3>
+              </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Renter</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Driver</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bond Amount</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Weekly Rent</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Received</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {drivers.filter(d => d.status === 'approved').map((driver) => (
-                      <tr key={driver.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {driver.firstName} {driver.lastName}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {driver.vehicleMake} {driver.vehicleModel}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          ${driver.weeklyRent}/week
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                            Active
-                                    </span>
+                    {drivers.filter(d => d.status === 'approved').map((driver) => {
+                      const bondAmount = parseInt(driver.bondAmount) || 0;
+                      const weeklyRent = parseInt(driver.weeklyRent) || 0;
+                      const totalReceived = bondAmount + weeklyRent;
+                      
+                      return (
+                        <tr key={driver.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">
+                              {driver.firstName} {driver.lastName}
+                            </div>
+                            <div className="text-xs text-gray-500">ID: {driver.id}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">
+                              {driver.vehicleMake} {driver.vehicleModel}
+                            </div>
+                            <div className="text-xs text-gray-500">{driver.vehicleLicensePlate}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <span className="font-semibold text-blue-600">${bondAmount}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <span className="font-semibold text-green-600">${weeklyRent}/week</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <span className="font-bold text-purple-600">${totalReceived}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                              Active
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button 
+                              onClick={() => {
+                                setSelectedDriver(driver);
+                                setShowDriverDetails(true);
+                              }}
+                              className="text-blue-600 hover:text-blue-900 mr-3"
+                            >
+                              View Details
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {drivers.filter(d => d.status === 'approved').length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                          No active rentals found
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
-                                  </div>
-                                </div>
-                              </div>
-                            );
+              </div>
+            </div>
+          </div>
+        );
 
       default:
         return null;
