@@ -2560,39 +2560,52 @@ app.delete('/api/vehicles/:id', async (req, res) => {
     const vehicleId = parseInt(req.params.id);
     const vehiclesCollection = getVehiclesCollection();
 
-    // Try DB first to fetch and delete
     if (vehiclesCollection) {
-      const vehicle = await vehiclesCollection.findOne({ id: vehicleId });
-      const result = await vehiclesCollection.deleteOne({ id: vehicleId });
-      if (result.deletedCount === 0) {
-        return res.status(404).json({ error: 'Vehicle not found' });
-      }
-      // Attempt to remove photo on disk if path is known from cache or vehicle
-      const photoUrl = vehicle?.photoUrl;
-      if (photoUrl && photoUrl.startsWith('/uploads/')) {
-        const absPath = path.join(__dirname, photoUrl.replace(/^\/uploads\//, 'uploads/'));
-        if (fs.existsSync(absPath)) {
-          try { fs.unlinkSync(absPath); } catch (e) { console.warn('Failed to delete vehicle photo:', e?.message || e); }
+      // Try delete by numeric id in DB
+      const vehicleFromDb = await vehiclesCollection.findOne({ id: vehicleId });
+      if (vehicleFromDb) {
+        await vehiclesCollection.deleteOne({ id: vehicleId });
+        // cleanup photo
+        const photoUrl = vehicleFromDb?.photoUrl;
+        if (photoUrl && photoUrl.startsWith('/uploads/')) {
+          const absPath = path.join(__dirname, photoUrl.replace(/^\/uploads\//, 'uploads/'));
+          if (fs.existsSync(absPath)) { try { fs.unlinkSync(absPath); } catch (_) {} }
         }
+        // remove from memory cache as well
+        const idx = vehicles.findIndex(v => v.id === vehicleId);
+        if (idx !== -1) vehicles.splice(idx, 1);
+        return res.json({ message: 'Vehicle deleted successfully' });
       }
-      // Also remove from in-memory cache if present
-      const idx = vehicles.findIndex(v => v.id === vehicleId);
-      if (idx !== -1) vehicles.splice(idx, 1);
-      return res.json({ message: 'Vehicle deleted successfully' });
+
+      // Fallback: not in DB by id. Try in-memory list.
+      const memIdx = vehicles.findIndex(v => v.id === vehicleId);
+      if (memIdx !== -1) {
+        const deleted = vehicles.splice(memIdx, 1)[0];
+        // try to delete from DB by matching licensePlate
+        if (deleted?.licensePlate) {
+          try { await vehiclesCollection.deleteOne({ licensePlate: deleted.licensePlate }); } catch (_) {}
+        }
+        if (deleted?.photoUrl?.startsWith('/uploads/')) {
+          const absPath = path.join(__dirname, deleted.photoUrl.replace(/^\/uploads\//, 'uploads/'));
+          if (fs.existsSync(absPath)) { try { fs.unlinkSync(absPath); } catch (_) {} }
+        }
+        saveData(users, verificationTokens, vehicles, drivers);
+        return res.json({ message: 'Vehicle deleted successfully' });
+      }
+
+      // Not found anywhere
+      return res.status(404).json({ error: 'Vehicle not found' });
     }
 
-    // Fallback: in-memory
+    // No DB: in-memory delete
     const index = vehicles.findIndex(v => v.id === vehicleId);
     if (index === -1) {
       return res.status(404).json({ error: 'Vehicle not found' });
     }
     const [deleted] = vehicles.splice(index, 1);
-    // delete photo if local
     if (deleted?.photoUrl?.startsWith('/uploads/')) {
       const absPath = path.join(__dirname, deleted.photoUrl.replace(/^\/uploads\//, 'uploads/'));
-      if (fs.existsSync(absPath)) {
-        try { fs.unlinkSync(absPath); } catch (e) { /* ignore */ }
-      }
+      if (fs.existsSync(absPath)) { try { fs.unlinkSync(absPath); } catch (_) {} }
     }
     saveData(users, verificationTokens, vehicles, drivers);
     res.json({ message: 'Vehicle deleted successfully' });
