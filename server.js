@@ -2532,7 +2532,7 @@ app.post('/api/admin/reset', async (req, res) => {
   }
 });
 
-// 404 handler for API routes
+// Final API 404 handler (after all routes)
 app.use('/api/*', (req, res) => {
   res.status(404).json({ error: 'API endpoint not found' });
 });

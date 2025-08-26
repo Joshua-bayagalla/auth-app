@@ -626,31 +626,31 @@ const AdminDashboard = () => {
                       <tr key={application.id} className="hover:bg-gray-50">
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <div className="space-y-2">
-                            <div>
+              <div>
                               <div className="text-sm font-medium text-gray-900">
                                 {application.firstName} {application.lastName}
-                  </div>
+              </div>
                               <div className="text-xs text-gray-500">
                                 ID: {application.id}
+            </div>
                   </div>
-                </div>
                             <div className="text-xs text-gray-600">
                               <div>📧 {application.email}</div>
                               <div>📱 {application.phone}</div>
-              </div>
                   </div>
+                </div>
                         </td>
                         <td className="hidden md:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">
                           <div className="space-y-2 text-xs text-gray-600">
                             <div>
                               <span className="font-medium">Address:</span><br/>
                               {application.address}
-                  </div>
+              </div>
                             <div>
                               <span className="font-medium">Emergency Contact:</span><br/>
                               {application.emergencyContact} ({application.emergencyPhone})
-                </div>
-              </div>
+                  </div>
+                  </div>
                         </td>
                         <td className="hidden lg:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">
                           <div className="space-y-2 text-xs">
@@ -658,7 +658,7 @@ const AdminDashboard = () => {
                               <div>
                                 <div className="font-medium text-gray-900">
                                   🚗 {application.vehicleMake} {application.vehicleModel}
-                  </div>
+                </div>
                                 {application.vehicleLicensePlate && (
                                   <div className="text-gray-600">Plate: {application.vehicleLicensePlate}</div>
                                 )}
@@ -668,7 +668,7 @@ const AdminDashboard = () => {
                                 {application.vehicleYear && (
                                   <div className="text-gray-600">Year: {application.vehicleYear}</div>
                                 )}
-                  </div>
+              </div>
             ) : (
                               <span className="text-gray-400">No vehicle selected</span>
                             )}
@@ -676,8 +676,8 @@ const AdminDashboard = () => {
                               <div>📅 Contract: {application.contractPeriod}</div>
                               <div>💳 Bond: ${application.bondAmount}</div>
                               <div>💰 Weekly: ${application.weeklyRent}</div>
-                </div>
-              </div>
+                  </div>
+                  </div>
                           </td>
                         <td className="hidden xl:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">
                           <div className="space-y-2 text-xs">
@@ -686,13 +686,13 @@ const AdminDashboard = () => {
                               <span className="text-gray-600">
                                 {application.createdAt ? new Date(application.createdAt).toLocaleDateString() : 'N/A'}
                                 </span>
-            </div>
+                </div>
                             <div>
                               <span className="font-medium text-gray-900">Next Rent Date:</span><br/>
                               <span className="text-gray-600">
                                 {application.nextRentDate ? new Date(application.nextRentDate).toLocaleDateString() : 'Weekly'}
                               </span>
-                </div>
+              </div>
                             <div>
                               <span className="font-medium text-gray-900">Documents:</span>
                               <div className="mt-2 grid grid-cols-3 gap-1 max-w-[280px]">
@@ -707,7 +707,7 @@ const AdminDashboard = () => {
                                         onClick={() => openPreview(((application.licenseFrontUrl || '').startsWith('data:') ? application.licenseFrontUrl : (application.licenseFront ? `/uploads/${application.licenseFront}` : '')), 'License')}
                                       />
                                       <div className="px-1 py-0.5 text-[10px] text-center bg-blue-50 text-blue-700">Lic</div>
-              </div>
+            </div>
             ) : (
                                     <button
                                       type="button"
@@ -747,8 +747,8 @@ const AdminDashboard = () => {
                                         onClick={() => openPreview(((application.rentProofUrl || '').startsWith('data:') ? application.rentProofUrl : (application.rentProof ? `/uploads/${application.rentProof}` : '')), 'Rent Proof')}
                                       />
                                       <div className="px-1 py-0.5 text-[10px] text-center bg-purple-50 text-purple-700">Rent</div>
-                                    </div>
-                                  ) : (
+              </div>
+            ) : (
                                     <button
                                       type="button"
                                       onClick={() => openPreview((application.rentProofUrl || `/uploads/${application.rentProof}`), 'Rent Proof')}
@@ -788,20 +788,20 @@ const AdminDashboard = () => {
                   <User className="w-5 h-5 mr-2" />
                   Driver Document Alerts
                 </h3>
-              </div>
-              <div className="overflow-x-auto">
+                </div>
+                <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
+                    <thead className="bg-gray-50">
+                      <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Document</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Driver</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expiry Date</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Days Left</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
                     {(() => {
                       const driverAlerts = [];
                       drivers.forEach(driver => {
@@ -869,7 +869,7 @@ const AdminDashboard = () => {
                               'bg-yellow-100 text-yellow-800'
                             }`}>
                               {diffDays} days
-                            </span>
+                                </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <button className="text-blue-600 hover:text-blue-900">
@@ -881,8 +881,8 @@ const AdminDashboard = () => {
                     })()}
                   </tbody>
                 </table>
-              </div>
-            </div>
+                              </div>
+                              </div>
 
             {/* Vehicle Document Alerts */}
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -891,7 +891,7 @@ const AdminDashboard = () => {
                   <Car className="w-5 h-5 mr-2" />
                   Vehicle Document Alerts
                 </h3>
-              </div>
+                                </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50">
@@ -1002,15 +1002,15 @@ const AdminDashboard = () => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <button className="text-blue-600 hover:text-blue-900">
                               Send Reminder
-                            </button>
+                              </button>
                           </td>
                         </tr>
                       ));
                     })()}
-                  </tbody>
-                </table>
-              </div>
+                    </tbody>
+                  </table>
             </div>
+              </div>
           </div>
         );
 
@@ -1047,7 +1047,7 @@ const AdminDashboard = () => {
                     <div>
                               <div className="text-sm font-medium text-gray-900">
                                 {driver.firstName} {driver.lastName}
-                    </div>
+              </div>
                               <div className="text-xs text-gray-500">
                                 ID: {driver.id}
                       </div>
@@ -1060,15 +1060,15 @@ const AdminDashboard = () => {
                         </td>
                         <td className="hidden md:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">
                           <div className="space-y-2 text-xs text-gray-600">
-                      <div>
+                    <div>
                               <span className="font-medium">Address:</span><br/>
                               {driver.address}
-                      </div>
+                    </div>
                       <div>
                               <span className="font-medium">Emergency:</span><br/>
                               {driver.emergencyContact} ({driver.emergencyPhone})
                       </div>
-                          </div>
+                  </div>
                         </td>
                         <td className="hidden lg:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">
                           <div className="space-y-2 text-xs">
@@ -1093,24 +1093,24 @@ const AdminDashboard = () => {
                         </td>
                         <td className="hidden xl:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">
                           <div className="space-y-2 text-xs">
-                            <div>
+                      <div>
                               <span className="font-medium text-gray-900">Joined:</span><br/>
                               <span className="text-gray-600">
                                 {driver.createdAt ? new Date(driver.createdAt).toLocaleDateString() : 'N/A'}
                               </span>
                       </div>
-                            <div>
+                      <div>
                               <span className="font-medium text-gray-900">Next Rent:</span><br/>
                               <span className="text-gray-600">
                                 {driver.nextRentDate ? new Date(driver.nextRentDate).toLocaleDateString() : 'Weekly'}
                               </span>
-                    </div>
-                            <div>
+                      </div>
+                      <div>
                               <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                                 Active
                               </span>
-                </div>
-                          </div>
+                      </div>
+                  </div>
                         </td>
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <div className="flex flex-col gap-1 min-w-[120px]">
@@ -1118,14 +1118,14 @@ const AdminDashboard = () => {
                             <button onClick={() => handleEditDriver(driver)} className="px-2 py-1 text-[11px] rounded-md bg-blue-600 text-white hover:bg-blue-700">Edit</button>
                             <button onClick={() => handleDeleteDriver(driver.id)} className="px-2 py-1 text-[11px] rounded-md bg-red-600 text-white hover:bg-red-700">Delete</button>
                             <button onClick={() => handleSendDocuments(driver)} className="px-2 py-1 text-[11px] rounded-md bg-green-600 text-white hover:bg-green-700">Send Docs</button>
-                          </div>
+                            </div>
                         </td>
                       </tr>
-              ))}
+                          ))}
                   </tbody>
                 </table>
-            </div>
-          </div>
+                        </div>
+                      </div>
           </div>
         );
 
@@ -1140,18 +1140,18 @@ const AdminDashboard = () => {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">Total Bond Received</h3>
                   <DollarSign className="w-8 h-8 text-blue-600" />
-                </div>
+                    </div>
                 <div className="text-3xl font-bold text-blue-600">
                   ${drivers.filter(d => d.status === 'approved').reduce((sum, d) => sum + (parseInt(d.bondAmount) || 0), 0)}
                 </div>
                 <p className="text-sm text-gray-500 mt-2">Security deposits collected</p>
-              </div>
+            </div>
               
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">Weekly Rent Income</h3>
                   <DollarSign className="w-8 h-8 text-green-600" />
-                </div>
+          </div>
                 <div className="text-3xl font-bold text-green-600">
                   ${drivers.filter(d => d.status === 'approved').reduce((sum, d) => sum + (parseInt(d.weeklyRent) || 0), 0)}
                 </div>
@@ -1162,13 +1162,13 @@ const AdminDashboard = () => {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">Active Rentals</h3>
                   <CheckCircle className="w-8 h-8 text-purple-600" />
-                </div>
+              </div>
                 <div className="text-3xl font-bold text-purple-600">
                   {drivers.filter(d => d.status === 'approved').length}
                 </div>
                 <p className="text-sm text-gray-500 mt-2">Currently active contracts</p>
-              </div>
-              
+            </div>
+            
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">Pending Applications</h3>
@@ -1176,7 +1176,7 @@ const AdminDashboard = () => {
                 </div>
                 <div className="text-3xl font-bold text-yellow-600">
                   {drivers.filter(d => d.status === 'pending_approval').length}
-                </div>
+              </div>
                 <p className="text-sm text-gray-500 mt-2">Awaiting approval</p>
               </div>
             </div>
@@ -1204,13 +1204,13 @@ const AdminDashboard = () => {
                       const bondAmount = parseInt(driver.bondAmount) || 0;
                       const weeklyRent = parseInt(driver.weeklyRent) || 0;
                       const totalReceived = bondAmount + weeklyRent;
-                      
-                      return (
+
+                    return (
                         <tr key={driver.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900">
                               {driver.firstName} {driver.lastName}
-                            </div>
+                      </div>
                             <div className="text-xs text-gray-500">ID: {driver.id}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -1231,7 +1231,7 @@ const AdminDashboard = () => {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                               Active
-                            </span>
+                              </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <button 
@@ -1256,8 +1256,8 @@ const AdminDashboard = () => {
                     )}
                   </tbody>
                 </table>
-              </div>
-            </div>
+                          </div>
+                        </div>
           </div>
         );
 
@@ -1267,14 +1267,14 @@ const AdminDashboard = () => {
   };
 
   if (loading) {
-    return (
+                            return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading dashboard...</p>
-                        </div>
-                      </div>
-                    );
+                                </div>
+                              </div>
+                            );
   }
 
   return (
@@ -1286,14 +1286,14 @@ const AdminDashboard = () => {
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
                 <Car className="w-7 h-7 text-white" />
-              </div>
+                        </div>
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
                   Admin Dashboard
                 </h1>
                 <p className="text-sm text-gray-600">SK Car Rental Management</p>
-          </div>
-            </div>
+                      </div>
+              </div>
             
             <div className="flex items-center space-x-4">
               <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-2">
@@ -1776,7 +1776,7 @@ const AdminDashboard = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Bond Amount ($)</label>
-                      <input
+                          <input
                         type="number"
                     name="bondAmount"
                     value={formData.bondAmount}
@@ -1784,9 +1784,9 @@ const AdminDashboard = () => {
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         placeholder="e.g., 1000"
                       />
-                    </div>
-              </div>
-              
+                        </div>
+                  </div>
+
               <div className="flex justify-end space-x-4 pt-6">
                     <button
                       type="button"
@@ -1826,7 +1826,7 @@ const AdminDashboard = () => {
                 e.preventDefault();
                 const fd = new FormData();
                 Object.entries(driverForm).forEach(([k,v]) => { if (v) fd.append(k, v); });
-                const response = await fetch('/api/admin/add-driver', { method: 'POST', body: fd });
+                const response = await fetch('/api/drivers', { method: 'POST', body: fd });
                 if (response.ok) {
                   setShowAddDriver(false);
                   setDriverForm({
@@ -1845,27 +1845,27 @@ const AdminDashboard = () => {
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
+                    <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">License Front</label>
                     <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, licenseFront: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
-                  </div>
-                  <div>
+                    </div>
+                    <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">License Back</label>
                     <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, licenseBack: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
-                  </div>
-                  <div>
+                    </div>
+                    <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Bond Proof</label>
                     <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, bondProof: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
-                  </div>
-                  <div>
+                    </div>
+                    <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Rent Proof</label>
                     <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, rentProof: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
-                  </div>
-                  <div>
+                    </div>
+                    <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Contract Document</label>
                     <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, contractDoc: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
                   </div>
-                </div>
+                    </div>
                     <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
                   <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.firstName} onChange={(e)=>setDriverForm({...driverForm, firstName:e.target.value})} required />
@@ -1922,16 +1922,16 @@ const AdminDashboard = () => {
                     <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Contract Period</label>
                   <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.contractPeriod} onChange={(e)=>setDriverForm({...driverForm, contractPeriod:e.target.value})} />
-                    </div>
-                    <div>
+                  </div>
+                  <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Bond Amount ($)</label>
                   <input type="number" className="w-full px-4 py-3 border rounded-xl" value={driverForm.bondAmount} onChange={(e)=>setDriverForm({...driverForm, bondAmount:e.target.value})} />
-                    </div>
+                  </div>
                   <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Weekly Rent ($)</label>
                   <input type="number" className="w-full px-4 py-3 border rounded-xl" value={driverForm.weeklyRent} onChange={(e)=>setDriverForm({...driverForm, weeklyRent:e.target.value})} />
-                  </div>
                         </div>
+                    </div>
               <div className="flex justify-end space-x-4">
                 <button type="button" onClick={()=>setShowAddDriver(false)} className="px-6 py-3 border rounded-xl">Cancel</button>
                 <button type="submit" className="px-6 py-3 bg-green-600 text-white rounded-xl">Save Driver</button>
