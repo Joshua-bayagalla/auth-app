@@ -1774,6 +1774,17 @@ const AdminDashboard = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">CPV Expiry Date</label>
                   <input type="date" name="cpvExpiry" value={formData.cpvExpiry} onChange={handleInputChange} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Bond Amount ($)</label>
+                      <input
+                        type="number"
+                    name="bondAmount"
+                    value={formData.bondAmount}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="e.g., 1000"
+                      />
+                    </div>
               </div>
               
               <div className="flex justify-end space-x-4 pt-6">
@@ -1815,7 +1826,7 @@ const AdminDashboard = () => {
                 e.preventDefault();
                 const fd = new FormData();
                 Object.entries(driverForm).forEach(([k,v]) => { if (v) fd.append(k, v); });
-                const response = await fetch('/api/drivers', { method: 'POST', body: fd });
+                const response = await fetch('/api/admin/add-driver', { method: 'POST', body: fd });
                 if (response.ok) {
                   setShowAddDriver(false);
                   setDriverForm({
