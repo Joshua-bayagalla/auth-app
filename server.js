@@ -8,6 +8,8 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import multer from 'multer';
 import { MongoClient } from 'mongodb';
+import swaggerJsdoc from 'swagger-jsdoc';
+import swaggerUi from 'swagger-ui-express';
 
 // MongoDB Collections (replaces in-memory storage)
 const getUsersCollection = () => db ? db.collection('users') : null;
@@ -66,6 +68,42 @@ connectToMongoDB();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Swagger configuration
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Car Rental API',
+      version: '1.0.0',
+      description: 'API for car rental management system with user and admin interfaces',
+      contact: {
+        name: 'Car Rental Support',
+        email: 'support@carrental.com'
+      }
+    },
+    servers: [
+      {
+        url: process.env.NODE_ENV === 'production' 
+          ? 'https://auth-app-xw7c.onrender.com' 
+          : 'http://localhost:3001',
+        description: process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server'
+      }
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT'
+        }
+      }
+    }
+  },
+  apis: ['./server.js'] // Path to the API docs
+};
+
+const specs = swaggerJsdoc(swaggerOptions);
 
 // Configure multer for file uploads (memory storage for deployment)
 const storage = multer.memoryStorage();
@@ -185,6 +223,12 @@ app.use(express.static(path.join(__dirname, 'dist')));
 
 // Serve uploaded documents and vehicle photos
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Swagger UI route
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(specs, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Car Rental API Documentation'
+}));
 
 // Download document endpoint
 app.get('/api/documents/:driverId/:docId/download', (req, res) => {
@@ -611,6 +655,55 @@ app.post('/api/verify-email', async (req, res) => {
 });
 
 // Login endpoint
+/**
+ * @swagger
+ * /api/login:
+ *   post:
+ *     summary: User login
+ *     description: Authenticate user with email and password
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: User's email address
+ *               password:
+ *                 type: string
+ *                 description: User's password
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Login successful"
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     email:
+ *                       type: string
+ *                     verified:
+ *                       type: boolean
+ *                     role:
+ *                       type: string
+ *       400:
+ *         description: Missing email or password
+ *       401:
+ *         description: Invalid credentials or email not verified
+ */
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   
@@ -890,6 +983,65 @@ app.put('/api/vehicles/:id', uploadDisk.single('vehiclePhoto'), async (req, res)
 });
 
 // Pagination for vehicles
+/**
+ * @swagger
+ * /api/vehicles:
+ *   get:
+ *     summary: Get all vehicles
+ *     description: Retrieve a list of all vehicles with optional pagination
+ *     tags: [Vehicles]
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *         description: Number of vehicles to return
+ *       - in: query
+ *         name: skip
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of vehicles to skip
+ *     responses:
+ *       200:
+ *         description: List of vehicles
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 items:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       make:
+ *                         type: string
+ *                       model:
+ *                         type: string
+ *                       year:
+ *                         type: integer
+ *                       licensePlate:
+ *                         type: string
+ *                       status:
+ *                         type: string
+ *                         enum: [available, rented, maintenance]
+ *                       bondAmount:
+ *                         type: number
+ *                       rentPerWeek:
+ *                         type: number
+ *                       vehiclePhoto:
+ *                         type: string
+ *                 total:
+ *                   type: integer
+ *                 limit:
+ *                   type: integer
+ *                 skip:
+ *                   type: integer
+ */
 app.get('/api/vehicles', async (req, res) => {
   try {
     const vehiclesCollection = getVehiclesCollection();
@@ -929,6 +1081,88 @@ app.post('/api/drivers', (req, res, next) => {
     }
     next();
   });
+}, async (req, res) => {
+/**
+ * @swagger
+ * /api/drivers:
+ *   post:
+ *     summary: Add a new driver
+ *     description: Create a new driver with documents and vehicle assignment
+ *     tags: [Drivers]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - firstName
+ *               - lastName
+ *               - email
+ *               - phone
+ *               - licenseNumber
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *               lastName:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               phone:
+ *                 type: string
+ *               licenseNumber:
+ *                 type: string
+ *               licenseExpiry:
+ *                 type: string
+ *               address:
+ *                 type: string
+ *               emergencyContact:
+ *                 type: string
+ *               emergencyPhone:
+ *                 type: string
+ *               selectedVehicleId:
+ *                 type: string
+ *               contractStartDate:
+ *                 type: string
+ *               contractEndDate:
+ *                 type: string
+ *               contractPeriod:
+ *                 type: string
+ *               bondAmount:
+ *                 type: number
+ *               weeklyRent:
+ *                 type: number
+ *               contractSigned:
+ *                 type: boolean
+ *               paymentReceiptUploaded:
+ *                 type: boolean
+ *               status:
+ *                 type: string
+ *                 default: "approved"
+ *               licenseFront:
+ *                 type: string
+ *                 format: binary
+ *               licenseBack:
+ *                 type: string
+ *                 format: binary
+ *               bondProof:
+ *                 type: string
+ *                 format: binary
+ *               rentProof:
+ *                 type: string
+ *                 format: binary
+ *               contractDoc:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       201:
+ *         description: Driver created successfully
+ *       400:
+ *         description: Missing required fields or driver already exists
+ *       500:
+ *         description: Internal server error
+ */
 }, async (req, res) => {
   try {
     const {
