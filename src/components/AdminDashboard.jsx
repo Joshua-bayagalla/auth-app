@@ -109,14 +109,16 @@ const AdminDashboard = () => {
       if (vehiclesRes.ok) {
         const vehiclesData = await vehiclesRes.json();
         console.log('Vehicles data:', vehiclesData);
-        setVehicles(vehiclesData);
+        const vehiclesList = Array.isArray(vehiclesData) ? vehiclesData : (vehiclesData?.items || []);
+        setVehicles(vehiclesList);
       }
 
       console.log('Drivers response:', driversRes.status, driversRes.ok);
       if (driversRes.ok) {
         const driversData = await driversRes.json();
         console.log('Drivers data:', driversData);
-        setDrivers(driversData);
+        const driversList = Array.isArray(driversData) ? driversData : (driversData?.items || []);
+        setDrivers(driversList);
       }
 
       console.log('Users response:', usersRes.status, usersRes.ok);
