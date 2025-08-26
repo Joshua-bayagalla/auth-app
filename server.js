@@ -1422,9 +1422,42 @@ app.put('/api/drivers/:id', (req, res) => {
   }
 });
 
-app.delete('/api/drivers/:id', (req, res) => {
+app.delete('/api/drivers/:id', async (req, res) => {
   try {
-    const driverIndex = drivers.findIndex(d => d.id === parseInt(req.params.id));
+    const { id } = req.params;
+    
+    // Try MongoDB first
+    if (db) {
+      try {
+        const result = await db.collection('drivers').deleteOne({ _id: parseInt(id) });
+        if (result.deletedCount === 0) {
+          return res.status(404).json({ error: 'Driver not found' });
+        }
+        
+        // Free up assigned vehicle if exists
+        const deletedDriver = await db.collection('drivers').findOne({ _id: parseInt(id) });
+        if (deletedDriver && deletedDriver.selectedVehicleId) {
+          await db.collection('vehicles').updateOne(
+            { _id: deletedDriver.selectedVehicleId },
+            { 
+              $set: { 
+                status: 'available',
+                assignedDriverId: null 
+              } 
+            }
+          );
+        }
+        
+        res.json({ message: 'Driver deleted successfully' });
+        return;
+      } catch (dbError) {
+        console.error('MongoDB error:', dbError);
+        // Fall back to in-memory
+      }
+    }
+    
+    // Fallback to in-memory storage
+    const driverIndex = drivers.findIndex(d => d.id === parseInt(id));
     if (driverIndex === -1) {
       return res.status(404).json({ error: 'Driver not found' });
     }

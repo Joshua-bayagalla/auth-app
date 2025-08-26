@@ -800,72 +800,83 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {drivers.filter(d => d.status === 'approved' && d.documents && d.documents.some(doc => {
-                      const expiryDate = new Date(doc.expiryDate);
-                      const today = new Date();
-                      const diffTime = expiryDate - today;
-                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                      return diffDays <= 30 && diffDays > 0;
-                    })).map((driver) => {
-                      const expiringDocs = driver.documents.filter(doc => {
-                        const expiryDate = new Date(doc.expiryDate);
-                        const today = new Date();
-                        const diffTime = expiryDate - today;
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                        return diffDays <= 30 && diffDays > 0;
+                    {(() => {
+                      const driverAlerts = [];
+                      drivers.forEach(driver => {
+                        if (driver.documents && driver.documents.length > 0) {
+                          const vehicle = vehicles.find(v => v.id === driver.selectedVehicleId);
+                          const vehicleName = vehicle ? `${vehicle.make} ${vehicle.model}` : 'Unknown Vehicle';
+                          
+                          driver.documents.forEach(doc => {
+                            if (doc.expiryDate) {
+                              const expiryDate = new Date(doc.expiryDate);
+                              const today = new Date();
+                              const diffTime = expiryDate - today;
+                              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                              
+                              if (diffDays <= 30 && diffDays > 0) {
+                                driverAlerts.push({
+                                  driver,
+                                  doc,
+                                  vehicleName,
+                                  expiryDate,
+                                  diffDays
+                                });
+                              }
+                            }
+                          });
+                        }
                       });
                       
-                      return expiringDocs.map((doc) => {
-                        const expiryDate = new Date(doc.expiryDate);
-                        const today = new Date();
-                        const diffTime = expiryDate - today;
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                        
-                        return (
-                          <tr key={`driver-${driver.id}-${doc.id}`} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <AlertTriangle className="w-4 h-4 text-yellow-500 mr-2" />
-                                <span className="text-sm font-medium text-gray-900">{doc.documentType}</span>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              <div className="font-medium">{driver.firstName} {driver.lastName}</div>
-                              <div className="text-xs text-gray-500">ID: {driver.id}</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {driver.vehicleMake} {driver.vehicleModel}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {expiryDate.toLocaleDateString()}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                diffDays <= 7 ? 'bg-red-100 text-red-800' :
-                                diffDays <= 14 ? 'bg-orange-100 text-orange-800' :
-                                'bg-yellow-100 text-yellow-800'
-                              }`}>
-                                {diffDays} days
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                              <button className="text-blue-600 hover:text-blue-900">
-                                Send Reminder
-                              </button>
-                            </td>
-                          </tr>
-                        );
+                      // Sort by vehicle name, then by days left
+                      driverAlerts.sort((a, b) => {
+                        if (a.vehicleName !== b.vehicleName) {
+                          return a.vehicleName.localeCompare(b.vehicleName);
+                        }
+                        return a.diffDays - b.diffDays;
                       });
-                    })}
-                    {drivers.filter(d => d.status === 'approved' && d.documents && d.documents.some(doc => {
-                      const expiryDate = new Date(doc.expiryDate);
-                      const today = new Date();
-                      const diffTime = expiryDate - today;
-                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                      return diffDays <= 30 && diffDays > 0;
-                    })).length === 0 && (
-                      <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">No driver document alerts</td></tr>
-                    )}
+                      
+                      if (driverAlerts.length === 0) {
+                        return (
+                          <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">No driver document alerts</td></tr>
+                        );
+                      }
+                      
+                      return driverAlerts.map(({ driver, doc, vehicleName, expiryDate, diffDays }, index) => (
+                        <tr key={`driver-${driver.id}-${doc.id}-${index}`} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <AlertTriangle className="w-4 h-4 text-yellow-500 mr-2" />
+                              <span className="text-sm font-medium text-gray-900">{doc.documentType}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div className="font-medium">{driver.firstName} {driver.lastName}</div>
+                            <div className="text-xs text-gray-500">ID: {driver.id}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {vehicleName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {expiryDate.toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              diffDays <= 7 ? 'bg-red-100 text-red-800' :
+                              diffDays <= 14 ? 'bg-orange-100 text-orange-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {diffDays} days
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button className="text-blue-600 hover:text-blue-900">
+                              Send Reminder
+                            </button>
+                          </td>
+                        </tr>
+                      ));
+                    })()}
                   </tbody>
                 </table>
               </div>
@@ -892,99 +903,108 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {vehicles.filter(v => {
-                      const today = new Date();
-                      return (v.contractExpiry && new Date(v.contractExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.contractExpiry) > today) ||
-                             (v.redBookExpiry && new Date(v.redBookExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.redBookExpiry) > today) ||
-                             (v.registrationExpiry && new Date(v.registrationExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.registrationExpiry) > today) ||
-                             (v.insuranceExpiry && new Date(v.insuranceExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.insuranceExpiry) > today) ||
-                             (v.cpvExpiry && new Date(v.cpvExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.cpvExpiry) > today);
-                    }).map((vehicle) => {
-                      const today = new Date();
-                      const documents = [];
-                      
-                      if (vehicle.contractExpiry && new Date(vehicle.contractExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(vehicle.contractExpiry) > today) {
-                        documents.push({
-                          type: 'Car Contract',
-                          expiry: vehicle.contractExpiry
-                        });
-                      }
-                      if (vehicle.redBookExpiry && new Date(vehicle.redBookExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(vehicle.redBookExpiry) > today) {
-                        documents.push({
-                          type: 'Red Book Inspection',
-                          expiry: vehicle.redBookExpiry
-                        });
-                      }
-                      if (vehicle.registrationExpiry && new Date(vehicle.registrationExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(vehicle.registrationExpiry) > today) {
-                        documents.push({
-                          type: 'Car Registration',
-                          expiry: vehicle.registrationExpiry
-                        });
-                      }
-                      if (vehicle.insuranceExpiry && new Date(vehicle.insuranceExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(vehicle.insuranceExpiry) > today) {
-                        documents.push({
-                          type: 'Car Insurance',
-                          expiry: vehicle.insuranceExpiry
-                        });
-                      }
-                      if (vehicle.cpvExpiry && new Date(vehicle.cpvExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(vehicle.cpvExpiry) > today) {
-                        documents.push({
-                          type: 'CPV Registration',
-                          expiry: vehicle.cpvExpiry
-                        });
-                      }
-                      
-                      return documents.map((doc) => {
-                        const expiryDate = new Date(doc.expiry);
-                        const diffTime = expiryDate - today;
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    {(() => {
+                      const vehicleAlerts = [];
+                      vehicles.forEach(vehicle => {
+                        const today = new Date();
+                        const documents = [];
                         
-                        return (
-                          <tr key={`vehicle-${vehicle.id}-${doc.type}`} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <AlertTriangle className="w-4 h-4 text-yellow-500 mr-2" />
-                                <span className="text-sm font-medium text-gray-900">{doc.type}</span>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              <div className="font-medium">{vehicle.make} {vehicle.model}</div>
-                              <div className="text-xs text-gray-500">{vehicle.vehicleType}</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {vehicle.licensePlate}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {expiryDate.toLocaleDateString()}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                diffDays <= 7 ? 'bg-red-100 text-red-800' :
-                                diffDays <= 14 ? 'bg-orange-100 text-orange-800' :
-                                'bg-yellow-100 text-yellow-800'
-                              }`}>
-                                {diffDays} days
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                              <button className="text-blue-600 hover:text-blue-900">
-                                Send Reminder
-                              </button>
-                            </td>
-                          </tr>
-                        );
+                        if (vehicle.contractExpiry && new Date(vehicle.contractExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(vehicle.contractExpiry) > today) {
+                          documents.push({
+                            type: 'Car Contract',
+                            expiry: vehicle.contractExpiry
+                          });
+                        }
+                        if (vehicle.redBookExpiry && new Date(vehicle.redBookExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(vehicle.redBookExpiry) > today) {
+                          documents.push({
+                            type: 'Red Book Inspection',
+                            expiry: vehicle.redBookExpiry
+                          });
+                        }
+                        if (vehicle.registrationExpiry && new Date(vehicle.registrationExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(vehicle.registrationExpiry) > today) {
+                          documents.push({
+                            type: 'Car Registration',
+                            expiry: vehicle.registrationExpiry
+                          });
+                        }
+                        if (vehicle.insuranceExpiry && new Date(vehicle.insuranceExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(vehicle.insuranceExpiry) > today) {
+                          documents.push({
+                            type: 'Car Insurance',
+                            expiry: vehicle.insuranceExpiry
+                          });
+                        }
+                        if (vehicle.cpvExpiry && new Date(vehicle.cpvExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(vehicle.cpvExpiry) > today) {
+                          documents.push({
+                            type: 'CPV Registration',
+                            expiry: vehicle.cpvExpiry
+                          });
+                        }
+                        
+                        documents.forEach(doc => {
+                          const expiryDate = new Date(doc.expiry);
+                          const diffTime = expiryDate - today;
+                          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                          
+                          vehicleAlerts.push({
+                            vehicle,
+                            doc,
+                            expiryDate,
+                            diffDays
+                          });
+                        });
                       });
-                    })}
-                    {vehicles.filter(v => {
-                      const today = new Date();
-                      return (v.contractExpiry && new Date(v.contractExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.contractExpiry) > today) ||
-                             (v.redBookExpiry && new Date(v.redBookExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.redBookExpiry) > today) ||
-                             (v.registrationExpiry && new Date(v.registrationExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.registrationExpiry) > today) ||
-                             (v.insuranceExpiry && new Date(v.insuranceExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.insuranceExpiry) > today) ||
-                             (v.cpvExpiry && new Date(v.cpvExpiry) - today <= 30 * 24 * 60 * 60 * 1000 && new Date(v.cpvExpiry) > today);
-                    }).length === 0 && (
-                      <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">No vehicle document alerts</td></tr>
-                    )}
+                      
+                      // Sort by vehicle name, then by days left
+                      vehicleAlerts.sort((a, b) => {
+                        const vehicleNameA = `${a.vehicle.make} ${a.vehicle.model}`;
+                        const vehicleNameB = `${b.vehicle.make} ${b.vehicle.model}`;
+                        if (vehicleNameA !== vehicleNameB) {
+                          return vehicleNameA.localeCompare(vehicleNameB);
+                        }
+                        return a.diffDays - b.diffDays;
+                      });
+                      
+                      if (vehicleAlerts.length === 0) {
+                        return (
+                          <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">No vehicle document alerts</td></tr>
+                        );
+                      }
+                      
+                      return vehicleAlerts.map(({ vehicle, doc, expiryDate, diffDays }, index) => (
+                        <tr key={`vehicle-${vehicle.id}-${doc.type}-${index}`} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <AlertTriangle className="w-4 h-4 text-yellow-500 mr-2" />
+                              <span className="text-sm font-medium text-gray-900">{doc.type}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div className="font-medium">{vehicle.make} {vehicle.model}</div>
+                            <div className="text-xs text-gray-500">{vehicle.vehicleType || 'N/A'}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {vehicle.licensePlate || 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {expiryDate.toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              diffDays <= 7 ? 'bg-red-100 text-red-800' :
+                              diffDays <= 14 ? 'bg-orange-100 text-orange-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {diffDays} days
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button className="text-blue-600 hover:text-blue-900">
+                              Send Reminder
+                            </button>
+                          </td>
+                        </tr>
+                      ));
+                    })()}
                   </tbody>
                 </table>
               </div>
