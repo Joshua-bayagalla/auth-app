@@ -2785,3 +2785,89 @@ app.post('/api/admin/add-driver', (req, res, next) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+// Helper to delete a vehicle by id used by multiple routes
+async function deleteVehicleByIdInternal(id) {
+  const vehicleId = parseInt(id);
+  const vehiclesCollection = getVehiclesCollection();
+
+  if (vehiclesCollection) {
+    const vehicleFromDb = await vehiclesCollection.findOne({ $or: [ { id: vehicleId }, { id: String(vehicleId) } ] });
+    if (vehicleFromDb) {
+      await vehiclesCollection.deleteOne({ $or: [ { id: vehicleId }, { id: String(vehicleId) } ] });
+      const photoUrl = vehicleFromDb?.photoUrl;
+      if (photoUrl && photoUrl.startsWith('/uploads/')) {
+        const absPath = path.join(__dirname, photoUrl.replace(/^\/uploads\//, 'uploads/'));
+        if (fs.existsSync(absPath)) { try { fs.unlinkSync(absPath); } catch (_) {} }
+      }
+      const idx = vehicles.findIndex(v => v.id === vehicleId || String(v.id) === String(vehicleId));
+      if (idx !== -1) vehicles.splice(idx, 1);
+      return { ok: true };
+    }
+
+    const memIdx = vehicles.findIndex(v => v.id === vehicleId || String(v.id) === String(vehicleId));
+    if (memIdx !== -1) {
+      const deleted = vehicles.splice(memIdx, 1)[0];
+      if (deleted?.licensePlate) {
+        try { await vehiclesCollection.deleteOne({ licensePlate: deleted.licensePlate }); } catch (_) {}
+      }
+      if (deleted?.photoUrl?.startsWith('/uploads/')) {
+        const absPath = path.join(__dirname, deleted.photoUrl.replace(/^\/uploads\//, 'uploads/'));
+        if (fs.existsSync(absPath)) { try { fs.unlinkSync(absPath); } catch (_) {} }
+      }
+      return { ok: true };
+    }
+
+    return { ok: false, error: 'Vehicle not found' };
+  }
+
+  const index = vehicles.findIndex(v => v.id === vehicleId || String(v.id) === String(vehicleId));
+  if (index === -1) {
+    return { ok: false, error: 'Vehicle not found' };
+  }
+  const [deleted] = vehicles.splice(index, 1);
+  if (deleted?.photoUrl?.startsWith('/uploads/')) {
+    const absPath = path.join(__dirname, deleted.photoUrl.replace(/^\/uploads\//, 'uploads/'));
+    if (fs.existsSync(absPath)) { try { fs.unlinkSync(absPath); } catch (_) {} }
+  }
+  return { ok: true };
+}
+
+// Primary DELETE route
+app.delete('/api/vehicles/:id', async (req, res) => {
+  try {
+    const result = await deleteVehicleByIdInternal(req.params.id);
+    if (!result.ok) return res.status(404).json({ error: result.error });
+    saveData(users, verificationTokens, vehicles, drivers);
+    res.json({ message: 'Vehicle deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting vehicle:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Backup alias using alternative path (DELETE)
+app.delete('/api/vehicles/delete/:id', async (req, res) => {
+  try {
+    const result = await deleteVehicleByIdInternal(req.params.id);
+    if (!result.ok) return res.status(404).json({ error: result.error });
+    saveData(users, verificationTokens, vehicles, drivers);
+    res.json({ message: 'Vehicle deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting vehicle (alias):', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST fallback to bypass environments blocking DELETE
+app.post('/api/vehicles/:id/delete', async (req, res) => {
+  try {
+    const result = await deleteVehicleByIdInternal(req.params.id);
+    if (!result.ok) return res.status(404).json({ error: result.error });
+    saveData(users, verificationTokens, vehicles, drivers);
+    res.json({ message: 'Vehicle deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting vehicle (post-fallback):', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
