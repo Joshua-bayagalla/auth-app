@@ -2766,261 +2766,7 @@ app.post('/api/admin/reset', async (req, res) => {
   }
 });
 
-// Final API 404 handler (after all routes)
-app.use('/api/*', (req, res) => {
-  res.status(404).json({ error: 'API endpoint not found' });
-});
-
-// Serve React app for all other GET routes - ensure production build index is returned
-app.get('*', (req, res) => {
-  const distIndex = path.join(__dirname, 'dist', 'index.html');
-  if (fs.existsSync(distIndex)) {
-    res.sendFile(distIndex);
-    return;
-  }
-  // Fallback (dev or missing build)
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Frontend: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
-  console.log(`Backend: http://localhost:${PORT}`);
-});
-
-// Delete vehicle
-app.delete('/api/vehicles/:id', async (req, res) => {
-  try {
-    const vehicleId = parseInt(req.params.id);
-    const vehiclesCollection = getVehiclesCollection();
-
-    if (vehiclesCollection) {
-      // Try to find by numeric or string id
-      const vehicleFromDb = await vehiclesCollection.findOne({ $or: [ { id: vehicleId }, { id: String(vehicleId) } ] });
-      if (vehicleFromDb) {
-        await vehiclesCollection.deleteOne({ $or: [ { id: vehicleId }, { id: String(vehicleId) } ] });
-        const photoUrl = vehicleFromDb?.photoUrl;
-        if (photoUrl && photoUrl.startsWith('/uploads/')) {
-          const absPath = path.join(__dirname, photoUrl.replace(/^\/uploads\//, 'uploads/'));
-          if (fs.existsSync(absPath)) { try { fs.unlinkSync(absPath); } catch (_) {} }
-        }
-        const idx = vehicles.findIndex(v => v.id === vehicleId || String(v.id) === String(vehicleId));
-        if (idx !== -1) vehicles.splice(idx, 1);
-        return res.json({ message: 'Vehicle deleted successfully' });
-      }
-
-      // Fallback: check in-memory cache
-      const memIdx = vehicles.findIndex(v => v.id === vehicleId || String(v.id) === String(vehicleId));
-      if (memIdx !== -1) {
-        const deleted = vehicles.splice(memIdx, 1)[0];
-        if (deleted?.licensePlate) {
-          try { await vehiclesCollection.deleteOne({ licensePlate: deleted.licensePlate }); } catch (_) {}
-        }
-        if (deleted?.photoUrl?.startsWith('/uploads/')) {
-          const absPath = path.join(__dirname, deleted.photoUrl.replace(/^\/uploads\//, 'uploads/'));
-          if (fs.existsSync(absPath)) { try { fs.unlinkSync(absPath); } catch (_) {} }
-        }
-        saveData(users, verificationTokens, vehicles, drivers);
-        return res.json({ message: 'Vehicle deleted successfully' });
-      }
-
-      return res.status(404).json({ error: 'Vehicle not found' });
-    }
-
-    // No DB case
-    const index = vehicles.findIndex(v => v.id === vehicleId || String(v.id) === String(vehicleId));
-    if (index === -1) {
-      return res.status(404).json({ error: 'Vehicle not found' });
-    }
-    const [deleted] = vehicles.splice(index, 1);
-    if (deleted?.photoUrl?.startsWith('/uploads/')) {
-      const absPath = path.join(__dirname, deleted.photoUrl.replace(/^\/uploads\//, 'uploads/'));
-      if (fs.existsSync(absPath)) { try { fs.unlinkSync(absPath); } catch (_) {} }
-    }
-    saveData(users, verificationTokens, vehicles, drivers);
-    res.json({ message: 'Vehicle deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting vehicle:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Replace driver uploads to disk-backed URLs for admin Add Driver
-const adminDriverUpload = multer({ storage: diskStorage, limits: { fileSize: 5 * 1024 * 1024 } }).fields([
-  { name: 'licenseFront', maxCount: 1 },
-  { name: 'licenseBack', maxCount: 1 },
-  { name: 'bondProof', maxCount: 1 },
-  { name: 'rentProof', maxCount: 1 },
-  { name: 'contractDoc', maxCount: 1 }
-]);
-
-app.post('/api/admin/add-driver', (req, res, next) => {
-  adminDriverUpload(req, res, (err) => {
-    if (err) return res.status(400).json({ error: err.message });
-    next();
-  });
-}, async (req, res) => {
-  try {
-    const body = req.body || {};
-    const f = req.files || {};
-    const mkUrl = (arr) => arr && arr[0] ? `/uploads/${arr[0].path.split('uploads/')[1].replace(/\\/g,'/')}` : null;
-
-    const newDriver = {
-      id: Date.now(),
-      firstName: body.firstName,
-      lastName: body.lastName,
-      email: body.email,
-      phone: body.phone,
-      licenseNumber: body.licenseNumber,
-      licenseExpiry: body.licenseExpiry,
-      address: body.address,
-      emergencyContact: body.emergencyContact,
-      emergencyPhone: body.emergencyPhone,
-      selectedVehicleId: body.selectedVehicleId ? parseInt(body.selectedVehicleId) : null,
-      bondAmount: body.bondAmount ? parseInt(body.bondAmount) : 0,
-      weeklyRent: body.weeklyRent ? parseInt(body.weeklyRent) : 0,
-      status: 'pending_approval',
-      licenseFrontUrl: mkUrl(f.licenseFront),
-      licenseBackUrl: mkUrl(f.licenseBack),
-      bondProofUrl: mkUrl(f.bondProof),
-      rentProofUrl: mkUrl(f.rentProof),
-      contractDocUrl: mkUrl(f.contractDoc),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    const driversCollection = getDriversCollection();
-    if (driversCollection) {
-      await driversCollection.insertOne(newDriver);
-    } else {
-      drivers.push(newDriver);
-      saveData(users, verificationTokens, vehicles, drivers);
-    }
-
-    // mark vehicle assigned if provided
-    if (newDriver.selectedVehicleId) {
-      const vehiclesCollection = getVehiclesCollection();
-      if (vehiclesCollection) {
-        await vehiclesCollection.updateOne({ id: newDriver.selectedVehicleId }, { $set: { status: 'assigned', assignedDriverId: newDriver.id } });
-      } else {
-        const vIdx = vehicles.findIndex(v => v.id === newDriver.selectedVehicleId);
-        if (vIdx !== -1) {
-          vehicles[vIdx].status = 'assigned';
-          vehicles[vIdx].assignedDriverId = newDriver.id;
-          saveData(users, verificationTokens, vehicles, drivers);
-        }
-      }
-    }
-
-    res.status(201).json({ message: 'Driver added', driver: newDriver });
-  } catch (e) {
-    console.error('Add driver error:', e);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Ensure critical routes are registered before the 404 handler
-// Delete vehicle (registered early)
-app.delete('/api/vehicles/:id', async (req, res) => {
-  try {
-    const vehicleId = parseInt(req.params.id);
-    const vehiclesCollection = getVehiclesCollection();
-
-    if (vehiclesCollection) {
-      const vehicle = await vehiclesCollection.findOne({ id: vehicleId });
-      const result = await vehiclesCollection.deleteOne({ id: vehicleId });
-      if (result.deletedCount === 0) return res.status(404).json({ error: 'Vehicle not found' });
-      const photoUrl = vehicle?.photoUrl;
-      if (photoUrl && photoUrl.startsWith('/uploads/')) {
-        const absPath = path.join(__dirname, photoUrl.replace(/^\/uploads\//, 'uploads/'));
-        if (fs.existsSync(absPath)) { try { fs.unlinkSync(absPath); } catch (_) {} }
-      }
-      const idx = vehicles.findIndex(v => v.id === vehicleId);
-      if (idx !== -1) vehicles.splice(idx, 1);
-      return res.json({ message: 'Vehicle deleted successfully' });
-    }
-
-    const index = vehicles.findIndex(v => v.id === vehicleId);
-    if (index === -1) return res.status(404).json({ error: 'Vehicle not found' });
-    const deleted = vehicles.splice(index, 1)[0];
-    if (deleted?.photoUrl?.startsWith('/uploads/')) {
-      const absPath = path.join(__dirname, deleted.photoUrl.replace(/^\/uploads\//, 'uploads/'));
-      if (fs.existsSync(absPath)) { try { fs.unlinkSync(absPath); } catch (_) {} }
-    }
-    saveData(users, verificationTokens, vehicles, drivers);
-    res.json({ message: 'Vehicle deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting vehicle (pre-404):', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Admin Add Driver (registered early)
-app.post('/api/admin/add-driver', (req, res, next) => {
-  adminDriverUpload(req, res, (err) => {
-    if (err) return res.status(400).json({ error: err.message });
-    next();
-  });
-}, async (req, res) => {
-  try {
-    const body = req.body || {};
-    const f = req.files || {};
-    const mkUrl = (arr) => arr && arr[0] ? `/uploads/${arr[0].path.split('uploads/')[1].replace(/\\/g,'/')}` : null;
-
-    const newDriver = {
-      id: Date.now(),
-      firstName: body.firstName,
-      lastName: body.lastName,
-      email: body.email,
-      phone: body.phone,
-      licenseNumber: body.licenseNumber,
-      licenseExpiry: body.licenseExpiry,
-      address: body.address,
-      emergencyContact: body.emergencyContact,
-      emergencyPhone: body.emergencyPhone,
-      selectedVehicleId: body.selectedVehicleId ? parseInt(body.selectedVehicleId) : null,
-      bondAmount: body.bondAmount ? parseInt(body.bondAmount) : 0,
-      weeklyRent: body.weeklyRent ? parseInt(body.weeklyRent) : 0,
-      status: 'pending_approval',
-      licenseFrontUrl: mkUrl(f.licenseFront),
-      licenseBackUrl: mkUrl(f.licenseBack),
-      bondProofUrl: mkUrl(f.bondProof),
-      rentProofUrl: mkUrl(f.rentProof),
-      contractDocUrl: mkUrl(f.contractDoc),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    const driversCollection = getDriversCollection();
-    if (driversCollection) {
-      await driversCollection.insertOne(newDriver);
-    } else {
-      drivers.push(newDriver);
-      saveData(users, verificationTokens, vehicles, drivers);
-    }
-
-    if (newDriver.selectedVehicleId) {
-      const vehiclesCollection = getVehiclesCollection();
-      if (vehiclesCollection) {
-        await vehiclesCollection.updateOne({ id: newDriver.selectedVehicleId }, { $set: { status: 'assigned', assignedDriverId: newDriver.id } });
-      } else {
-        const vIdx = vehicles.findIndex(v => v.id === newDriver.selectedVehicleId);
-        if (vIdx !== -1) {
-          vehicles[vIdx].status = 'assigned';
-          vehicles[vIdx].assignedDriverId = newDriver.id;
-          saveData(users, verificationTokens, vehicles, drivers);
-        }
-      }
-    }
-
-    res.status(201).json({ message: 'Driver added', driver: newDriver });
-  } catch (e) {
-    console.error('Add driver error (pre-404):', e);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Helper to delete a vehicle by id used by multiple routes
+// Vehicle delete endpoints (must be before 404 handler)
 async function deleteVehicleByIdInternal(id) {
   const vehicleId = parseInt(id);
   const vehiclesCollection = getVehiclesCollection();
@@ -3120,3 +2866,103 @@ app.post('/api/vehicles-delete', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+// Final API 404 handler (after all routes)
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ error: 'API endpoint not found' });
+});
+
+// Serve React app for all other GET routes - ensure production build index is returned
+app.get('*', (req, res) => {
+  const distIndex = path.join(__dirname, 'dist', 'index.html');
+  if (fs.existsSync(distIndex)) {
+    res.sendFile(distIndex);
+    return;
+  }
+  // Fallback (dev or missing build)
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Frontend: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
+  console.log(`Backend: http://localhost:${PORT}`);
+});
+
+
+
+// Replace driver uploads to disk-backed URLs for admin Add Driver
+const adminDriverUpload = multer({ storage: diskStorage, limits: { fileSize: 5 * 1024 * 1024 } }).fields([
+  { name: 'licenseFront', maxCount: 1 },
+  { name: 'licenseBack', maxCount: 1 },
+  { name: 'bondProof', maxCount: 1 },
+  { name: 'rentProof', maxCount: 1 },
+  { name: 'contractDoc', maxCount: 1 }
+]);
+
+app.post('/api/admin/add-driver', (req, res, next) => {
+  adminDriverUpload(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    next();
+  });
+}, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const f = req.files || {};
+    const mkUrl = (arr) => arr && arr[0] ? `/uploads/${arr[0].path.split('uploads/')[1].replace(/\\/g,'/')}` : null;
+
+    const newDriver = {
+      id: Date.now(),
+      firstName: body.firstName,
+      lastName: body.lastName,
+      email: body.email,
+      phone: body.phone,
+      licenseNumber: body.licenseNumber,
+      licenseExpiry: body.licenseExpiry,
+      address: body.address,
+      emergencyContact: body.emergencyContact,
+      emergencyPhone: body.emergencyPhone,
+      selectedVehicleId: body.selectedVehicleId ? parseInt(body.selectedVehicleId) : null,
+      bondAmount: body.bondAmount ? parseInt(body.bondAmount) : 0,
+      weeklyRent: body.weeklyRent ? parseInt(body.weeklyRent) : 0,
+      status: 'pending_approval',
+      licenseFrontUrl: mkUrl(f.licenseFront),
+      licenseBackUrl: mkUrl(f.licenseBack),
+      bondProofUrl: mkUrl(f.bondProof),
+      rentProofUrl: mkUrl(f.rentProof),
+      contractDocUrl: mkUrl(f.contractDoc),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    const driversCollection = getDriversCollection();
+    if (driversCollection) {
+      await driversCollection.insertOne(newDriver);
+    } else {
+      drivers.push(newDriver);
+      saveData(users, verificationTokens, vehicles, drivers);
+    }
+
+    // mark vehicle assigned if provided
+    if (newDriver.selectedVehicleId) {
+      const vehiclesCollection = getVehiclesCollection();
+      if (vehiclesCollection) {
+        await vehiclesCollection.updateOne({ id: newDriver.selectedVehicleId }, { $set: { status: 'assigned', assignedDriverId: newDriver.id } });
+      } else {
+        const vIdx = vehicles.findIndex(v => v.id === newDriver.selectedVehicleId);
+        if (vIdx !== -1) {
+          vehicles[vIdx].status = 'assigned';
+          vehicles[vIdx].assignedDriverId = newDriver.id;
+          saveData(users, verificationTokens, vehicles, drivers);
+        }
+      }
+    }
+
+    res.status(201).json({ message: 'Driver added', driver: newDriver });
+  } catch (e) {
+    console.error('Add driver error:', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
