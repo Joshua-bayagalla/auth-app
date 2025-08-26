@@ -824,9 +824,12 @@ app.post('/api/vehicles', uploadDisk.fields([
 
     if (vehiclesCollection) {
       await vehiclesCollection.insertOne(newVehicle);
+    } else {
+      // No DB available: keep in memory
+      vehicles.push(newVehicle);
+      saveData(users, verificationTokens, vehicles, drivers);
     }
-    // Remove in-memory duplication: do not push to vehicles array
-
+    
     res.json({ message: 'Vehicle added successfully', vehicle: newVehicle });
   } catch (error) {
     console.error('Error adding vehicle:', error);
@@ -889,20 +892,15 @@ app.put('/api/vehicles/:id', uploadDisk.single('vehiclePhoto'), async (req, res)
 // Pagination for vehicles
 app.get('/api/vehicles', async (req, res) => {
   try {
-    const limit = Math.min(parseInt(req.query.limit) || 50, 200);
-    const skip = parseInt(req.query.skip) || 0;
     const vehiclesCollection = getVehiclesCollection();
     if (vehiclesCollection) {
-      const list = await vehiclesCollection.find({}).skip(skip).limit(limit).toArray();
-      const total = await vehiclesCollection.countDocuments({});
-      return res.json({ items: list, total, limit, skip });
+      const vehiclesFromDB = await vehiclesCollection.find({}).toArray();
+      return res.json(vehiclesFromDB);
     }
-    // fallback
-    const items = vehicles.slice(skip, skip + limit);
-    return res.json({ items, total: vehicles.length, limit, skip });
+    return res.json(vehicles);
   } catch (e) {
     console.error('Error fetching vehicles:', e);
-    res.status(500).json({ error: 'Internal server error' });
+    res.json(vehicles);
   }
 });
 
@@ -2600,6 +2598,80 @@ app.delete('/api/vehicles/:id', async (req, res) => {
     res.json({ message: 'Vehicle deleted successfully' });
   } catch (error) {
     console.error('Error deleting vehicle:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Replace driver uploads to disk-backed URLs for admin Add Driver
+const adminDriverUpload = multer({ storage: diskStorage, limits: { fileSize: 5 * 1024 * 1024 } }).fields([
+  { name: 'licenseFront', maxCount: 1 },
+  { name: 'licenseBack', maxCount: 1 },
+  { name: 'bondProof', maxCount: 1 },
+  { name: 'rentProof', maxCount: 1 },
+  { name: 'contractDoc', maxCount: 1 }
+]);
+
+app.post('/api/admin/add-driver', (req, res, next) => {
+  adminDriverUpload(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    next();
+  });
+}, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const f = req.files || {};
+    const mkUrl = (arr) => arr && arr[0] ? `/uploads/${arr[0].path.split('uploads/')[1].replace(/\\/g,'/')}` : null;
+
+    const newDriver = {
+      id: Date.now(),
+      firstName: body.firstName,
+      lastName: body.lastName,
+      email: body.email,
+      phone: body.phone,
+      licenseNumber: body.licenseNumber,
+      licenseExpiry: body.licenseExpiry,
+      address: body.address,
+      emergencyContact: body.emergencyContact,
+      emergencyPhone: body.emergencyPhone,
+      selectedVehicleId: body.selectedVehicleId ? parseInt(body.selectedVehicleId) : null,
+      bondAmount: body.bondAmount ? parseInt(body.bondAmount) : 0,
+      weeklyRent: body.weeklyRent ? parseInt(body.weeklyRent) : 0,
+      status: 'pending_approval',
+      licenseFrontUrl: mkUrl(f.licenseFront),
+      licenseBackUrl: mkUrl(f.licenseBack),
+      bondProofUrl: mkUrl(f.bondProof),
+      rentProofUrl: mkUrl(f.rentProof),
+      contractDocUrl: mkUrl(f.contractDoc),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    const driversCollection = getDriversCollection();
+    if (driversCollection) {
+      await driversCollection.insertOne(newDriver);
+    } else {
+      drivers.push(newDriver);
+      saveData(users, verificationTokens, vehicles, drivers);
+    }
+
+    // mark vehicle assigned if provided
+    if (newDriver.selectedVehicleId) {
+      const vehiclesCollection = getVehiclesCollection();
+      if (vehiclesCollection) {
+        await vehiclesCollection.updateOne({ id: newDriver.selectedVehicleId }, { $set: { status: 'assigned', assignedDriverId: newDriver.id } });
+      } else {
+        const vIdx = vehicles.findIndex(v => v.id === newDriver.selectedVehicleId);
+        if (vIdx !== -1) {
+          vehicles[vIdx].status = 'assigned';
+          vehicles[vIdx].assignedDriverId = newDriver.id;
+          saveData(users, verificationTokens, vehicles, drivers);
+        }
+      }
+    }
+
+    res.status(201).json({ message: 'Driver added', driver: newDriver });
+  } catch (e) {
+    console.error('Add driver error:', e);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
