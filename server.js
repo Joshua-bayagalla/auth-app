@@ -2555,3 +2555,51 @@ app.listen(PORT, () => {
   console.log(`Frontend: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
   console.log(`Backend: http://localhost:${PORT}`);
 });
+
+// Delete vehicle
+app.delete('/api/vehicles/:id', async (req, res) => {
+  try {
+    const vehicleId = parseInt(req.params.id);
+    const vehiclesCollection = getVehiclesCollection();
+
+    // Try DB first to fetch and delete
+    if (vehiclesCollection) {
+      const vehicle = await vehiclesCollection.findOne({ id: vehicleId });
+      const result = await vehiclesCollection.deleteOne({ id: vehicleId });
+      if (result.deletedCount === 0) {
+        return res.status(404).json({ error: 'Vehicle not found' });
+      }
+      // Attempt to remove photo on disk if path is known from cache or vehicle
+      const photoUrl = vehicle?.photoUrl;
+      if (photoUrl && photoUrl.startsWith('/uploads/')) {
+        const absPath = path.join(__dirname, photoUrl.replace(/^\/uploads\//, 'uploads/'));
+        if (fs.existsSync(absPath)) {
+          try { fs.unlinkSync(absPath); } catch (e) { console.warn('Failed to delete vehicle photo:', e?.message || e); }
+        }
+      }
+      // Also remove from in-memory cache if present
+      const idx = vehicles.findIndex(v => v.id === vehicleId);
+      if (idx !== -1) vehicles.splice(idx, 1);
+      return res.json({ message: 'Vehicle deleted successfully' });
+    }
+
+    // Fallback: in-memory
+    const index = vehicles.findIndex(v => v.id === vehicleId);
+    if (index === -1) {
+      return res.status(404).json({ error: 'Vehicle not found' });
+    }
+    const [deleted] = vehicles.splice(index, 1);
+    // delete photo if local
+    if (deleted?.photoUrl?.startsWith('/uploads/')) {
+      const absPath = path.join(__dirname, deleted.photoUrl.replace(/^\/uploads\//, 'uploads/'));
+      if (fs.existsSync(absPath)) {
+        try { fs.unlinkSync(absPath); } catch (e) { /* ignore */ }
+      }
+    }
+    saveData(users, verificationTokens, vehicles, drivers);
+    res.json({ message: 'Vehicle deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting vehicle:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
