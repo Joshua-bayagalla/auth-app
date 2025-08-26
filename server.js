@@ -732,71 +732,14 @@ app.use('/api/*', (req, res, next) => {
   next();
 });
 
-app.post('/api/vehicles', (req, res, next) => {
-  // Set CORS headers explicitly for all requests
-  res.header('Access-Control-Allow-Origin', 'https://auth-app-xw7c.onrender.com');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Origin, Accept, Content-Length');
-  
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-    return;
-  }
-  
-  next();
-}, (req, res, next) => {
-  // Custom multer configuration for vehicle creation (memory storage for deployment)
-  const vehicleUpload = multer({
-    storage: multer.memoryStorage(),
-    limits: {
-      fileSize: 10 * 1024 * 1024 // 10MB limit
-    },
-    fileFilter: function (req, file, cb) {
-      if (file.fieldname === 'vehiclePhoto') {
-        // Allow only image files for vehicle photos
-        const allowedTypes = /jpeg|jpg|png|webp/;
-        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = allowedTypes.test(file.mimetype);
-        
-        if (mimetype && extname) {
-          return cb(null, true);
-        } else {
-          cb(new Error('Only JPG, PNG, WEBP image files are allowed for vehicle photos!'));
-        }
-      } else if ([ 'contractDoc', 'redBookDoc', 'registrationDoc', 'insuranceDoc', 'cpvDoc' ].includes(file.fieldname)) {
-        // Allow PDF, DOC, DOCX, JPG, PNG for vehicle documents
-        const allowedTypes = /jpeg|jpg|png|pdf|doc|docx/;
-        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = allowedTypes.test(file.mimetype);
-        
-        if (mimetype && extname) {
-          return cb(null, true);
-        } else {
-          cb(new Error('Only PDF, DOC, DOCX, JPG, PNG files are allowed for vehicle documents!'));
-        }
-      } else {
-        cb(null, true);
-      }
-    }
-  }).fields([
-    { name: 'vehiclePhoto', maxCount: 1 },
-    { name: 'contractDoc', maxCount: 1 },
-    { name: 'redBookDoc', maxCount: 1 },
-    { name: 'registrationDoc', maxCount: 1 },
-    { name: 'insuranceDoc', maxCount: 1 },
-    { name: 'cpvDoc', maxCount: 1 }
-  ]);
-
-  vehicleUpload(req, res, (err) => {
-    if (err) {
-      console.error('File upload error:', err);
-      return res.status(400).json({ error: err.message });
-    }
-    next();
-  });
-}, async (req, res) => {
+app.post('/api/vehicles', uploadDisk.fields([
+  { name: 'vehiclePhoto', maxCount: 1 },
+  { name: 'contractDoc', maxCount: 1 },
+  { name: 'redBookDoc', maxCount: 1 },
+  { name: 'registrationDoc', maxCount: 1 },
+  { name: 'insuranceDoc', maxCount: 1 },
+  { name: 'cpvDoc', maxCount: 1 }
+]), async (req, res) => {
   try {
     const {
       make, model, year, licensePlate, vin, bondAmount, rentPerWeek,
@@ -805,66 +748,24 @@ app.post('/api/vehicles', (req, res, next) => {
       contractExpiry, redBookExpiry, registrationExpiry, insuranceExpiry, cpvExpiry
     } = req.body;
 
-    // Validate required fields
     if (!make || !model || !year || !licensePlate) {
       return res.status(400).json({ error: 'Make, model, year, and license plate are required' });
     }
 
-    // Check for duplicate license plate
-    const existingVehicle = vehicles.find(v => v.licensePlate === licensePlate);
-    if (existingVehicle) {
+    const vehiclesCollection = getVehiclesCollection();
+    const exists = vehiclesCollection ? await vehiclesCollection.findOne({ licensePlate }) : vehicles.find(v => v.licensePlate === licensePlate);
+    if (exists) {
       return res.status(400).json({ error: 'Vehicle with this license plate already exists' });
     }
 
-    // Process uploaded vehicle documents
     const vehicleDocuments = {};
-    if (req.files) {
-      if (req.files.contractDoc) {
-        vehicleDocuments.contractDoc = {
-          fileName: req.files.contractDoc[0].originalname,
-          fileUrl: `data:${req.files.contractDoc[0].mimetype};base64,${req.files.contractDoc[0].buffer.toString('base64')}`,
-          fileSize: req.files.contractDoc[0].size,
-          mimeType: req.files.contractDoc[0].mimetype,
-          uploadedAt: new Date().toISOString()
-        };
-      }
-      if (req.files.redBookDoc) {
-        vehicleDocuments.redBookDoc = {
-          fileName: req.files.redBookDoc[0].originalname,
-          fileUrl: `data:${req.files.redBookDoc[0].mimetype};base64,${req.files.redBookDoc[0].buffer.toString('base64')}`,
-          fileSize: req.files.redBookDoc[0].size,
-          mimeType: req.files.redBookDoc[0].mimetype,
-          uploadedAt: new Date().toISOString()
-        };
-      }
-      if (req.files.registrationDoc) {
-        vehicleDocuments.registrationDoc = {
-          fileName: req.files.registrationDoc[0].originalname,
-          fileUrl: `data:${req.files.registrationDoc[0].mimetype};base64,${req.files.registrationDoc[0].buffer.toString('base64')}`,
-          fileSize: req.files.registrationDoc[0].size,
-          mimeType: req.files.registrationDoc[0].mimetype,
-          uploadedAt: new Date().toISOString()
-        };
-      }
-      if (req.files.insuranceDoc) {
-        vehicleDocuments.insuranceDoc = {
-          fileName: req.files.insuranceDoc[0].originalname,
-          fileUrl: `data:${req.files.insuranceDoc[0].mimetype};base64,${req.files.insuranceDoc[0].buffer.toString('base64')}`,
-          fileSize: req.files.insuranceDoc[0].size,
-          mimeType: req.files.insuranceDoc[0].mimetype,
-          uploadedAt: new Date().toISOString()
-        };
-      }
-      if (req.files.cpvDoc) {
-        vehicleDocuments.cpvDoc = {
-          fileName: req.files.cpvDoc[0].originalname,
-          fileUrl: `data:${req.files.cpvDoc[0].mimetype};base64,${req.files.cpvDoc[0].buffer.toString('base64')}`,
-          fileSize: req.files.cpvDoc[0].size,
-          mimeType: req.files.cpvDoc[0].mimetype,
-          uploadedAt: new Date().toISOString()
-        };
-      }
-    }
+    const files = req.files || {};
+    const mkUrl = (f) => f ? `/uploads/${f.path.split('uploads/')[1].replace(/\\/g,'/')}` : null;
+    if (files.contractDoc) vehicleDocuments.contractDoc = { fileName: files.contractDoc[0].originalname, fileUrl: mkUrl(files.contractDoc[0]), uploadedAt: new Date().toISOString() };
+    if (files.redBookDoc) vehicleDocuments.redBookDoc = { fileName: files.redBookDoc[0].originalname, fileUrl: mkUrl(files.redBookDoc[0]), uploadedAt: new Date().toISOString() };
+    if (files.registrationDoc) vehicleDocuments.registrationDoc = { fileName: files.registrationDoc[0].originalname, fileUrl: mkUrl(files.registrationDoc[0]), uploadedAt: new Date().toISOString() };
+    if (files.insuranceDoc) vehicleDocuments.insuranceDoc = { fileName: files.insuranceDoc[0].originalname, fileUrl: mkUrl(files.insuranceDoc[0]), uploadedAt: new Date().toISOString() };
+    if (files.cpvDoc) vehicleDocuments.cpvDoc = { fileName: files.cpvDoc[0].originalname, fileUrl: mkUrl(files.cpvDoc[0]), uploadedAt: new Date().toISOString() };
 
     const newVehicle = {
       id: Date.now(),
@@ -884,34 +785,22 @@ app.post('/api/vehicles', (req, res, next) => {
       transmission: transmission || 'automatic',
       status: status || 'available',
       ownerName: ownerName || '',
-      photoUrl: req.files && req.files.vehiclePhoto ? `data:${req.files.vehiclePhoto[0].mimetype};base64,${req.files.vehiclePhoto[0].buffer.toString('base64')}` : null,
-      photoPath: req.files && req.files.vehiclePhoto ? 'memory' : null,
-      photoName: req.files && req.files.vehiclePhoto ? req.files.vehiclePhoto[0].originalname : null,
-      photoSize: req.files && req.files.vehiclePhoto ? req.files.vehiclePhoto[0].size : null,
+      photoUrl: files.vehiclePhoto ? mkUrl(files.vehiclePhoto[0]) : null,
       contractExpiry: contractExpiry || null,
       redBookExpiry: redBookExpiry || null,
       registrationExpiry: registrationExpiry || null,
       insuranceExpiry: insuranceExpiry || null,
       cpvExpiry: cpvExpiry || null,
-      vehicleDocuments: vehicleDocuments || {},
+      vehicleDocuments,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
-    // Save vehicle to MongoDB or local array
-    const vehiclesCollection = getVehiclesCollection();
     if (vehiclesCollection) {
-      try {
-        await vehiclesCollection.insertOne(newVehicle);
-      } catch (error) {
-        console.error('Error saving vehicle to MongoDB:', error);
-      }
+      await vehiclesCollection.insertOne(newVehicle);
     }
-    
-    // Update local array
-    vehicles.push(newVehicle);
-    
-    console.log('Vehicle added:', newVehicle);
+    // Remove in-memory duplication: do not push to vehicles array
+
     res.json({ message: 'Vehicle added successfully', vehicle: newVehicle });
   } catch (error) {
     console.error('Error adding vehicle:', error);
@@ -919,64 +808,17 @@ app.post('/api/vehicles', (req, res, next) => {
   }
 });
 
-app.put('/api/vehicles/:id', uploadVehiclePhoto.single('vehiclePhoto'), async (req, res) => {
+// Update vehicle photo with disk storage
+app.put('/api/vehicles/:id', uploadDisk.single('vehiclePhoto'), async (req, res) => {
   try {
     const vehicleId = parseInt(req.params.id);
-    
-    // Try database first, fallback to in-memory
-    let vehicle = null;
-    let vehicleIndex = -1;
-    
     const vehiclesCollection = getVehiclesCollection();
-    if (vehiclesCollection) {
-      try {
-        vehicle = await vehiclesCollection.findOne({ id: vehicleId });
-        if (!vehicle) {
-          // Fallback to in-memory
-          vehicleIndex = vehicles.findIndex(v => v.id === vehicleId);
-          if (vehicleIndex === -1) {
-            return res.status(404).json({ error: 'Vehicle not found' });
-          }
-          vehicle = vehicles[vehicleIndex];
-        }
-      } catch (dbError) {
-        console.error('Database error:', dbError);
-        // Fallback to in-memory
-        vehicleIndex = vehicles.findIndex(v => v.id === vehicleId);
-        if (vehicleIndex === -1) {
-          return res.status(404).json({ error: 'Vehicle not found' });
-        }
-        vehicle = vehicles[vehicleIndex];
-      }
-    } else {
-      // Use in-memory storage
-      vehicleIndex = vehicles.findIndex(v => v.id === vehicleId);
-      if (vehicleIndex === -1) {
-        return res.status(404).json({ error: 'Vehicle not found' });
-      }
-      vehicle = vehicles[vehicleIndex];
-    }
 
-    const {
-      make, model, year, licensePlate, vin, bondAmount, rentPerWeek,
-      currentMileage, odoMeter, nextServiceDate, vehicleType, color,
-      fuelType, transmission, status, ownerName
-    } = req.body;
+    let vehicle = vehiclesCollection ? await vehiclesCollection.findOne({ id: vehicleId }) : vehicles.find(v => v.id === vehicleId);
+    if (!vehicle) return res.status(404).json({ error: 'Vehicle not found' });
 
-    // Validate required fields
-    if (!make || !model || !year || !licensePlate) {
-      return res.status(400).json({ error: 'Make, model, year, and license plate are required' });
-    }
+    const { make, model, year, licensePlate, vin, bondAmount, rentPerWeek, currentMileage, odoMeter, nextServiceDate, vehicleType, color, fuelType, transmission, status, ownerName } = req.body;
 
-    // Check for duplicate license plate (excluding current vehicle)
-    const existingVehicle = vehicles.find(v => 
-      v.id !== vehicleId && v.licensePlate === licensePlate
-    );
-    if (existingVehicle) {
-      return res.status(400).json({ error: 'Vehicle with this license plate already exists' });
-    }
-
-    // Update vehicle data
     const updatedVehicle = {
       ...vehicle,
       make,
@@ -998,44 +840,19 @@ app.put('/api/vehicles/:id', uploadVehiclePhoto.single('vehiclePhoto'), async (r
       updatedAt: new Date().toISOString()
     };
 
-    // Handle photo update
     if (req.file) {
-      // Delete old photo if exists
-      if (vehicle.photoPath && fs.existsSync(vehicle.photoPath)) {
-        fs.unlinkSync(vehicle.photoPath);
-      }
-      
-      // Update with new photo
-      updatedVehicle.photoUrl = `/uploads/vehicles/${req.file.filename}`;
-      updatedVehicle.photoPath = req.file.path;
-      updatedVehicle.photoName = req.file.originalname;
-      updatedVehicle.photoSize = req.file.size;
+      updatedVehicle.photoUrl = `/uploads/${req.file.path.split('uploads/')[1].replace(/\\/g,'/')}`;
     }
 
-    // Update in database or in-memory
     if (vehiclesCollection) {
-      try {
-        await vehiclesCollection.updateOne(
-          { id: vehicleId },
-          { $set: updatedVehicle }
-        );
-      } catch (dbError) {
-        console.error('Database update error:', dbError);
-        // Fallback to in-memory update
-        if (vehicleIndex !== -1) {
-          vehicles[vehicleIndex] = updatedVehicle;
-          saveData(users, verificationTokens, vehicles, drivers);
-        }
-      }
-    } else {
-      // Update in-memory
-      if (vehicleIndex !== -1) {
-        vehicles[vehicleIndex] = updatedVehicle;
-        saveData(users, verificationTokens, vehicles, drivers);
-      }
+      await vehiclesCollection.updateOne({ id: vehicleId }, { $set: updatedVehicle });
+      const saved = await vehiclesCollection.findOne({ id: vehicleId });
+      return res.json({ message: 'Vehicle updated successfully', vehicle: saved });
     }
-    
-    console.log('Vehicle updated:', updatedVehicle);
+
+    // In-memory fallback (legacy)
+    const idx = vehicles.findIndex(v => v.id === vehicleId);
+    if (idx !== -1) vehicles[idx] = updatedVehicle;
     res.json({ message: 'Vehicle updated successfully', vehicle: updatedVehicle });
   } catch (error) {
     console.error('Error updating vehicle:', error);
@@ -1043,76 +860,22 @@ app.put('/api/vehicles/:id', uploadVehiclePhoto.single('vehiclePhoto'), async (r
   }
 });
 
+// Pagination for vehicles
 app.get('/api/vehicles', async (req, res) => {
   try {
-    const vehiclesCollection = getVehiclesCollection();
-    if (!vehiclesCollection) {
-      // Fallback to in-memory storage
-    res.json(vehicles);
-      return;
-    }
-    const vehiclesFromDB = await vehiclesCollection.find({}).toArray();
-    res.json(vehiclesFromDB);
-  } catch (error) {
-    console.error('Error fetching vehicles:', error);
-    // Fallback to in-memory storage
-    res.json(vehicles);
-  }
-});
-
-app.get('/api/vehicles/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
+    const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+    const skip = parseInt(req.query.skip) || 0;
     const vehiclesCollection = getVehiclesCollection();
     if (vehiclesCollection) {
-      try {
-        const vehicle = await vehiclesCollection.findOne({ id: parseInt(id) });
-        if (!vehicle) {
-          return res.status(404).json({ error: 'Vehicle not found' });
-        }
-        return res.json(vehicle);
-      } catch (dbErr) {
-        console.error('DB error fetching vehicle by id:', dbErr);
-      }
+      const list = await vehiclesCollection.find({}).skip(skip).limit(limit).toArray();
+      const total = await vehiclesCollection.countDocuments({});
+      return res.json({ items: list, total, limit, skip });
     }
-    const vehicle = vehicles.find(v => v.id === parseInt(id));
-    if (!vehicle) {
-      return res.status(404).json({ error: 'Vehicle not found' });
-    }
-    res.json(vehicle);
-  } catch (error) {
-    console.error('Error fetching vehicle:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-app.delete('/api/vehicles/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const vehiclesCollection = getVehiclesCollection();
-    if (vehiclesCollection) {
-      try {
-        const result = await vehiclesCollection.deleteOne({ id: parseInt(id) });
-        if (result.deletedCount === 0) {
-          return res.status(404).json({ error: 'Vehicle not found' });
-        }
-        // Also remove from in-memory cache if present
-        const idx = vehicles.findIndex(v => v.id === parseInt(id));
-        if (idx !== -1) vehicles.splice(idx, 1);
-        return res.json({ message: 'Vehicle deleted successfully' });
-      } catch (dbErr) {
-        console.error('DB error deleting vehicle:', dbErr);
-      }
-    }
-    const vehicleIndex = vehicles.findIndex(v => v.id === parseInt(id));
-    if (vehicleIndex === -1) {
-      return res.status(404).json({ error: 'Vehicle not found' });
-    }
-    const deletedVehicle = vehicles.splice(vehicleIndex, 1)[0];
-    saveData(users, verificationTokens, vehicles);
-    res.json({ message: 'Vehicle deleted successfully', vehicle: deletedVehicle });
-  } catch (error) {
-    console.error('Error deleting vehicle:', error);
+    // fallback
+    const items = vehicles.slice(skip, skip + limit);
+    return res.json({ items, total: vehicles.length, limit, skip });
+  } catch (e) {
+    console.error('Error fetching vehicles:', e);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -1333,49 +1096,27 @@ app.post('/api/drivers', (req, res, next) => {
 
 app.get('/api/drivers', async (req, res) => {
   try {
+    const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+    const skip = parseInt(req.query.skip) || 0;
     const driversCollection = getDriversCollection();
     const vehiclesCollection = getVehiclesCollection();
-    
+
     if (driversCollection && vehiclesCollection) {
-      try {
-        const driversFromDB = await driversCollection.find({}).toArray();
-        const vehiclesFromDB = await vehiclesCollection.find({}).toArray();
-        
-        // Include vehicle details for each driver
-        const driversWithVehicles = driversFromDB.map(driver => {
-          const vehicle = driver.selectedVehicleId ? 
-            vehiclesFromDB.find(v => v.id === driver.selectedVehicleId) : null;
-          return {
-            ...driver,
-            vehicle
-          };
-        });
-        res.json(driversWithVehicles);
-      } catch (dbError) {
-        console.error('Database error:', dbError);
-        // Fallback to in-memory
-        const driversWithVehicles = drivers.map(driver => {
-          const vehicle = driver.selectedVehicleId ? 
-            vehicles.find(v => v.id === driver.selectedVehicleId) : null;
-          return {
-            ...driver,
-            vehicle
-          };
-        });
-        res.json(driversWithVehicles);
-      }
-    } else {
-      // Use in-memory storage
-      const driversWithVehicles = drivers.map(driver => {
-        const vehicle = driver.selectedVehicleId ? 
-          vehicles.find(v => v.id === driver.selectedVehicleId) : null;
-        return {
-          ...driver,
-          vehicle
-        };
-      });
-      res.json(driversWithVehicles);
+      const [driversFromDB, vehiclesFromDB, total] = await Promise.all([
+        driversCollection.find({}).skip(skip).limit(limit).toArray(),
+        vehiclesCollection.find({}).toArray(),
+        driversCollection.countDocuments({})
+      ]);
+      const driversWithVehicles = driversFromDB.map(driver => ({
+        ...driver,
+        vehicle: driver.selectedVehicleId ? vehiclesFromDB.find(v => v.id === driver.selectedVehicleId) : null
+      }));
+      return res.json({ items: driversWithVehicles, total, limit, skip });
     }
+
+    // fallback
+    const items = drivers.slice(skip, skip + limit).map(d => ({ ...d, vehicle: d.selectedVehicleId ? vehicles.find(v => v.id === d.selectedVehicleId) : null }));
+    return res.json({ items, total: drivers.length, limit, skip });
   } catch (error) {
     console.error('Error fetching drivers:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -2741,21 +2482,26 @@ app.post('/api/admin/reset', async (req, res) => {
     const vehiclesCollection = getVehiclesCollection();
     const driversCollection = getDriversCollection();
 
-    // Clear MongoDB collections if available
-    if (vehiclesCollection) {
-      try { await vehiclesCollection.deleteMany({}); } catch (e) { console.error('DB reset vehicles error:', e); }
-    }
-    if (driversCollection) {
-      try { await driversCollection.deleteMany({}); } catch (e) { console.error('DB reset drivers error:', e); }
+    if (vehiclesCollection) await vehiclesCollection.deleteMany({});
+    if (driversCollection) await driversCollection.deleteMany({});
+
+    // Delete uploads directory contents
+    const uploadsDir = path.join(__dirname, 'uploads');
+    if (fs.existsSync(uploadsDir)) {
+      const entries = fs.readdirSync(uploadsDir);
+      for (const entry of entries) {
+        const p = path.join(uploadsDir, entry);
+        fs.rmSync(p, { recursive: true, force: true });
+      }
+      fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
-    // Clear in-memory caches
+    // Clear in-memory caches (legacy)
     vehicles.splice(0, vehicles.length);
     drivers.splice(0, drivers.length);
 
     saveData(users, verificationTokens, vehicles, drivers);
-
-    res.json({ message: 'All drivers and vehicles have been deleted.' });
+    res.json({ message: 'All drivers, vehicles, and uploaded files have been deleted.' });
   } catch (error) {
     console.error('Admin reset error:', error);
     res.status(500).json({ error: 'Internal server error' });
