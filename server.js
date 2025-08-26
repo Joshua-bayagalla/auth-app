@@ -2675,3 +2675,104 @@ app.post('/api/admin/add-driver', (req, res, next) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+// Ensure critical routes are registered before the 404 handler
+// Delete vehicle (registered early)
+app.delete('/api/vehicles/:id', async (req, res) => {
+  try {
+    const vehicleId = parseInt(req.params.id);
+    const vehiclesCollection = getVehiclesCollection();
+
+    if (vehiclesCollection) {
+      const vehicle = await vehiclesCollection.findOne({ id: vehicleId });
+      const result = await vehiclesCollection.deleteOne({ id: vehicleId });
+      if (result.deletedCount === 0) return res.status(404).json({ error: 'Vehicle not found' });
+      const photoUrl = vehicle?.photoUrl;
+      if (photoUrl && photoUrl.startsWith('/uploads/')) {
+        const absPath = path.join(__dirname, photoUrl.replace(/^\/uploads\//, 'uploads/'));
+        if (fs.existsSync(absPath)) { try { fs.unlinkSync(absPath); } catch (_) {} }
+      }
+      const idx = vehicles.findIndex(v => v.id === vehicleId);
+      if (idx !== -1) vehicles.splice(idx, 1);
+      return res.json({ message: 'Vehicle deleted successfully' });
+    }
+
+    const index = vehicles.findIndex(v => v.id === vehicleId);
+    if (index === -1) return res.status(404).json({ error: 'Vehicle not found' });
+    const deleted = vehicles.splice(index, 1)[0];
+    if (deleted?.photoUrl?.startsWith('/uploads/')) {
+      const absPath = path.join(__dirname, deleted.photoUrl.replace(/^\/uploads\//, 'uploads/'));
+      if (fs.existsSync(absPath)) { try { fs.unlinkSync(absPath); } catch (_) {} }
+    }
+    saveData(users, verificationTokens, vehicles, drivers);
+    res.json({ message: 'Vehicle deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting vehicle (pre-404):', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin Add Driver (registered early)
+app.post('/api/admin/add-driver', (req, res, next) => {
+  adminDriverUpload(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    next();
+  });
+}, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const f = req.files || {};
+    const mkUrl = (arr) => arr && arr[0] ? `/uploads/${arr[0].path.split('uploads/')[1].replace(/\\/g,'/')}` : null;
+
+    const newDriver = {
+      id: Date.now(),
+      firstName: body.firstName,
+      lastName: body.lastName,
+      email: body.email,
+      phone: body.phone,
+      licenseNumber: body.licenseNumber,
+      licenseExpiry: body.licenseExpiry,
+      address: body.address,
+      emergencyContact: body.emergencyContact,
+      emergencyPhone: body.emergencyPhone,
+      selectedVehicleId: body.selectedVehicleId ? parseInt(body.selectedVehicleId) : null,
+      bondAmount: body.bondAmount ? parseInt(body.bondAmount) : 0,
+      weeklyRent: body.weeklyRent ? parseInt(body.weeklyRent) : 0,
+      status: 'pending_approval',
+      licenseFrontUrl: mkUrl(f.licenseFront),
+      licenseBackUrl: mkUrl(f.licenseBack),
+      bondProofUrl: mkUrl(f.bondProof),
+      rentProofUrl: mkUrl(f.rentProof),
+      contractDocUrl: mkUrl(f.contractDoc),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    const driversCollection = getDriversCollection();
+    if (driversCollection) {
+      await driversCollection.insertOne(newDriver);
+    } else {
+      drivers.push(newDriver);
+      saveData(users, verificationTokens, vehicles, drivers);
+    }
+
+    if (newDriver.selectedVehicleId) {
+      const vehiclesCollection = getVehiclesCollection();
+      if (vehiclesCollection) {
+        await vehiclesCollection.updateOne({ id: newDriver.selectedVehicleId }, { $set: { status: 'assigned', assignedDriverId: newDriver.id } });
+      } else {
+        const vIdx = vehicles.findIndex(v => v.id === newDriver.selectedVehicleId);
+        if (vIdx !== -1) {
+          vehicles[vIdx].status = 'assigned';
+          vehicles[vIdx].assignedDriverId = newDriver.id;
+          saveData(users, verificationTokens, vehicles, drivers);
+        }
+      }
+    }
+
+    res.status(201).json({ message: 'Driver added', driver: newDriver });
+  } catch (e) {
+    console.error('Add driver error (pre-404):', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
