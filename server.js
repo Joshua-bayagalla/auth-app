@@ -732,6 +732,32 @@ app.use('/api/*', (req, res, next) => {
   next();
 });
 
+// Disk-based multer storage for uploads
+const diskStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    try {
+      const baseDir = path.join(__dirname, 'uploads');
+      let subDir = 'documents';
+      if (file.fieldname && /vehiclePhoto/i.test(file.fieldname)) subDir = 'vehicles';
+      const dest = path.join(baseDir, subDir);
+      fs.mkdirSync(dest, { recursive: true });
+      cb(null, dest);
+    } catch (e) {
+      cb(e);
+    }
+  },
+  filename: function (req, file, cb) {
+    const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    const safe = (file.originalname || 'file').replace(/[^a-zA-Z0-9._-]/g, '_');
+    cb(null, `${unique}-${safe}`);
+  }
+});
+
+const uploadDisk = multer({
+  storage: diskStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }
+});
+
 app.post('/api/vehicles', uploadDisk.fields([
   { name: 'vehiclePhoto', maxCount: 1 },
   { name: 'contractDoc', maxCount: 1 },
