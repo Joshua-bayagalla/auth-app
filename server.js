@@ -1060,9 +1060,22 @@ app.get('/api/vehicles', async (req, res) => {
   }
 });
 
-app.get('/api/vehicles/:id', (req, res) => {
+app.get('/api/vehicles/:id', async (req, res) => {
   try {
-    const vehicle = vehicles.find(v => v.id === parseInt(req.params.id));
+    const { id } = req.params;
+    const vehiclesCollection = getVehiclesCollection();
+    if (vehiclesCollection) {
+      try {
+        const vehicle = await vehiclesCollection.findOne({ id: parseInt(id) });
+        if (!vehicle) {
+          return res.status(404).json({ error: 'Vehicle not found' });
+        }
+        return res.json(vehicle);
+      } catch (dbErr) {
+        console.error('DB error fetching vehicle by id:', dbErr);
+      }
+    }
+    const vehicle = vehicles.find(v => v.id === parseInt(id));
     if (!vehicle) {
       return res.status(404).json({ error: 'Vehicle not found' });
     }
@@ -1073,16 +1086,30 @@ app.get('/api/vehicles/:id', (req, res) => {
   }
 });
 
-app.delete('/api/vehicles/:id', (req, res) => {
+app.delete('/api/vehicles/:id', async (req, res) => {
   try {
-    const vehicleIndex = vehicles.findIndex(v => v.id === parseInt(req.params.id));
+    const { id } = req.params;
+    const vehiclesCollection = getVehiclesCollection();
+    if (vehiclesCollection) {
+      try {
+        const result = await vehiclesCollection.deleteOne({ id: parseInt(id) });
+        if (result.deletedCount === 0) {
+          return res.status(404).json({ error: 'Vehicle not found' });
+        }
+        // Also remove from in-memory cache if present
+        const idx = vehicles.findIndex(v => v.id === parseInt(id));
+        if (idx !== -1) vehicles.splice(idx, 1);
+        return res.json({ message: 'Vehicle deleted successfully' });
+      } catch (dbErr) {
+        console.error('DB error deleting vehicle:', dbErr);
+      }
+    }
+    const vehicleIndex = vehicles.findIndex(v => v.id === parseInt(id));
     if (vehicleIndex === -1) {
       return res.status(404).json({ error: 'Vehicle not found' });
     }
-
     const deletedVehicle = vehicles.splice(vehicleIndex, 1)[0];
     saveData(users, verificationTokens, vehicles);
-
     res.json({ message: 'Vehicle deleted successfully', vehicle: deletedVehicle });
   } catch (error) {
     console.error('Error deleting vehicle:', error);
@@ -1355,17 +1382,37 @@ app.get('/api/drivers', async (req, res) => {
   }
 });
 
-app.get('/api/drivers/:id', (req, res) => {
+app.get('/api/drivers/:id', async (req, res) => {
   try {
-    const driver = drivers.find(d => d.id === parseInt(req.params.id));
+    const { id } = req.params;
+    const driversCollection = getDriversCollection();
+    const vehiclesCollection = getVehiclesCollection();
+
+    if (driversCollection) {
+      try {
+        const driver = await driversCollection.findOne({ id: parseInt(id) });
+        if (!driver) {
+          return res.status(404).json({ error: 'Driver not found' });
+        }
+        let vehicle = null;
+        if (vehiclesCollection && driver.selectedVehicleId) {
+          vehicle = await vehiclesCollection.findOne({ id: driver.selectedVehicleId });
+        } else if (driver.selectedVehicleId) {
+          vehicle = vehicles.find(v => v.id === driver.selectedVehicleId) || null;
+        }
+        return res.json({ ...driver, vehicle });
+      } catch (dbErr) {
+        console.error('DB error fetching driver by id:', dbErr);
+      }
+    }
+
+    // Fallback to in-memory
+    const driver = drivers.find(d => d.id === parseInt(id));
     if (!driver) {
       return res.status(404).json({ error: 'Driver not found' });
     }
-    
-    // Include vehicle details
     const vehicle = driver.selectedVehicleId ? 
       vehicles.find(v => v.id === driver.selectedVehicleId) : null;
-    
     res.json({ ...driver, vehicle });
   } catch (error) {
     console.error('Error fetching driver:', error);
@@ -1535,36 +1582,54 @@ app.post('/api/drivers/:id/payment', (req, res) => {
 });
 
 // Update driver application status (approve/reject)
-app.put('/api/drivers/:id/status', (req, res) => {
+app.put('/api/drivers/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, actionDate } = req.body;
-    
+    const { status } = req.body;
+
+    const driversCollection = getDriversCollection();
+
+    // Compute nextRentDate on approval (7 days from today)
+    const now = new Date();
+    const nextRentDate = status === 'approved' ? new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString() : null;
+
+    if (driversCollection) {
+      try {
+        const update = {
+          $set: {
+            status,
+            updatedAt: new Date().toISOString(),
+          },
+        };
+        if (nextRentDate) {
+          update.$set.nextRentDate = nextRentDate;
+          update.$set.approvedAt = now.toISOString();
+        }
+        const result = await driversCollection.updateOne({ id: parseInt(id) }, update);
+        if (result.matchedCount === 0) {
+          return res.status(404).json({ error: 'Application not found' });
+        }
+        const updated = await driversCollection.findOne({ id: parseInt(id) });
+        return res.json({ message: 'Status updated', driver: updated });
+      } catch (dbErr) {
+        console.error('DB error updating driver status:', dbErr);
+        // fall through to in-memory
+      }
+    }
+
+    // Fallback: in-memory
     const driverIndex = drivers.findIndex(d => d.id == id);
     if (driverIndex === -1) {
       return res.status(404).json({ error: 'Application not found' });
     }
-    
-    // Update the status
     drivers[driverIndex].status = status;
-    drivers[driverIndex].actionDate = actionDate;
     drivers[driverIndex].updatedAt = new Date().toISOString();
-    
-    // If approved, set next rent date to 1 week from now
-    if (status === 'approved') {
-      const nextRentDate = new Date();
-      nextRentDate.setDate(nextRentDate.getDate() + 7);
-      drivers[driverIndex].nextRentDate = nextRentDate.toISOString();
+    if (nextRentDate) {
+      drivers[driverIndex].nextRentDate = nextRentDate;
+      drivers[driverIndex].approvedAt = now.toISOString();
     }
-    
-    // Save to database
     saveData(users, verificationTokens, vehicles, drivers);
-    
-    res.json({ 
-      message: `Application ${status} successfully`,
-      driver: drivers[driverIndex]
-    });
-    
+    res.json({ message: 'Status updated', driver: drivers[driverIndex] });
   } catch (error) {
     console.error('Error updating driver status:', error);
     res.status(500).json({ error: 'Internal server error' });
