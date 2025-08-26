@@ -1419,49 +1419,137 @@ app.get('/api/drivers/:id', async (req, res) => {
   }
 });
 
-app.put('/api/drivers/:id', (req, res) => {
+app.put('/api/drivers/:id', (req, res, next) => {
+  uploadDriverDocs(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
-    const driverIndex = drivers.findIndex(d => d.id === parseInt(req.params.id));
-    if (driverIndex === -1) {
+    const driverId = parseInt(req.params.id);
+    const {
+      firstName,
+      lastName,
+      email,
+      phone,
+      licenseNumber,
+      licenseExpiry,
+      address,
+      emergencyContact,
+      emergencyPhone,
+      selectedVehicleId,
+      contractStartDate,
+      contractEndDate,
+      contractPeriod,
+      bondAmount,
+      weeklyRent
+    } = req.body;
+
+    // Validate required fields
+    if (!firstName || !lastName || !email || !phone || !licenseNumber) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const driversCollection = getDriversCollection();
+    let existingDriver = null;
+    
+    if (driversCollection) {
+      try {
+        existingDriver = await driversCollection.findOne({ id: driverId });
+      } catch (dbError) {
+        console.error('Database error:', dbError);
+        existingDriver = drivers.find(d => d.id === driverId);
+      }
+    } else {
+      existingDriver = drivers.find(d => d.id === driverId);
+    }
+    
+    if (!existingDriver) {
       return res.status(404).json({ error: 'Driver not found' });
     }
 
-    const oldVehicleId = drivers[driverIndex].selectedVehicleId;
-    const newVehicleId = req.body.selectedVehicleId ? parseInt(req.body.selectedVehicleId) : null;
+    // Handle file uploads
+    const files = req.files || {};
+    const mkUrl = (arr) => arr && arr[0] ? `/uploads/${arr[0].path.split('uploads/')[1].replace(/\\/g,'/')}` : null;
 
-    // Handle vehicle reassignment
-    if (oldVehicleId !== newVehicleId) {
-      // Free up old vehicle
-      if (oldVehicleId) {
-        const oldVehicleIndex = vehicles.findIndex(v => v.id === oldVehicleId);
-        if (oldVehicleIndex !== -1) {
-          vehicles[oldVehicleIndex].status = 'available';
-          vehicles[oldVehicleIndex].assignedDriverId = null;
+    const updateData = {
+      firstName,
+      lastName,
+      email,
+      phone,
+      licenseNumber,
+      licenseExpiry: licenseExpiry || null,
+      address: address || '',
+      emergencyContact: emergencyContact || '',
+      emergencyPhone: emergencyPhone || '',
+      selectedVehicleId: selectedVehicleId ? parseInt(selectedVehicleId) : null,
+      contractStartDate: contractStartDate || null,
+      contractEndDate: contractEndDate || null,
+      contractPeriod: contractPeriod || '',
+      bondAmount: bondAmount ? parseInt(bondAmount) : 0,
+      weeklyRent: weeklyRent ? parseInt(weeklyRent) : 0,
+      updatedAt: new Date().toISOString()
+    };
+
+    // Add file URLs if new files were uploaded
+    if (files.licenseFront) updateData.licenseFrontUrl = mkUrl(files.licenseFront);
+    if (files.licenseBack) updateData.licenseBackUrl = mkUrl(files.licenseBack);
+    if (files.bondProof) updateData.bondProofUrl = mkUrl(files.bondProof);
+    if (files.rentProof) updateData.rentProofUrl = mkUrl(files.rentProof);
+    if (files.contractDoc) updateData.contractDocUrl = mkUrl(files.contractDoc);
+
+    // Update in database
+    if (driversCollection) {
+      await driversCollection.updateOne({ id: driverId }, { $set: updateData });
+    }
+
+    // Update in-memory cache
+    const driverIndex = drivers.findIndex(d => d.id === driverId);
+    if (driverIndex !== -1) {
+      drivers[driverIndex] = { ...drivers[driverIndex], ...updateData };
+    }
+
+    // Handle vehicle assignment
+    if (selectedVehicleId !== existingDriver.selectedVehicleId) {
+      // Free the previously assigned vehicle
+      if (existingDriver.selectedVehicleId) {
+        const vehiclesCollection = getVehiclesCollection();
+        if (vehiclesCollection) {
+          await vehiclesCollection.updateOne(
+            { id: existingDriver.selectedVehicleId },
+            { $set: { status: 'available', assignedDriverId: null } }
+          );
+        } else {
+          const vIdx = vehicles.findIndex(v => v.id === existingDriver.selectedVehicleId);
+          if (vIdx !== -1) {
+            vehicles[vIdx].status = 'available';
+            vehicles[vIdx].assignedDriverId = null;
+          }
         }
       }
-      
+
       // Assign new vehicle
-      if (newVehicleId) {
-        const newVehicleIndex = vehicles.findIndex(v => v.id === newVehicleId);
-        if (newVehicleIndex !== -1) {
-          vehicles[newVehicleIndex].status = 'assigned';
-          vehicles[newVehicleIndex].assignedDriverId = parseInt(req.params.id);
+      if (selectedVehicleId) {
+        const vehiclesCollection = getVehiclesCollection();
+        if (vehiclesCollection) {
+          await vehiclesCollection.updateOne(
+            { id: parseInt(selectedVehicleId) },
+            { $set: { status: 'assigned', assignedDriverId: driverId } }
+          );
+        } else {
+          const vIdx = vehicles.findIndex(v => v.id === parseInt(selectedVehicleId));
+          if (vIdx !== -1) {
+            vehicles[vIdx].status = 'assigned';
+            vehicles[vIdx].assignedDriverId = driverId;
+          }
         }
       }
     }
 
-    const updatedDriver = {
-      ...drivers[driverIndex],
-      ...req.body,
-      id: parseInt(req.params.id), // Ensure ID doesn't change
-      selectedVehicleId: newVehicleId,
-      updatedAt: new Date().toISOString()
-    };
-
-    drivers[driverIndex] = updatedDriver;
     saveData(users, verificationTokens, vehicles, drivers);
-
-    res.json({ message: 'Driver updated successfully', driver: updatedDriver });
+    res.json({ message: 'Driver updated successfully' });
   } catch (error) {
     console.error('Error updating driver:', error);
     res.status(500).json({ error: 'Internal server error' });

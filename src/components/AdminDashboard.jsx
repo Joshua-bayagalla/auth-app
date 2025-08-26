@@ -29,6 +29,8 @@ const AdminDashboard = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [showAddDriver, setShowAddDriver] = useState(false);
+  const [showEditDriver, setShowEditDriver] = useState(false);
+  const [editingDriver, setEditingDriver] = useState(null);
   const [showDriverDetails, setShowDriverDetails] = useState(false);
   const [selectedDriver, setSelectedDriver] = useState(null);
   const [showDocPreview, setShowDocPreview] = useState(false);
@@ -349,8 +351,30 @@ const AdminDashboard = () => {
   };
 
   const handleEditDriver = (driver) => {
-    // TODO: Implement driver editing functionality
-    alert('Driver editing functionality will be implemented soon!');
+    setEditingDriver(driver);
+    setDriverForm({
+      firstName: driver.firstName || '',
+      lastName: driver.lastName || '',
+      email: driver.email || '',
+      phone: driver.phone || '',
+      licenseNumber: driver.licenseNumber || '',
+      licenseExpiry: driver.licenseExpiry || '',
+      address: driver.address || '',
+      emergencyContact: driver.emergencyContact || '',
+      emergencyPhone: driver.emergencyPhone || '',
+      selectedVehicleId: driver.selectedVehicleId ? String(driver.selectedVehicleId) : '',
+      contractStartDate: driver.contractStartDate || '',
+      contractEndDate: driver.contractEndDate || '',
+      contractPeriod: driver.contractPeriod || '',
+      bondAmount: driver.bondAmount ? String(driver.bondAmount) : '1000',
+      weeklyRent: driver.weeklyRent ? String(driver.weeklyRent) : '200',
+      licenseFront: null,
+      licenseBack: null,
+      bondProof: null,
+      rentProof: null,
+      contractDoc: null
+    });
+    setShowEditDriver(true);
   };
 
   const handleDeleteDriver = async (driverId) => {
@@ -1516,7 +1540,31 @@ const AdminDashboard = () => {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Bond Amount ($) *</label>
+                  <input
+                    type="number"
+                    name="bondAmount"
+                    value={formData.bondAmount}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., 1000"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Rent Per Week ($) *</label>
+                  <input
+                    type="number"
+                    name="rentPerWeek"
+                    value={formData.rentPerWeek}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., 200"
+                  />
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Make *</label>
                       <input
                         type="text"
@@ -1592,17 +1640,7 @@ const AdminDashboard = () => {
                       />
                     </div>
                 
-                    <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Rent Per Week ($)</label>
-                      <input
-                        type="number"
-                    name="rentPerWeek"
-                    value={formData.rentPerWeek}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., 200"
-                      />
-                    </div>
+
                 
                     <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Current Mileage</label>
@@ -1774,17 +1812,7 @@ const AdminDashboard = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">CPV Expiry Date</label>
                   <input type="date" name="cpvExpiry" value={formData.cpvExpiry} onChange={handleInputChange} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Bond Amount ($)</label>
-                          <input
-                        type="number"
-                    name="bondAmount"
-                    value={formData.bondAmount}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., 1000"
-                      />
-                        </div>
+
                   </div>
 
               <div className="flex justify-end space-x-4 pt-6">
@@ -1811,135 +1839,6 @@ const AdminDashboard = () => {
         )}
 
       {/* Driver Details Modal */}
-      {/* Add Driver Modal */}
-      {showAddDriver && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full p-8 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Add Driver</h2>
-              <button onClick={() => setShowAddDriver(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="w-6 h-6" />
-                  </button>
-                </div>
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                const fd = new FormData();
-                Object.entries(driverForm).forEach(([k,v]) => { if (v) fd.append(k, v); });
-                const response = await fetch('/api/drivers', { method: 'POST', body: fd });
-                if (response.ok) {
-                  setShowAddDriver(false);
-                  setDriverForm({
-                    firstName: '', lastName: '', email: '', phone: '', licenseNumber: '', licenseExpiry: '',
-                    address: '', emergencyContact: '', emergencyPhone: '', selectedVehicleId: '',
-                    contractStartDate: '', contractEndDate: '', contractPeriod: '', bondAmount: '1000', weeklyRent: '200',
-                    licenseFront: null, licenseBack: null, bondProof: null, rentProof: null, contractDoc: null
-                  });
-                  fetchData();
-                } else {
-                  const err = await response.json();
-                  alert(err.error || 'Failed to add driver');
-                }
-              }}
-              className="space-y-6"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">License Front</label>
-                    <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, licenseFront: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
-                    </div>
-                    <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">License Back</label>
-                    <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, licenseBack: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
-                    </div>
-                    <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Bond Proof</label>
-                    <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, bondProof: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
-                    </div>
-                    <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Rent Proof</label>
-                    <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, rentProof: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
-                    </div>
-                    <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Contract Document</label>
-                    <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, contractDoc: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
-                  </div>
-                    </div>
-                    <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
-                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.firstName} onChange={(e)=>setDriverForm({...driverForm, firstName:e.target.value})} required />
-                    </div>
-                    <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
-                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.lastName} onChange={(e)=>setDriverForm({...driverForm, lastName:e.target.value})} required />
-                    </div>
-                    <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
-                  <input type="email" className="w-full px-4 py-3 border rounded-xl" value={driverForm.email} onChange={(e)=>setDriverForm({...driverForm, email:e.target.value})} required />
-                    </div>
-                    <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone *</label>
-                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.phone} onChange={(e)=>setDriverForm({...driverForm, phone:e.target.value})} required />
-                    </div>
-                    <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">License Number *</label>
-                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.licenseNumber} onChange={(e)=>setDriverForm({...driverForm, licenseNumber:e.target.value})} required />
-                    </div>
-                    <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">License Expiry</label>
-                  <input type="date" className="w-full px-4 py-3 border rounded-xl" value={driverForm.licenseExpiry} onChange={(e)=>setDriverForm({...driverForm, licenseExpiry:e.target.value})} />
-                    </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
-                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.address} onChange={(e)=>setDriverForm({...driverForm, address:e.target.value})} />
-                    </div>
-                    <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Emergency Contact</label>
-                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.emergencyContact} onChange={(e)=>setDriverForm({...driverForm, emergencyContact:e.target.value})} />
-                    </div>
-                    <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Emergency Phone</label>
-                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.emergencyPhone} onChange={(e)=>setDriverForm({...driverForm, emergencyPhone:e.target.value})} />
-                    </div>
-                    <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Assign Vehicle</label>
-                  <select className="w-full px-4 py-3 border rounded-xl" value={driverForm.selectedVehicleId} onChange={(e)=>setDriverForm({...driverForm, selectedVehicleId:e.target.value})}>
-                    <option value="">None</option>
-                    {vehicles.map(v => (
-                      <option key={v.id} value={v.id}>{v.make} {v.model} • {v.licensePlate}</option>
-                    ))}
-                      </select>
-                    </div>
-                    <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Contract Start</label>
-                  <input type="date" className="w-full px-4 py-3 border rounded-xl" value={driverForm.contractStartDate} onChange={(e)=>setDriverForm({...driverForm, contractStartDate:e.target.value})} />
-                    </div>
-                    <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Contract End</label>
-                  <input type="date" className="w-full px-4 py-3 border rounded-xl" value={driverForm.contractEndDate} onChange={(e)=>setDriverForm({...driverForm, contractEndDate:e.target.value})} />
-                    </div>
-                    <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Contract Period</label>
-                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.contractPeriod} onChange={(e)=>setDriverForm({...driverForm, contractPeriod:e.target.value})} />
-                  </div>
-                  <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Bond Amount ($)</label>
-                  <input type="number" className="w-full px-4 py-3 border rounded-xl" value={driverForm.bondAmount} onChange={(e)=>setDriverForm({...driverForm, bondAmount:e.target.value})} />
-                  </div>
-                  <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Weekly Rent ($)</label>
-                  <input type="number" className="w-full px-4 py-3 border rounded-xl" value={driverForm.weeklyRent} onChange={(e)=>setDriverForm({...driverForm, weeklyRent:e.target.value})} />
-                        </div>
-                    </div>
-              <div className="flex justify-end space-x-4">
-                <button type="button" onClick={()=>setShowAddDriver(false)} className="px-6 py-3 border rounded-xl">Cancel</button>
-                <button type="submit" className="px-6 py-3 bg-green-600 text-white rounded-xl">Save Driver</button>
-                            </div>
-                </form>
-                        </div>
-                      </div>
-                    )}
       {showDriverDetails && selectedDriver && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -2183,6 +2082,269 @@ const AdminDashboard = () => {
                 <img src={previewDocUrl} alt="document" className="max-h-[75vh] w-auto mx-auto object-contain" />
               )}
             </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Edit Driver Modal */}
+      {showEditDriver && editingDriver && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full p-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Edit Driver</h2>
+              <button onClick={() => setShowEditDriver(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const fd = new FormData();
+                Object.entries(driverForm).forEach(([k,v]) => { if (v) fd.append(k, v); });
+                const response = await fetch(`/api/drivers/${editingDriver.id}`, { method: 'PUT', body: fd });
+                if (response.ok) {
+                  setShowEditDriver(false);
+                  setEditingDriver(null);
+                  setDriverForm({
+                    firstName: '', lastName: '', email: '', phone: '', licenseNumber: '', licenseExpiry: '',
+                    address: '', emergencyContact: '', emergencyPhone: '', selectedVehicleId: '',
+                    contractStartDate: '', contractEndDate: '', contractPeriod: '', bondAmount: '1000', weeklyRent: '200',
+                    licenseFront: null, licenseBack: null, bondProof: null, rentProof: null, contractDoc: null
+                  });
+                  fetchData();
+                  alert('Driver updated successfully!');
+                } else {
+                  const err = await response.json();
+                  alert(err.error || 'Failed to update driver');
+                }
+              }}
+              className="space-y-6"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">License Front</label>
+                    <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, licenseFront: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">License Back</label>
+                    <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, licenseBack: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Bond Proof</label>
+                    <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, bondProof: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Rent Proof</label>
+                    <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, rentProof: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Contract Document</label>
+                    <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, contractDoc: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.firstName} onChange={(e)=>setDriverForm({...driverForm, firstName:e.target.value})} required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.lastName} onChange={(e)=>setDriverForm({...driverForm, lastName:e.target.value})} required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                  <input type="email" className="w-full px-4 py-3 border rounded-xl" value={driverForm.email} onChange={(e)=>setDriverForm({...driverForm, email:e.target.value})} required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone *</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.phone} onChange={(e)=>setDriverForm({...driverForm, phone:e.target.value})} required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">License Number *</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.licenseNumber} onChange={(e)=>setDriverForm({...driverForm, licenseNumber:e.target.value})} required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">License Expiry</label>
+                  <input type="date" className="w-full px-4 py-3 border rounded-xl" value={driverForm.licenseExpiry} onChange={(e)=>setDriverForm({...driverForm, licenseExpiry:e.target.value})} />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.address} onChange={(e)=>setDriverForm({...driverForm, address:e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Emergency Contact</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.emergencyContact} onChange={(e)=>setDriverForm({...driverForm, emergencyContact:e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Emergency Phone</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.emergencyPhone} onChange={(e)=>setDriverForm({...driverForm, emergencyPhone:e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Assigned Vehicle</label>
+                  <select className="w-full px-4 py-3 border rounded-xl" value={driverForm.selectedVehicleId} onChange={(e)=>setDriverForm({...driverForm, selectedVehicleId:e.target.value})}>
+                    <option value="">Select Vehicle</option>
+                    {vehicles.filter(v => v.status === 'available' || v.id === editingDriver.selectedVehicleId).map(vehicle => (
+                      <option key={vehicle.id} value={vehicle.id}>
+                        {vehicle.make} {vehicle.model} - {vehicle.licensePlate}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Contract Start Date</label>
+                  <input type="date" className="w-full px-4 py-3 border rounded-xl" value={driverForm.contractStartDate} onChange={(e)=>setDriverForm({...driverForm, contractStartDate:e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Contract End Date</label>
+                  <input type="date" className="w-full px-4 py-3 border rounded-xl" value={driverForm.contractEndDate} onChange={(e)=>setDriverForm({...driverForm, contractEndDate:e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Contract Period</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.contractPeriod} onChange={(e)=>setDriverForm({...driverForm, contractPeriod:e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Bond Amount ($)</label>
+                  <input type="number" className="w-full px-4 py-3 border rounded-xl" value={driverForm.bondAmount} onChange={(e)=>setDriverForm({...driverForm, bondAmount:e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Weekly Rent ($)</label>
+                  <input type="number" className="w-full px-4 py-3 border rounded-xl" value={driverForm.weeklyRent} onChange={(e)=>setDriverForm({...driverForm, weeklyRent:e.target.value})} />
+                </div>
+              </div>
+              <div className="flex justify-end space-x-4">
+                <button type="button" onClick={()=>setShowEditDriver(false)} className="px-6 py-3 border rounded-xl">Cancel</button>
+                <button type="submit" className="px-6 py-3 bg-blue-600 text-white rounded-xl">Update Driver</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Add Driver Modal */}
+      {showAddDriver && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full p-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Add Driver</h2>
+              <button onClick={() => setShowAddDriver(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const fd = new FormData();
+                Object.entries(driverForm).forEach(([k,v]) => { if (v) fd.append(k, v); });
+                const response = await fetch('/api/drivers', { method: 'POST', body: fd });
+                if (response.ok) {
+                  setShowAddDriver(false);
+                  setDriverForm({
+                    firstName: '', lastName: '', email: '', phone: '', licenseNumber: '', licenseExpiry: '',
+                    address: '', emergencyContact: '', emergencyPhone: '', selectedVehicleId: '',
+                    contractStartDate: '', contractEndDate: '', contractPeriod: '', bondAmount: '1000', weeklyRent: '200',
+                    licenseFront: null, licenseBack: null, bondProof: null, rentProof: null, contractDoc: null
+                  });
+                  fetchData();
+                } else {
+                  const err = await response.json();
+                  alert(err.error || 'Failed to add driver');
+                }
+              }}
+              className="space-y-6"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">License Front</label>
+                    <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, licenseFront: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">License Back</label>
+                    <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, licenseBack: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Bond Proof</label>
+                    <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, bondProof: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Rent Proof</label>
+                    <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, rentProof: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Contract Document</label>
+                    <input type="file" accept="image/*,application/pdf" onChange={(e)=>setDriverForm({...driverForm, contractDoc: e.target.files?.[0] || null})} className="w-full px-4 py-3 border rounded-xl" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.firstName} onChange={(e)=>setDriverForm({...driverForm, firstName:e.target.value})} required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.lastName} onChange={(e)=>setDriverForm({...driverForm, lastName:e.target.value})} required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                  <input type="email" className="w-full px-4 py-3 border rounded-xl" value={driverForm.email} onChange={(e)=>setDriverForm({...driverForm, email:e.target.value})} required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone *</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.phone} onChange={(e)=>setDriverForm({...driverForm, phone:e.target.value})} required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">License Number *</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.licenseNumber} onChange={(e)=>setDriverForm({...driverForm, licenseNumber:e.target.value})} required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">License Expiry</label>
+                  <input type="date" className="w-full px-4 py-3 border rounded-xl" value={driverForm.licenseExpiry} onChange={(e)=>setDriverForm({...driverForm, licenseExpiry:e.target.value})} />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.address} onChange={(e)=>setDriverForm({...driverForm, address:e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Emergency Contact</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.emergencyContact} onChange={(e)=>setDriverForm({...driverForm, emergencyContact:e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Emergency Phone</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.emergencyPhone} onChange={(e)=>setDriverForm({...driverForm, emergencyPhone:e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Assign Vehicle</label>
+                  <select className="w-full px-4 py-3 border rounded-xl" value={driverForm.selectedVehicleId} onChange={(e)=>setDriverForm({...driverForm, selectedVehicleId:e.target.value})}>
+                    <option value="">None</option>
+                    {vehicles.map(v => (
+                      <option key={v.id} value={v.id}>{v.make} {v.model} • {v.licensePlate}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Contract Start</label>
+                  <input type="date" className="w-full px-4 py-3 border rounded-xl" value={driverForm.contractStartDate} onChange={(e)=>setDriverForm({...driverForm, contractStartDate:e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Contract End</label>
+                  <input type="date" className="w-full px-4 py-3 border rounded-xl" value={driverForm.contractEndDate} onChange={(e)=>setDriverForm({...driverForm, contractEndDate:e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Contract Period</label>
+                  <input className="w-full px-4 py-3 border rounded-xl" value={driverForm.contractPeriod} onChange={(e)=>setDriverForm({...driverForm, contractPeriod:e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Bond Amount ($)</label>
+                  <input type="number" className="w-full px-4 py-3 border rounded-xl" value={driverForm.bondAmount} onChange={(e)=>setDriverForm({...driverForm, bondAmount:e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Weekly Rent ($)</label>
+                  <input type="number" className="w-full px-4 py-3 border rounded-xl" value={driverForm.weeklyRent} onChange={(e)=>setDriverForm({...driverForm, weeklyRent:e.target.value})} />
+                </div>
+              </div>
+              <div className="flex justify-end space-x-4">
+                <button type="button" onClick={()=>setShowAddDriver(false)} className="px-6 py-3 border rounded-xl">Cancel</button>
+                <button type="submit" className="px-6 py-3 bg-green-600 text-white rounded-xl">Save Driver</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
