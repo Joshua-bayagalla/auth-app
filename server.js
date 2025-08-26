@@ -2561,27 +2561,24 @@ app.delete('/api/vehicles/:id', async (req, res) => {
     const vehiclesCollection = getVehiclesCollection();
 
     if (vehiclesCollection) {
-      // Try delete by numeric id in DB
-      const vehicleFromDb = await vehiclesCollection.findOne({ id: vehicleId });
+      // Try to find by numeric or string id
+      const vehicleFromDb = await vehiclesCollection.findOne({ $or: [ { id: vehicleId }, { id: String(vehicleId) } ] });
       if (vehicleFromDb) {
-        await vehiclesCollection.deleteOne({ id: vehicleId });
-        // cleanup photo
+        await vehiclesCollection.deleteOne({ $or: [ { id: vehicleId }, { id: String(vehicleId) } ] });
         const photoUrl = vehicleFromDb?.photoUrl;
         if (photoUrl && photoUrl.startsWith('/uploads/')) {
           const absPath = path.join(__dirname, photoUrl.replace(/^\/uploads\//, 'uploads/'));
           if (fs.existsSync(absPath)) { try { fs.unlinkSync(absPath); } catch (_) {} }
         }
-        // remove from memory cache as well
-        const idx = vehicles.findIndex(v => v.id === vehicleId);
+        const idx = vehicles.findIndex(v => v.id === vehicleId || String(v.id) === String(vehicleId));
         if (idx !== -1) vehicles.splice(idx, 1);
         return res.json({ message: 'Vehicle deleted successfully' });
       }
 
-      // Fallback: not in DB by id. Try in-memory list.
-      const memIdx = vehicles.findIndex(v => v.id === vehicleId);
+      // Fallback: check in-memory cache
+      const memIdx = vehicles.findIndex(v => v.id === vehicleId || String(v.id) === String(vehicleId));
       if (memIdx !== -1) {
         const deleted = vehicles.splice(memIdx, 1)[0];
-        // try to delete from DB by matching licensePlate
         if (deleted?.licensePlate) {
           try { await vehiclesCollection.deleteOne({ licensePlate: deleted.licensePlate }); } catch (_) {}
         }
@@ -2593,12 +2590,11 @@ app.delete('/api/vehicles/:id', async (req, res) => {
         return res.json({ message: 'Vehicle deleted successfully' });
       }
 
-      // Not found anywhere
       return res.status(404).json({ error: 'Vehicle not found' });
     }
 
-    // No DB: in-memory delete
-    const index = vehicles.findIndex(v => v.id === vehicleId);
+    // No DB case
+    const index = vehicles.findIndex(v => v.id === vehicleId || String(v.id) === String(vehicleId));
     if (index === -1) {
       return res.status(404).json({ error: 'Vehicle not found' });
     }
