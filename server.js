@@ -2871,3 +2871,18 @@ app.post('/api/vehicles/:id/delete', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+// Body-based admin delete endpoint (accepts JSON { id })
+app.post('/api/vehicles-delete', async (req, res) => {
+  try {
+    const { id } = req.body || {};
+    if (!id) return res.status(400).json({ error: 'id is required' });
+    const result = await deleteVehicleByIdInternal(id);
+    if (!result.ok) return res.status(404).json({ error: result.error });
+    saveData(users, verificationTokens, vehicles, drivers);
+    res.json({ message: 'Vehicle deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting vehicle (json body):', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
