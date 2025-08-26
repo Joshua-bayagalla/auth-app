@@ -1054,7 +1054,7 @@ app.post('/api/drivers', (req, res, next) => {
       bondProofUrl,
       rentProofUrl,
       contractDocUrl,
-      status: status || 'pending',
+      status: status || 'approved',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
