@@ -2735,28 +2735,6 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// 404 handler for API routes
-app.use('/api/*', (req, res) => {
-  res.status(404).json({ error: 'API endpoint not found' });
-});
-
-// Serve React app for all other GET routes - ensure production build index is returned
-app.get('*', (req, res) => {
-  const distIndex = path.join(__dirname, 'dist', 'index.html');
-  if (fs.existsSync(distIndex)) {
-    res.sendFile(distIndex);
-    return;
-  }
-  // Fallback (dev or missing build)
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Frontend: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
-  console.log(`Backend: http://localhost:${PORT}`);
-});
-
 // Admin reset endpoint to purge all drivers and vehicles (use carefully)
 app.post('/api/admin/reset', async (req, res) => {
   try {
@@ -2782,4 +2760,26 @@ app.post('/api/admin/reset', async (req, res) => {
     console.error('Admin reset error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
+});
+
+// 404 handler for API routes
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ error: 'API endpoint not found' });
+});
+
+// Serve React app for all other GET routes - ensure production build index is returned
+app.get('*', (req, res) => {
+  const distIndex = path.join(__dirname, 'dist', 'index.html');
+  if (fs.existsSync(distIndex)) {
+    res.sendFile(distIndex);
+    return;
+  }
+  // Fallback (dev or missing build)
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Frontend: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
+  console.log(`Backend: http://localhost:${PORT}`);
 });
