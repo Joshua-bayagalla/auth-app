@@ -1476,23 +1476,32 @@ app.delete('/api/drivers/:id', async (req, res) => {
     // Try MongoDB first
     if (db) {
       try {
-        const result = await db.collection('drivers').deleteOne({ _id: parseInt(id) });
+        const driversCollection = getDriversCollection();
+        const vehiclesCollection = getVehiclesCollection();
+        
+        // Fetch the driver first to free assigned vehicle after delete
+        const driverToDelete = await driversCollection.findOne({ id: parseInt(id) });
+        const result = await driversCollection.deleteOne({ id: parseInt(id) });
         if (result.deletedCount === 0) {
           return res.status(404).json({ error: 'Driver not found' });
         }
         
-        // Free up assigned vehicle if exists
-        const deletedDriver = await db.collection('drivers').findOne({ _id: parseInt(id) });
-        if (deletedDriver && deletedDriver.selectedVehicleId) {
-          await db.collection('vehicles').updateOne(
-            { _id: deletedDriver.selectedVehicleId },
-            { 
-              $set: { 
-                status: 'available',
-                assignedDriverId: null 
-              } 
-            }
+        if (driverToDelete && driverToDelete.selectedVehicleId && vehiclesCollection) {
+          await vehiclesCollection.updateOne(
+            { id: driverToDelete.selectedVehicleId },
+            { $set: { status: 'available', assignedDriverId: null } }
           );
+        }
+        
+        // Also update in-memory cache if present
+        const idx = drivers.findIndex(d => d.id === parseInt(id));
+        if (idx !== -1) drivers.splice(idx, 1);
+        if (driverToDelete && driverToDelete.selectedVehicleId) {
+          const vIdx = vehicles.findIndex(v => v.id === driverToDelete.selectedVehicleId);
+          if (vIdx !== -1) {
+            vehicles[vIdx].status = 'available';
+            vehicles[vIdx].assignedDriverId = null;
+          }
         }
         
         res.json({ message: 'Driver deleted successfully' });
@@ -2746,4 +2755,31 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Frontend: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
   console.log(`Backend: http://localhost:${PORT}`);
+});
+
+// Admin reset endpoint to purge all drivers and vehicles (use carefully)
+app.post('/api/admin/reset', async (req, res) => {
+  try {
+    const vehiclesCollection = getVehiclesCollection();
+    const driversCollection = getDriversCollection();
+
+    // Clear MongoDB collections if available
+    if (vehiclesCollection) {
+      try { await vehiclesCollection.deleteMany({}); } catch (e) { console.error('DB reset vehicles error:', e); }
+    }
+    if (driversCollection) {
+      try { await driversCollection.deleteMany({}); } catch (e) { console.error('DB reset drivers error:', e); }
+    }
+
+    // Clear in-memory caches
+    vehicles.splice(0, vehicles.length);
+    drivers.splice(0, drivers.length);
+
+    saveData(users, verificationTokens, vehicles, drivers);
+
+    res.json({ message: 'All drivers and vehicles have been deleted.' });
+  } catch (error) {
+    console.error('Admin reset error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
