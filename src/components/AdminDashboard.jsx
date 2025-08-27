@@ -363,8 +363,14 @@ const AdminDashboard = () => {
   };
 
   const getDocumentUrl = (vehicle, docType) => {
-    if (!vehicle.documents || !vehicle.documents[docType]) return null;
-    return vehicle.documents[docType];
+    // Check both old format (documents) and new format (vehicleDocuments)
+    if (vehicle.vehicleDocuments && vehicle.vehicleDocuments[docType] && vehicle.vehicleDocuments[docType].fileUrl) {
+      return vehicle.vehicleDocuments[docType].fileUrl;
+    }
+    if (vehicle.documents && vehicle.documents[docType]) {
+      return vehicle.documents[docType];
+    }
+    return null;
   };
 
   const handleDownloadDocument = (url, filename) => {
@@ -2500,10 +2506,10 @@ const AdminDashboard = () => {
               {/* Contract Document */}
               <div className="border rounded-lg p-4">
                 <h4 className="font-semibold text-gray-900 mb-3">Contract Document</h4>
-                {selectedVehicle.contractDoc ? (
+                {getDocumentUrl(selectedVehicle, 'contractDoc') ? (
                   <div className="space-y-2">
                     <button
-                      onClick={() => handleDownloadDocument(selectedVehicle.contractDoc, `contract_${selectedVehicle.licensePlate}.pdf`)}
+                      onClick={() => handleDownloadDocument(getDocumentUrl(selectedVehicle, 'contractDoc'), `contract_${selectedVehicle.licensePlate}.pdf`)}
                       className="w-full px-3 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm"
                     >
                       📄 Download Contract
@@ -2520,10 +2526,10 @@ const AdminDashboard = () => {
               {/* Red Book Document */}
               <div className="border rounded-lg p-4">
                 <h4 className="font-semibold text-gray-900 mb-3">Red Book Inspection</h4>
-                {selectedVehicle.redBookDoc ? (
+                {getDocumentUrl(selectedVehicle, 'redBookDoc') ? (
                   <div className="space-y-2">
                     <button
-                      onClick={() => handleDownloadDocument(selectedVehicle.redBookDoc, `redbook_${selectedVehicle.licensePlate}.pdf`)}
+                      onClick={() => handleDownloadDocument(getDocumentUrl(selectedVehicle, 'redBookDoc'), `redbook_${selectedVehicle.licensePlate}.pdf`)}
                       className="w-full px-3 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors text-sm"
                     >
                       📄 Download Red Book
@@ -2540,10 +2546,10 @@ const AdminDashboard = () => {
               {/* Registration Document */}
               <div className="border rounded-lg p-4">
                 <h4 className="font-semibold text-gray-900 mb-3">Registration Document</h4>
-                {selectedVehicle.registrationDoc ? (
+                {getDocumentUrl(selectedVehicle, 'registrationDoc') ? (
                   <div className="space-y-2">
                     <button
-                      onClick={() => handleDownloadDocument(selectedVehicle.registrationDoc, `registration_${selectedVehicle.licensePlate}.pdf`)}
+                      onClick={() => handleDownloadDocument(getDocumentUrl(selectedVehicle, 'registrationDoc'), `registration_${selectedVehicle.licensePlate}.pdf`)}
                       className="w-full px-3 py-2 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors text-sm"
                     >
                       📄 Download Registration
@@ -2560,10 +2566,10 @@ const AdminDashboard = () => {
               {/* Insurance Document */}
               <div className="border rounded-lg p-4">
                 <h4 className="font-semibold text-gray-900 mb-3">Insurance Document</h4>
-                {selectedVehicle.insuranceDoc ? (
+                {getDocumentUrl(selectedVehicle, 'insuranceDoc') ? (
                   <div className="space-y-2">
                     <button
-                      onClick={() => handleDownloadDocument(selectedVehicle.insuranceDoc, `insurance_${selectedVehicle.licensePlate}.pdf`)}
+                      onClick={() => handleDownloadDocument(getDocumentUrl(selectedVehicle, 'insuranceDoc'), `insurance_${selectedVehicle.licensePlate}.pdf`)}
                       className="w-full px-3 py-2 bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200 transition-colors text-sm"
                     >
                       📄 Download Insurance
@@ -2580,10 +2586,10 @@ const AdminDashboard = () => {
               {/* CPV Document */}
               <div className="border rounded-lg p-4">
                 <h4 className="font-semibold text-gray-900 mb-3">CPV Registration</h4>
-                {selectedVehicle.cpvDoc ? (
+                {getDocumentUrl(selectedVehicle, 'cpvDoc') ? (
                   <div className="space-y-2">
                     <button
-                      onClick={() => handleDownloadDocument(selectedVehicle.cpvDoc, `cpv_${selectedVehicle.licensePlate}.pdf`)}
+                      onClick={() => handleDownloadDocument(getDocumentUrl(selectedVehicle, 'cpvDoc'), `cpv_${selectedVehicle.licensePlate}.pdf`)}
                       className="w-full px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-sm"
                     >
                       📄 Download CPV
