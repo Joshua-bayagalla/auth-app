@@ -19,7 +19,7 @@ const getTokensCollection = () => db ? db.collection('tokens') : null;
 
 // Load .env only in local development to avoid overriding Render env vars
 if (process.env.NODE_ENV !== 'production') {
-  dotenv.config();
+dotenv.config();
 }
 
 const __filename = fileURLToPath(import.meta.url);
@@ -41,7 +41,7 @@ async function connectToMongoDB() {
     await client.connect();
     db = client.db('carrental');
     console.log('Connected to MongoDB successfully!');
-
+    
     // Ensure collections exist without failing if they already do
     const requiredCollections = ['users', 'vehicles', 'drivers', 'tokens'];
     const existing = new Set((await db.listCollections().toArray()).map(c => c.name));
@@ -916,7 +916,7 @@ app.post('/api/vehicles', uploadDisk.fields([
     };
 
     if (vehiclesCollection) {
-      await vehiclesCollection.insertOne(newVehicle);
+        await vehiclesCollection.insertOne(newVehicle);
     } else {
       // No DB available: keep in memory
       vehicles.push(newVehicle);
@@ -1046,7 +1046,7 @@ app.get('/api/vehicles', async (req, res) => {
   try {
     const vehiclesCollection = getVehiclesCollection();
     if (vehiclesCollection) {
-      const vehiclesFromDB = await vehiclesCollection.find({}).toArray();
+    const vehiclesFromDB = await vehiclesCollection.find({}).toArray();
       return res.json(vehiclesFromDB);
     }
     return res.json(vehicles);
@@ -1205,8 +1205,8 @@ app.post('/api/drivers', (req, res, next) => {
         console.error('Database error:', dbError);
         // Fallback to in-memory check
         existingDriver = drivers.find(d => 
-          d.email === email || d.licenseNumber === licenseNumber
-        );
+      d.email === email || d.licenseNumber === licenseNumber
+    );
       }
     } else {
       // Use in-memory storage
@@ -1300,7 +1300,7 @@ app.post('/api/drivers', (req, res, next) => {
       } catch (dbError) {
         console.error('Database save error:', dbError);
         // Fallback to in-memory
-        drivers.push(newDriver);
+    drivers.push(newDriver);
         saveData(users, verificationTokens, vehicles, drivers);
       }
     } else {
@@ -1326,10 +1326,10 @@ app.post('/api/drivers', (req, res, next) => {
         } catch (dbError) {
           console.error('Database vehicle update error:', dbError);
           // Fallback to in-memory
-          const vehicleIndex = vehicles.findIndex(v => v.id === parseInt(selectedVehicleId));
-          if (vehicleIndex !== -1) {
-            vehicles[vehicleIndex].status = 'assigned';
-            vehicles[vehicleIndex].assignedDriverId = newDriver.id;
+      const vehicleIndex = vehicles.findIndex(v => v.id === parseInt(selectedVehicleId));
+      if (vehicleIndex !== -1) {
+        vehicles[vehicleIndex].status = 'assigned';
+        vehicles[vehicleIndex].assignedDriverId = newDriver.id;
             saveData(users, verificationTokens, vehicles, drivers);
           }
         }
@@ -1339,7 +1339,7 @@ app.post('/api/drivers', (req, res, next) => {
         if (vehicleIndex !== -1) {
           vehicles[vehicleIndex].status = 'assigned';
           vehicles[vehicleIndex].assignedDriverId = newDriver.id;
-          saveData(users, verificationTokens, vehicles, drivers);
+    saveData(users, verificationTokens, vehicles, drivers);
         }
       }
     }
@@ -1390,8 +1390,8 @@ app.get('/api/drivers/:id', async (req, res) => {
     if (driversCollection) {
       try {
         const driver = await driversCollection.findOne({ id: parseInt(id) });
-        if (!driver) {
-          return res.status(404).json({ error: 'Driver not found' });
+    if (!driver) {
+      return res.status(404).json({ error: 'Driver not found' });
         }
         let vehicle = null;
         if (vehiclesCollection && driver.selectedVehicleId) {
@@ -1529,7 +1529,7 @@ app.put('/api/drivers/:id', (req, res, next) => {
           }
         }
       }
-
+      
       // Assign new vehicle
       if (selectedVehicleId) {
         const vehiclesCollection = getVehiclesCollection();
@@ -3053,13 +3053,12 @@ app.post('/api/admin/add-driver', (req, res, next) => {
   }
 });
 
-// List users for admin dashboard
+// List users for admin dashboard (registered before 404)
 app.get('/api/users', async (req, res) => {
   try {
     const usersCollection = getUsersCollection();
     if (usersCollection) {
       const rawUsers = await usersCollection.find({}).toArray();
-      // Normalize email and strip sensitive fields if any
       const usersList = rawUsers.map(u => ({
         id: u.id || u._id,
         email: (u.email || '').toLowerCase(),
@@ -3070,7 +3069,6 @@ app.get('/api/users', async (req, res) => {
       }));
       return res.json(usersList);
     }
-    // Fallback to in-memory map of users
     const list = Array.from(users.values()).map(u => ({
       id: u.id,
       email: (u.email || '').toLowerCase(),
