@@ -373,15 +373,49 @@ const AdminDashboard = () => {
     return null;
   };
 
-  const handleDownloadDocument = (url, filename) => {
+  const handleDownloadDocument = async (url, filename) => {
     if (!url) return;
     
-    const link = document.createElement('a');
-    link.href = url.startsWith('http') ? url : `${window.location.origin}${url}`;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
+      
+      // Fetch the file first to handle CORS and ensure it exists
+      const response = await fetch(fullUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.status}`);
+      }
+      
+      // Get the blob
+      const blob = await response.blob();
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = filename;
+      link.style.display = 'none';
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up
+      window.URL.revokeObjectURL(link.href);
+      
+      showSuccessMessage('Document downloaded successfully!');
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('Failed to download document. Please try again.');
+    }
+  };
+
+  const handleViewDocument = (url, filename) => {
+    if (!url) return;
+    
+    const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
+    
+    // Open in new tab for viewing
+    window.open(fullUrl, '_blank');
   };
 
   const handleApplicationAction = async (applicationId, action) => {
@@ -2508,12 +2542,20 @@ const AdminDashboard = () => {
                 <h4 className="font-semibold text-gray-900 mb-3">Contract Document</h4>
                 {getDocumentUrl(selectedVehicle, 'contractDoc') ? (
                   <div className="space-y-2">
-                    <button
-                      onClick={() => handleDownloadDocument(getDocumentUrl(selectedVehicle, 'contractDoc'), `contract_${selectedVehicle.licensePlate}.pdf`)}
-                      className="w-full px-3 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm"
-                    >
-                      📄 Download Contract
-                    </button>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleViewDocument(getDocumentUrl(selectedVehicle, 'contractDoc'), `contract_${selectedVehicle.licensePlate}.pdf`)}
+                        className="flex-1 px-3 py-2 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors text-sm border border-blue-200"
+                      >
+                        👁️ View
+                      </button>
+                      <button
+                        onClick={() => handleDownloadDocument(getDocumentUrl(selectedVehicle, 'contractDoc'), `contract_${selectedVehicle.licensePlate}.pdf`)}
+                        className="flex-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm"
+                      >
+                        📄 Download
+                      </button>
+                    </div>
                     <p className="text-xs text-gray-500">
                       Expiry: {selectedVehicle.contractExpiry || 'Not set'}
                     </p>
@@ -2528,12 +2570,20 @@ const AdminDashboard = () => {
                 <h4 className="font-semibold text-gray-900 mb-3">Red Book Inspection</h4>
                 {getDocumentUrl(selectedVehicle, 'redBookDoc') ? (
                   <div className="space-y-2">
-                    <button
-                      onClick={() => handleDownloadDocument(getDocumentUrl(selectedVehicle, 'redBookDoc'), `redbook_${selectedVehicle.licensePlate}.pdf`)}
-                      className="w-full px-3 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors text-sm"
-                    >
-                      📄 Download Red Book
-                    </button>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleViewDocument(getDocumentUrl(selectedVehicle, 'redBookDoc'), `redbook_${selectedVehicle.licensePlate}.pdf`)}
+                        className="flex-1 px-3 py-2 bg-green-50 text-green-700 rounded-md hover:bg-green-100 transition-colors text-sm border border-green-200"
+                      >
+                        👁️ View
+                      </button>
+                      <button
+                        onClick={() => handleDownloadDocument(getDocumentUrl(selectedVehicle, 'redBookDoc'), `redbook_${selectedVehicle.licensePlate}.pdf`)}
+                        className="flex-1 px-3 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors text-sm"
+                      >
+                        📄 Download
+                      </button>
+                    </div>
                     <p className="text-xs text-gray-500">
                       Expiry: {selectedVehicle.redBookExpiry || 'Not set'}
                     </p>
@@ -2548,12 +2598,20 @@ const AdminDashboard = () => {
                 <h4 className="font-semibold text-gray-900 mb-3">Registration Document</h4>
                 {getDocumentUrl(selectedVehicle, 'registrationDoc') ? (
                   <div className="space-y-2">
-                    <button
-                      onClick={() => handleDownloadDocument(getDocumentUrl(selectedVehicle, 'registrationDoc'), `registration_${selectedVehicle.licensePlate}.pdf`)}
-                      className="w-full px-3 py-2 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors text-sm"
-                    >
-                      📄 Download Registration
-                    </button>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleViewDocument(getDocumentUrl(selectedVehicle, 'registrationDoc'), `registration_${selectedVehicle.licensePlate}.pdf`)}
+                        className="flex-1 px-3 py-2 bg-purple-50 text-purple-700 rounded-md hover:bg-purple-100 transition-colors text-sm border border-purple-200"
+                      >
+                        👁️ View
+                      </button>
+                      <button
+                        onClick={() => handleDownloadDocument(getDocumentUrl(selectedVehicle, 'registrationDoc'), `registration_${selectedVehicle.licensePlate}.pdf`)}
+                        className="flex-1 px-3 py-2 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors text-sm"
+                      >
+                        📄 Download
+                      </button>
+                    </div>
                     <p className="text-xs text-gray-500">
                       Expiry: {selectedVehicle.registrationExpiry || 'Not set'}
                     </p>
@@ -2568,12 +2626,20 @@ const AdminDashboard = () => {
                 <h4 className="font-semibold text-gray-900 mb-3">Insurance Document</h4>
                 {getDocumentUrl(selectedVehicle, 'insuranceDoc') ? (
                   <div className="space-y-2">
-                    <button
-                      onClick={() => handleDownloadDocument(getDocumentUrl(selectedVehicle, 'insuranceDoc'), `insurance_${selectedVehicle.licensePlate}.pdf`)}
-                      className="w-full px-3 py-2 bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200 transition-colors text-sm"
-                    >
-                      📄 Download Insurance
-                    </button>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleViewDocument(getDocumentUrl(selectedVehicle, 'insuranceDoc'), `insurance_${selectedVehicle.licensePlate}.pdf`)}
+                        className="flex-1 px-3 py-2 bg-yellow-50 text-yellow-700 rounded-md hover:bg-yellow-100 transition-colors text-sm border border-yellow-200"
+                      >
+                        👁️ View
+                      </button>
+                      <button
+                        onClick={() => handleDownloadDocument(getDocumentUrl(selectedVehicle, 'insuranceDoc'), `insurance_${selectedVehicle.licensePlate}.pdf`)}
+                        className="flex-1 px-3 py-2 bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200 transition-colors text-sm"
+                      >
+                        📄 Download
+                      </button>
+                    </div>
                     <p className="text-xs text-gray-500">
                       Expiry: {selectedVehicle.insuranceExpiry || 'Not set'}
                     </p>
@@ -2588,12 +2654,20 @@ const AdminDashboard = () => {
                 <h4 className="font-semibold text-gray-900 mb-3">CPV Registration</h4>
                 {getDocumentUrl(selectedVehicle, 'cpvDoc') ? (
                   <div className="space-y-2">
-                    <button
-                      onClick={() => handleDownloadDocument(getDocumentUrl(selectedVehicle, 'cpvDoc'), `cpv_${selectedVehicle.licensePlate}.pdf`)}
-                      className="w-full px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-sm"
-                    >
-                      📄 Download CPV
-                    </button>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleViewDocument(getDocumentUrl(selectedVehicle, 'cpvDoc'), `cpv_${selectedVehicle.licensePlate}.pdf`)}
+                        className="flex-1 px-3 py-2 bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors text-sm border border-red-200"
+                      >
+                        👁️ View
+                      </button>
+                      <button
+                        onClick={() => handleDownloadDocument(getDocumentUrl(selectedVehicle, 'cpvDoc'), `cpv_${selectedVehicle.licensePlate}.pdf`)}
+                        className="flex-1 px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-sm"
+                      >
+                        📄 Download
+                      </button>
+                    </div>
                     <p className="text-xs text-gray-500">
                       Expiry: {selectedVehicle.cpvExpiry || 'Not set'}
                     </p>
