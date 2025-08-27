@@ -2955,6 +2955,37 @@ app.post('/api/vehicles-delete', async (req, res) => {
   }
 });
 
+// List users for admin dashboard (registered before 404)
+app.get('/api/users', async (req, res) => {
+  try {
+    const usersCollection = getUsersCollection();
+    if (usersCollection) {
+      const rawUsers = await usersCollection.find({}).toArray();
+      const usersList = rawUsers.map(u => ({
+        id: u.id || u._id,
+        email: (u.email || '').toLowerCase(),
+        role: u.role || 'user',
+        verified: !!u.verified,
+        createdAt: u.createdAt || null,
+        updatedAt: u.updatedAt || null
+      }));
+      return res.json(usersList);
+    }
+    const list = Array.from(users.values()).map(u => ({
+      id: u.id,
+      email: (u.email || '').toLowerCase(),
+      role: u.role || 'user',
+      verified: !!u.verified,
+      createdAt: u.createdAt || null,
+      updatedAt: u.updatedAt || null
+    }));
+    return res.json(list);
+  } catch (e) {
+    console.error('Error fetching users:', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Final API 404 handler (after all routes)
 app.use('/api/*', (req, res) => {
   res.status(404).json({ error: 'API endpoint not found' });
@@ -3049,37 +3080,6 @@ app.post('/api/admin/add-driver', (req, res, next) => {
     res.status(201).json({ message: 'Driver added', driver: newDriver });
   } catch (e) {
     console.error('Add driver error:', e);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// List users for admin dashboard (registered before 404)
-app.get('/api/users', async (req, res) => {
-  try {
-    const usersCollection = getUsersCollection();
-    if (usersCollection) {
-      const rawUsers = await usersCollection.find({}).toArray();
-      const usersList = rawUsers.map(u => ({
-        id: u.id || u._id,
-        email: (u.email || '').toLowerCase(),
-        role: u.role || 'user',
-        verified: !!u.verified,
-        createdAt: u.createdAt || null,
-        updatedAt: u.updatedAt || null
-      }));
-      return res.json(usersList);
-    }
-    const list = Array.from(users.values()).map(u => ({
-      id: u.id,
-      email: (u.email || '').toLowerCase(),
-      role: u.role || 'user',
-      verified: !!u.verified,
-      createdAt: u.createdAt || null,
-      updatedAt: u.updatedAt || null
-    }));
-    return res.json(list);
-  } catch (e) {
-    console.error('Error fetching users:', e);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
