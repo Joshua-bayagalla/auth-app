@@ -1,17 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Car, Eye, EyeOff, ArrowLeft } from 'lucide-react';
-import { API_BASE_URL } from '../config';
+import { useAuth } from '../contexts/AuthContext';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
+  const { login, currentUser, loading } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Redirect if already logged in as admin
+  useEffect(() => {
+    if (currentUser && currentUser.role === 'admin') {
+      navigate('/admin-dashboard');
+    }
+  }, [currentUser, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -24,32 +31,14 @@ const AdminLogin = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('user', JSON.stringify(data.user));
-        localStorage.setItem('token', data.token);
-        navigate('/admin-dashboard');
-      } else {
-        const errorData = await response.json();
-        setError(errorData.error || 'Invalid credentials');
-      }
+      await login(formData.email, formData.password);
+      // Navigation will be handled by the useEffect above
     } catch (error) {
       console.error('Login error:', error);
-      setError('Network error. Please try again.');
-    } finally {
-      setLoading(false);
+      setError(error.message || 'Invalid credentials');
     }
   };
 

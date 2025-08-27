@@ -125,8 +125,10 @@ export function AuthProvider({ children }) {
   async function logout() {
     try {
       setCurrentUser(null);
+      // Clear all possible authentication data
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
+      localStorage.removeItem('token');
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -137,7 +139,15 @@ export function AuthProvider({ children }) {
     const savedUser = localStorage.getItem('user');
     
     if (token && savedUser) {
-      setCurrentUser(JSON.parse(savedUser));
+      try {
+        const userData = JSON.parse(savedUser);
+        setCurrentUser(userData);
+      } catch (error) {
+        console.error('Error parsing saved user data:', error);
+        // Clear corrupted data
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+      }
     }
     setInitializing(false);
   }, []);
