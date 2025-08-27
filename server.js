@@ -269,7 +269,17 @@ app.use('/uploads', (req, res, next) => {
   // Check if file exists before serving
   const filePath = path.join(__dirname, 'uploads', req.path);
   if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: 'File not found' });
+    // Return a default placeholder image instead of 404
+    const placeholderPath = path.join(__dirname, 'public', 'placeholder.jpg');
+    if (fs.existsSync(placeholderPath)) {
+      return res.sendFile(placeholderPath);
+    }
+    // If no placeholder, return a simple 404 with better error message
+    return res.status(404).json({ 
+      error: 'File not found', 
+      message: 'This image file is no longer available. Please update the vehicle with a new image.',
+      path: req.path 
+    });
   }
   
   // Serve the file
@@ -313,6 +323,41 @@ app.get('/api/health', async (req, res) => {
       error: error.message,
       timestamp: new Date().toISOString()
     });
+  }
+});
+
+// Cleanup invalid image references
+app.post('/api/admin/cleanup-images', async (req, res) => {
+  try {
+    const vehiclesCollection = getVehiclesCollection();
+    if (!vehiclesCollection) {
+      return res.status(500).json({ error: 'Database not available' });
+    }
+
+    const vehicles = await vehiclesCollection.find({}).toArray();
+    let cleanedCount = 0;
+
+    for (const vehicle of vehicles) {
+      if (vehicle.photoUrl && vehicle.photoUrl.startsWith('/uploads/')) {
+        const filePath = path.join(__dirname, 'uploads', vehicle.photoUrl.replace('/uploads/', ''));
+        if (!fs.existsSync(filePath)) {
+          // Remove invalid photoUrl
+          await vehiclesCollection.updateOne(
+            { _id: vehicle._id },
+            { $unset: { photoUrl: "" } }
+          );
+          cleanedCount++;
+        }
+      }
+    }
+
+    res.json({ 
+      message: `Cleaned up ${cleanedCount} invalid image references`,
+      cleanedCount 
+    });
+  } catch (error) {
+    console.error('Error cleaning up images:', error);
+    res.status(500).json({ error: 'Failed to cleanup images' });
   }
 });
 
