@@ -326,40 +326,7 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// Cleanup invalid image references
-app.post('/api/admin/cleanup-images', async (req, res) => {
-  try {
-    const vehiclesCollection = getVehiclesCollection();
-    if (!vehiclesCollection) {
-      return res.status(500).json({ error: 'Database not available' });
-    }
 
-    const vehicles = await vehiclesCollection.find({}).toArray();
-    let cleanedCount = 0;
-
-    for (const vehicle of vehicles) {
-      if (vehicle.photoUrl && vehicle.photoUrl.startsWith('/uploads/')) {
-        const filePath = path.join(__dirname, 'uploads', vehicle.photoUrl.replace('/uploads/', ''));
-        if (!fs.existsSync(filePath)) {
-          // Remove invalid photoUrl
-          await vehiclesCollection.updateOne(
-            { _id: vehicle._id },
-            { $unset: { photoUrl: "" } }
-          );
-          cleanedCount++;
-        }
-      }
-    }
-
-    res.json({ 
-      message: `Cleaned up ${cleanedCount} invalid image references`,
-      cleanedCount 
-    });
-  } catch (error) {
-    console.error('Error cleaning up images:', error);
-    res.status(500).json({ error: 'Failed to cleanup images' });
-  }
-});
 
 // Swagger UI route
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(specs, {
@@ -3049,6 +3016,41 @@ app.post('/api/admin/reset', async (req, res) => {
   } catch (error) {
     console.error('Admin reset error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Cleanup invalid image references
+app.post('/api/admin/cleanup-images', async (req, res) => {
+  try {
+    const vehiclesCollection = getVehiclesCollection();
+    if (!vehiclesCollection) {
+      return res.status(500).json({ error: 'Database not available' });
+    }
+
+    const vehicles = await vehiclesCollection.find({}).toArray();
+    let cleanedCount = 0;
+
+    for (const vehicle of vehicles) {
+      if (vehicle.photoUrl && vehicle.photoUrl.startsWith('/uploads/')) {
+        const filePath = path.join(__dirname, 'uploads', vehicle.photoUrl.replace('/uploads/', ''));
+        if (!fs.existsSync(filePath)) {
+          // Remove invalid photoUrl
+          await vehiclesCollection.updateOne(
+            { _id: vehicle._id },
+            { $unset: { photoUrl: "" } }
+          );
+          cleanedCount++;
+        }
+      }
+    }
+
+    res.json({ 
+      message: `Cleaned up ${cleanedCount} invalid image references`,
+      cleanedCount 
+    });
+  } catch (error) {
+    console.error('Error cleaning up images:', error);
+    res.status(500).json({ error: 'Failed to cleanup images' });
   }
 });
 
