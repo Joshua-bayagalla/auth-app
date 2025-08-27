@@ -3053,4 +3053,37 @@ app.post('/api/admin/add-driver', (req, res, next) => {
   }
 });
 
+// List users for admin dashboard
+app.get('/api/users', async (req, res) => {
+  try {
+    const usersCollection = getUsersCollection();
+    if (usersCollection) {
+      const rawUsers = await usersCollection.find({}).toArray();
+      // Normalize email and strip sensitive fields if any
+      const usersList = rawUsers.map(u => ({
+        id: u.id || u._id,
+        email: (u.email || '').toLowerCase(),
+        role: u.role || 'user',
+        verified: !!u.verified,
+        createdAt: u.createdAt || null,
+        updatedAt: u.updatedAt || null
+      }));
+      return res.json(usersList);
+    }
+    // Fallback to in-memory map of users
+    const list = Array.from(users.values()).map(u => ({
+      id: u.id,
+      email: (u.email || '').toLowerCase(),
+      role: u.role || 'user',
+      verified: !!u.verified,
+      createdAt: u.createdAt || null,
+      updatedAt: u.updatedAt || null
+    }));
+    return res.json(list);
+  } catch (e) {
+    console.error('Error fetching users:', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 
