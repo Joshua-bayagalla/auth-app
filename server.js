@@ -39,8 +39,6 @@ async function connectToMongoDB() {
   
   try {
     mongoClient = new MongoClient(MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
     });
