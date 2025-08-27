@@ -1057,10 +1057,10 @@ app.get('/api/vehicles', async (req, res) => {
 });
 
 // Driver management endpoints
-// Multer for admin-added driver uploads
+// Multer for admin-added driver uploads (use disk storage to avoid memory pressure)
 const uploadDriverDocs = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
+  storage: diskStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = /jpeg|jpg|png|webp|pdf/;
     if (allowed.test(file.mimetype)) return cb(null, true);
