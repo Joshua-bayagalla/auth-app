@@ -1224,7 +1224,7 @@ const uploadDriverDocs = multer({
   { name: 'licenseBack', maxCount: 1 },
   { name: 'bondProof', maxCount: 1 },
   { name: 'rentProof', maxCount: 1 },
-  { name: 'contractDoc', maxCount: 1 },
+  { name: 'contractDoc', maxCount: 1 }
 ]);
 
 app.post('/api/drivers', (req, res, next) => {
