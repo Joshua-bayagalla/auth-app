@@ -283,7 +283,8 @@ app.get('/api/health', async (req, res) => {
       status: 'ok',
       timestamp: new Date().toISOString(),
       mongodb: 'disconnected',
-      uploads: 'unknown'
+      uploads: 'unknown',
+      version: '1.0.1'
     };
     
     // Check MongoDB connection
@@ -1227,14 +1228,6 @@ const uploadDriverDocs = multer({
   { name: 'contractDoc', maxCount: 1 }
 ]);
 
-app.post('/api/drivers', (req, res, next) => {
-  uploadDriverDocs(req, res, (err) => {
-    if (err) {
-      return res.status(400).json({ error: err.message });
-    }
-    next();
-  });
-}, async (req, res) => {
 /**
  * @swagger
  * /api/drivers:
@@ -1316,6 +1309,13 @@ app.post('/api/drivers', (req, res, next) => {
  *       500:
  *         description: Internal server error
  */
+app.post('/api/drivers', (req, res, next) => {
+  uploadDriverDocs(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+    next();
+  });
 }, async (req, res) => {
   try {
     const {
