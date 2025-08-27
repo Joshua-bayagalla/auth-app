@@ -284,7 +284,7 @@ app.get('/api/health', async (req, res) => {
       timestamp: new Date().toISOString(),
       mongodb: 'disconnected',
       uploads: 'unknown',
-      version: '1.0.1'
+      version: '1.0.2'
     };
     
     // Check MongoDB connection
@@ -1397,21 +1397,21 @@ app.post('/api/drivers', (req, res, next) => {
       }
     }
 
-    // Document URLs if uploaded
+    // Document URLs if uploaded (using disk storage)
     const licenseFrontUrl = req.files?.licenseFront?.[0]
-      ? `data:${req.files.licenseFront[0].mimetype};base64,${req.files.licenseFront[0].buffer.toString('base64')}`
+      ? `/uploads/licenses/${req.files.licenseFront[0].filename}`
       : null;
     const licenseBackUrl = req.files?.licenseBack?.[0]
-      ? `data:${req.files.licenseBack[0].mimetype};base64,${req.files.licenseBack[0].buffer.toString('base64')}`
+      ? `/uploads/licenses/${req.files.licenseBack[0].filename}`
       : null;
     const bondProofUrl = req.files?.bondProof?.[0]
-      ? `data:${req.files.bondProof[0].mimetype};base64,${req.files.bondProof[0].buffer.toString('base64')}`
+      ? `/uploads/payments/${req.files.bondProof[0].filename}`
       : null;
     const rentProofUrl = req.files?.rentProof?.[0]
-      ? `data:${req.files.rentProof[0].mimetype};base64,${req.files.rentProof[0].buffer.toString('base64')}`
+      ? `/uploads/payments/${req.files.rentProof[0].filename}`
       : null;
     const contractDocUrl = req.files?.contractDoc?.[0]
-      ? `data:${req.files.contractDoc[0].mimetype};base64,${req.files.contractDoc[0].buffer.toString('base64')}`
+      ? `/uploads/contracts/${req.files.contractDoc[0].filename}`
       : null;
 
     // Create new driver
