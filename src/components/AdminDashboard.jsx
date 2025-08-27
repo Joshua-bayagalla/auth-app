@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   Car, 
   Plus, 
@@ -21,6 +22,7 @@ import {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState('applications');
   const [vehicles, setVehicles] = useState([]);
   const [drivers, setDrivers] = useState([]);
@@ -143,10 +145,19 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    navigate('/admin-login');
+  const handleLogout = async () => {
+    try {
+      // Use the AuthContext logout function to properly clear authentication state
+      await logout();
+      navigate('/admin-login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Fallback: manually clear localStorage and redirect
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      localStorage.removeItem('authToken');
+      navigate('/admin-login');
+    }
   };
 
   const handleInputChange = (e) => {
