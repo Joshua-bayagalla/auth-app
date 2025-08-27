@@ -36,6 +36,13 @@ const AdminDashboard = () => {
   const [showDocPreview, setShowDocPreview] = useState(false);
   const [previewDocUrl, setPreviewDocUrl] = useState('');
   const [previewDocTitle, setPreviewDocTitle] = useState('');
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showVehicleDocuments, setShowVehicleDocuments] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [showMaintenancePopup, setShowMaintenancePopup] = useState(false);
+  const [maintenanceAction, setMaintenanceAction] = useState('');
+  const [maintenanceVehicle, setMaintenanceVehicle] = useState(null);
   const [driverForm, setDriverForm] = useState({
     firstName: '',
     lastName: '',
@@ -227,6 +234,7 @@ const AdminDashboard = () => {
           cpvDoc: null, cpvExpiry: ''
         });
         fetchData();
+        showSuccessMessage(editingVehicle ? 'Vehicle updated successfully!' : 'Vehicle added successfully!');
       } else {
         const error = await response.json();
         alert(`Error: ${error.error || 'Unknown error'}`);
@@ -281,6 +289,7 @@ const AdminDashboard = () => {
 
         if (response.ok) {
           fetchData();
+          showSuccessMessage('Vehicle deleted successfully!');
       } else {
           alert('Error deleting vehicle');
         }
@@ -314,6 +323,7 @@ const AdminDashboard = () => {
       const res = await fetch(`/api/vehicles/${vehicle.id}`, { method: 'PUT', body: formDataToSend });
       if (res.ok) {
         fetchData();
+        showSuccessMessage(`Vehicle ${newStatus === 'maintenance' ? 'marked as maintenance' : 'marked as available'} successfully!`);
       } else {
         const err = await res.json();
         alert(err.error || 'Failed to update status');
@@ -322,6 +332,50 @@ const AdminDashboard = () => {
       console.error(e);
       alert('Failed to update status');
     }
+  };
+
+  // Enhanced helper functions for popups and interactions
+  const showSuccessMessage = (message) => {
+    setSuccessMessage(message);
+    setShowSuccessPopup(true);
+    setTimeout(() => setShowSuccessPopup(false), 3000);
+  };
+
+  const handleMaintenanceAction = (vehicle, action) => {
+    setMaintenanceVehicle(vehicle);
+    setMaintenanceAction(action);
+    setShowMaintenancePopup(true);
+  };
+
+  const confirmMaintenanceAction = async () => {
+    if (!maintenanceVehicle) return;
+    
+    const newStatus = maintenanceAction === 'maintenance' ? 'maintenance' : 'available';
+    await handleUpdateVehicleStatus(maintenanceVehicle, newStatus);
+    setShowMaintenancePopup(false);
+    setMaintenanceVehicle(null);
+    setMaintenanceAction('');
+  };
+
+  const handleViewVehicleDocuments = (vehicle) => {
+    setSelectedVehicle(vehicle);
+    setShowVehicleDocuments(true);
+  };
+
+  const getDocumentUrl = (vehicle, docType) => {
+    if (!vehicle.documents || !vehicle.documents[docType]) return null;
+    return vehicle.documents[docType];
+  };
+
+  const handleDownloadDocument = (url, filename) => {
+    if (!url) return;
+    
+    const link = document.createElement('a');
+    link.href = url.startsWith('http') ? url : `${window.location.origin}${url}`;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleApplicationAction = async (applicationId, action) => {
@@ -339,7 +393,7 @@ const AdminDashboard = () => {
 
       if (response.ok) {
         fetchData();
-        alert(`Application ${action === 'approve' ? 'approved' : 'rejected'} successfully!`);
+        showSuccessMessage(`Application ${action === 'approve' ? 'approved' : 'rejected'} successfully!`);
       } else {
         const error = await response.json();
         alert(`Error: ${error.error || 'Unknown error'}`);
@@ -564,25 +618,40 @@ const AdminDashboard = () => {
                           <div>Weekly: ${vehicle.rentPerWeek || 0}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                            onClick={() => handleEdit(vehicle)}
-                            className="text-indigo-600 hover:text-indigo-900 mr-3"
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleEdit(vehicle)}
+                              className="text-indigo-600 hover:text-indigo-900 p-1 rounded"
+                              title="Edit Vehicle"
                             >
-                            <Edit className="w-4 h-4" />
+                              <Edit className="w-4 h-4" />
                             </button>
                             <button
-                            onClick={() => handleDelete(vehicle.id)}
-                            className="text-red-600 hover:text-red-900"
-                      >
-                            <Trash2 className="w-4 h-4" />
-                      </button>
-                      <button
-                            onClick={() => handleUpdateVehicleStatus(vehicle, vehicle.status === 'maintenance' ? 'available' : 'maintenance')}
-                            className="ml-3 px-2 py-1 text-xs rounded-md border hover:bg-gray-50"
-                            title={vehicle.status === 'maintenance' ? 'Mark as Available' : 'Mark as Maintenance'}
-                              >
-                            {vehicle.status === 'maintenance' ? 'Mark as Available' : 'Mark as Maintenance'}
-                              </button>
+                              onClick={() => handleDelete(vehicle.id)}
+                              className="text-red-600 hover:text-red-900 p-1 rounded"
+                              title="Delete Vehicle"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleViewVehicleDocuments(vehicle)}
+                              className="text-blue-600 hover:text-blue-900 p-1 rounded"
+                              title="View Documents"
+                            >
+                              <FileText className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleMaintenanceAction(vehicle, vehicle.status === 'maintenance' ? 'available' : 'maintenance')}
+                              className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+                                vehicle.status === 'maintenance' 
+                                  ? 'bg-green-100 text-green-700 border-green-300 hover:bg-green-200' 
+                                  : 'bg-orange-100 text-orange-700 border-orange-300 hover:bg-orange-200'
+                              }`}
+                              title={vehicle.status === 'maintenance' ? 'Mark as Available' : 'Mark as Maintenance'}
+                            >
+                              {vehicle.status === 'maintenance' ? 'Mark as Available' : 'Mark as Maintenance'}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -615,7 +684,12 @@ const AdminDashboard = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{v.licensePlate}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{v.nextServiceDate || '—'}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <button onClick={() => handleUpdateVehicleStatus(v, 'available')} className="px-3 py-1 text-[12px] rounded-md bg-green-600 text-white hover:bg-green-700">Mark as Available</button>
+                          <button 
+                            onClick={() => handleMaintenanceAction(v, 'available')} 
+                            className="px-3 py-1 text-[12px] rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors"
+                          >
+                            Mark as Available
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -2244,6 +2318,7 @@ const AdminDashboard = () => {
                     licenseFront: null, licenseBack: null, bondProof: null, rentProof: null, contractDoc: null
                   });
                   fetchData();
+                  showSuccessMessage('Driver added successfully!');
                 } else {
                   const err = await response.json();
                   alert(err.error || 'Failed to add driver');
@@ -2345,6 +2420,183 @@ const AdminDashboard = () => {
                 <button type="submit" className="px-6 py-3 bg-green-600 text-white rounded-xl">Save Driver</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Success Popup */}
+      {showSuccessPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="flex items-center space-x-3 mb-4">
+              <CheckCircle className="w-8 h-8 text-green-500" />
+              <h3 className="text-lg font-semibold text-gray-900">Success!</h3>
+            </div>
+            <p className="text-gray-600 mb-6">{successMessage}</p>
+            <button
+              onClick={() => setShowSuccessPopup(false)}
+              className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Maintenance Confirmation Popup */}
+      {showMaintenancePopup && maintenanceVehicle && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="flex items-center space-x-3 mb-4">
+              <Wrench className="w-8 h-8 text-orange-500" />
+              <h3 className="text-lg font-semibold text-gray-900">Confirm Action</h3>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to mark <strong>{maintenanceVehicle.make} {maintenanceVehicle.model}</strong> as{' '}
+              <strong>{maintenanceAction === 'maintenance' ? 'maintenance' : 'available'}</strong>?
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowMaintenancePopup(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmMaintenanceAction}
+                className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${
+                  maintenanceAction === 'maintenance' 
+                    ? 'bg-orange-600 hover:bg-orange-700' 
+                    : 'bg-green-600 hover:bg-green-700'
+                }`}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Vehicle Documents Modal */}
+      {showVehicleDocuments && selectedVehicle && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-4xl w-full mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">
+                  Vehicle Documents - {selectedVehicle.make} {selectedVehicle.model}
+                </h3>
+                <p className="text-gray-600">License Plate: {selectedVehicle.licensePlate}</p>
+              </div>
+              <button
+                onClick={() => setShowVehicleDocuments(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Contract Document */}
+              <div className="border rounded-lg p-4">
+                <h4 className="font-semibold text-gray-900 mb-3">Contract Document</h4>
+                {selectedVehicle.contractDoc ? (
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => handleDownloadDocument(selectedVehicle.contractDoc, `contract_${selectedVehicle.licensePlate}.pdf`)}
+                      className="w-full px-3 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm"
+                    >
+                      📄 Download Contract
+                    </button>
+                    <p className="text-xs text-gray-500">
+                      Expiry: {selectedVehicle.contractExpiry || 'Not set'}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm">No contract document uploaded</p>
+                )}
+              </div>
+
+              {/* Red Book Document */}
+              <div className="border rounded-lg p-4">
+                <h4 className="font-semibold text-gray-900 mb-3">Red Book Inspection</h4>
+                {selectedVehicle.redBookDoc ? (
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => handleDownloadDocument(selectedVehicle.redBookDoc, `redbook_${selectedVehicle.licensePlate}.pdf`)}
+                      className="w-full px-3 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors text-sm"
+                    >
+                      📄 Download Red Book
+                    </button>
+                    <p className="text-xs text-gray-500">
+                      Expiry: {selectedVehicle.redBookExpiry || 'Not set'}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm">No red book document uploaded</p>
+                )}
+              </div>
+
+              {/* Registration Document */}
+              <div className="border rounded-lg p-4">
+                <h4 className="font-semibold text-gray-900 mb-3">Registration Document</h4>
+                {selectedVehicle.registrationDoc ? (
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => handleDownloadDocument(selectedVehicle.registrationDoc, `registration_${selectedVehicle.licensePlate}.pdf`)}
+                      className="w-full px-3 py-2 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors text-sm"
+                    >
+                      📄 Download Registration
+                    </button>
+                    <p className="text-xs text-gray-500">
+                      Expiry: {selectedVehicle.registrationExpiry || 'Not set'}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm">No registration document uploaded</p>
+                )}
+              </div>
+
+              {/* Insurance Document */}
+              <div className="border rounded-lg p-4">
+                <h4 className="font-semibold text-gray-900 mb-3">Insurance Document</h4>
+                {selectedVehicle.insuranceDoc ? (
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => handleDownloadDocument(selectedVehicle.insuranceDoc, `insurance_${selectedVehicle.licensePlate}.pdf`)}
+                      className="w-full px-3 py-2 bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200 transition-colors text-sm"
+                    >
+                      📄 Download Insurance
+                    </button>
+                    <p className="text-xs text-gray-500">
+                      Expiry: {selectedVehicle.insuranceExpiry || 'Not set'}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm">No insurance document uploaded</p>
+                )}
+              </div>
+
+              {/* CPV Document */}
+              <div className="border rounded-lg p-4">
+                <h4 className="font-semibold text-gray-900 mb-3">CPV Registration</h4>
+                {selectedVehicle.cpvDoc ? (
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => handleDownloadDocument(selectedVehicle.cpvDoc, `cpv_${selectedVehicle.licensePlate}.pdf`)}
+                      className="w-full px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-sm"
+                    >
+                      📄 Download CPV
+                    </button>
+                    <p className="text-xs text-gray-500">
+                      Expiry: {selectedVehicle.cpvExpiry || 'Not set'}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm">No CPV document uploaded</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

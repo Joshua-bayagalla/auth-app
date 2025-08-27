@@ -253,7 +253,7 @@ app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// Serve uploaded documents and vehicle photos with better error handling
+// Serve uploaded documents and vehicle photos with enhanced error handling and caching
 app.use('/uploads', (req, res, next) => {
   // Add CORS headers for uploads
   res.header('Access-Control-Allow-Origin', '*');
@@ -266,12 +266,50 @@ app.use('/uploads', (req, res, next) => {
   
   // Check if file exists before serving
   const filePath = path.join(__dirname, 'uploads', req.path);
+  
   if (!fs.existsSync(filePath)) {
+    // Try to find the file in different subdirectories
+    const possiblePaths = [
+      path.join(__dirname, 'uploads', 'vehicles', path.basename(req.path)),
+      path.join(__dirname, 'uploads', 'licenses', path.basename(req.path)),
+      path.join(__dirname, 'uploads', 'payments', path.basename(req.path)),
+      path.join(__dirname, 'uploads', 'contracts', path.basename(req.path)),
+      path.join(__dirname, 'uploads', 'documents', path.basename(req.path))
+    ];
+    
+    let foundPath = null;
+    for (const possiblePath of possiblePaths) {
+      if (fs.existsSync(possiblePath)) {
+        foundPath = possiblePath;
+        break;
+      }
+    }
+    
+    if (foundPath) {
+      // File found in a different directory, serve it
+      const ext = path.extname(foundPath).toLowerCase();
+      const mimeType = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+        '.pdf': 'application/pdf'
+      }[ext] || 'application/octet-stream';
+      
+      res.setHeader('Content-Type', mimeType);
+      res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+      return res.sendFile(foundPath);
+    }
+    
     // Return a default placeholder image instead of 404
     const placeholderPath = path.join(__dirname, 'public', 'placeholder.jpg');
     if (fs.existsSync(placeholderPath)) {
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
       return res.sendFile(placeholderPath);
     }
+    
     // If no placeholder, return a simple 404 with better error message
     return res.status(404).json({ 
       error: 'File not found', 
@@ -279,6 +317,20 @@ app.use('/uploads', (req, res, next) => {
       path: req.path 
     });
   }
+  
+  // File exists, serve it with proper headers
+  const ext = path.extname(filePath).toLowerCase();
+  const mimeType = {
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+    '.pdf': 'application/pdf'
+  }[ext] || 'application/octet-stream';
+  
+  res.setHeader('Content-Type', mimeType);
+  res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
   
   // Serve the file
   express.static(path.join(__dirname, 'uploads'))(req, res, next);
