@@ -25,11 +25,12 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// MongoDB Connection
+// MongoDB Connection with better error handling and reconnection
 const MONGODB_URI = process.env.MONGODB_URI;
 let db;
+let mongoClient;
 
-// Connect to MongoDB
+// Connect to MongoDB with retry logic
 async function connectToMongoDB() {
   if (!MONGODB_URI) {
     console.error('MONGODB_URI is not set. Refusing to start to avoid losing users in memory.');
@@ -37,14 +38,25 @@ async function connectToMongoDB() {
   }
   
   try {
-    const client = new MongoClient(MONGODB_URI);
-    await client.connect();
-    db = client.db('carrental');
+    mongoClient = new MongoClient(MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    });
+    
+    await mongoClient.connect();
+    db = mongoClient.db('carrental');
     console.log('Connected to MongoDB successfully!');
     
-    // Ensure collections exist without failing if they already do
+    // Test the connection
+    await db.admin().ping();
+    console.log('MongoDB ping successful!');
+    
+    // Ensure collections exist and create indexes
     const requiredCollections = ['users', 'vehicles', 'drivers', 'tokens'];
     const existing = new Set((await db.listCollections().toArray()).map(c => c.name));
+    
     for (const name of requiredCollections) {
       if (!existing.has(name)) {
         try {
@@ -55,13 +67,35 @@ async function connectToMongoDB() {
         }
       }
     }
-    console.log('MongoDB collections ready!');
+    
+    // Create indexes for better performance
+    try {
+      await db.collection('users').createIndex({ email: 1 }, { unique: true });
+      await db.collection('vehicles').createIndex({ licensePlate: 1 }, { unique: true });
+      await db.collection('drivers').createIndex({ email: 1 });
+      await db.collection('drivers').createIndex({ selectedVehicleId: 1 });
+      console.log('MongoDB indexes created successfully!');
+    } catch (e) {
+      console.warn('Could not create indexes:', e?.message || e);
+    }
+    
+    console.log('MongoDB collections and indexes ready!');
   } catch (error) {
     console.error('MongoDB connection error:', error);
     // Hard exit to avoid in-memory fallback (prevents user data loss)
     process.exit(1);
   }
 }
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+  console.log('Shutting down gracefully...');
+  if (mongoClient) {
+    await mongoClient.close();
+    console.log('MongoDB connection closed.');
+  }
+  process.exit(0);
+});
 
 // Initialize MongoDB connection
 connectToMongoDB();
@@ -221,8 +255,65 @@ app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// Serve uploaded documents and vehicle photos
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve uploaded documents and vehicle photos with better error handling
+app.use('/uploads', (req, res, next) => {
+  // Add CORS headers for uploads
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  
+  // Check if file exists before serving
+  const filePath = path.join(__dirname, 'uploads', req.path);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'File not found' });
+  }
+  
+  // Serve the file
+  express.static(path.join(__dirname, 'uploads'))(req, res, next);
+});
+
+// Health check endpoint
+app.get('/api/health', async (req, res) => {
+  try {
+    const health = {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      mongodb: 'disconnected',
+      uploads: 'unknown'
+    };
+    
+    // Check MongoDB connection
+    if (db) {
+      try {
+        await db.admin().ping();
+        health.mongodb = 'connected';
+      } catch (e) {
+        health.mongodb = 'error';
+        health.mongodbError = e.message;
+      }
+    }
+    
+    // Check uploads directory
+    const uploadsDir = path.join(__dirname, 'uploads');
+    if (fs.existsSync(uploadsDir)) {
+      health.uploads = 'available';
+    } else {
+      health.uploads = 'missing';
+    }
+    
+    res.json(health);
+  } catch (error) {
+    res.status(500).json({ 
+      status: 'error', 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
 
 // Swagger UI route
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(specs, {
@@ -825,31 +916,76 @@ app.use('/api/*', (req, res, next) => {
   next();
 });
 
-// Disk-based multer storage for uploads
+// Disk-based multer storage for uploads with better organization
 const diskStorage = multer.diskStorage({
   destination: function (req, file, cb) {
     try {
       const baseDir = path.join(__dirname, 'uploads');
       let subDir = 'documents';
-      if (file.fieldname && /vehiclePhoto/i.test(file.fieldname)) subDir = 'vehicles';
+      
+      // Organize files by type
+      if (file.fieldname && /vehiclePhoto/i.test(file.fieldname)) {
+        subDir = 'vehicles';
+      } else if (file.fieldname && /license/i.test(file.fieldname)) {
+        subDir = 'licenses';
+      } else if (file.fieldname && /bond|rent/i.test(file.fieldname)) {
+        subDir = 'payments';
+      } else if (file.fieldname && /contract/i.test(file.fieldname)) {
+        subDir = 'contracts';
+      }
+      
       const dest = path.join(baseDir, subDir);
       fs.mkdirSync(dest, { recursive: true });
       cb(null, dest);
     } catch (e) {
+      console.error('Error creating upload directory:', e);
       cb(e);
     }
   },
   filename: function (req, file, cb) {
-    const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const safe = (file.originalname || 'file').replace(/[^a-zA-Z0-9._-]/g, '_');
-    cb(null, `${unique}-${safe}`);
+    try {
+      const timestamp = Date.now();
+      const random = Math.round(Math.random() * 1e9);
+      const originalName = file.originalname || 'file';
+      const extension = path.extname(originalName);
+      const baseName = path.basename(originalName, extension);
+      const safeName = baseName.replace(/[^a-zA-Z0-9._-]/g, '_');
+      
+      const filename = `${timestamp}-${random}-${safeName}${extension}`;
+      cb(null, filename);
+    } catch (e) {
+      console.error('Error generating filename:', e);
+      cb(e);
+    }
   }
 });
 
 const uploadDisk = multer({
   storage: diskStorage,
-  limits: { fileSize: 5 * 1024 * 1024 }
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    // Allow images and PDFs
+    const allowed = /jpeg|jpg|png|webp|pdf|gif/;
+    if (allowed.test(file.mimetype)) {
+      return cb(null, true);
+    }
+    return cb(new Error(`File type ${file.mimetype} not allowed. Only images and PDFs are supported.`));
+  }
 });
+
+// Helper function to ensure MongoDB operations are stable
+async function ensureMongoDBOperation(operation, fallback = null) {
+  try {
+    if (!db) {
+      console.warn('MongoDB not connected, using fallback');
+      return fallback;
+    }
+    return await operation();
+  } catch (error) {
+    console.error('MongoDB operation failed:', error);
+    return fallback;
+  }
+}
 
 app.post('/api/vehicles', uploadDisk.fields([
   { name: 'vehiclePhoto', maxCount: 1 },
@@ -871,8 +1007,12 @@ app.post('/api/vehicles', uploadDisk.fields([
       return res.status(400).json({ error: 'Make, model, year, and license plate are required' });
     }
 
-    const vehiclesCollection = getVehiclesCollection();
-    const exists = vehiclesCollection ? await vehiclesCollection.findOne({ licensePlate }) : vehicles.find(v => v.licensePlate === licensePlate);
+    // Check for existing vehicle with same license plate
+    const exists = await ensureMongoDBOperation(
+      async () => await getVehiclesCollection().findOne({ licensePlate }),
+      vehicles.find(v => v.licensePlate === licensePlate)
+    );
+    
     if (exists) {
       return res.status(400).json({ error: 'Vehicle with this license plate already exists' });
     }
@@ -915,12 +1055,19 @@ app.post('/api/vehicles', uploadDisk.fields([
       updatedAt: new Date().toISOString()
     };
 
-    if (vehiclesCollection) {
-        await vehiclesCollection.insertOne(newVehicle);
+    // Save vehicle to MongoDB or fallback to memory
+    const result = await ensureMongoDBOperation(
+      async () => await getVehiclesCollection().insertOne(newVehicle),
+      null
+    );
+    
+    if (result) {
+      console.log('Vehicle saved to MongoDB successfully');
     } else {
-      // No DB available: keep in memory
+      // Fallback to in-memory storage
       vehicles.push(newVehicle);
-      saveData(users, verificationTokens, vehicles, drivers);
+      await saveData(users, verificationTokens, vehicles, drivers);
+      console.log('Vehicle saved to in-memory storage');
     }
     
     res.json({ message: 'Vehicle added successfully', vehicle: newVehicle });
@@ -1062,9 +1209,15 @@ const uploadDriverDocs = multer({
   storage: diskStorage,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    const allowed = /jpeg|jpg|png|webp|pdf/;
-    if (allowed.test(file.mimetype)) return cb(null, true);
-    return cb(new Error('Only images or PDFs allowed'));
+    try {
+      const allowed = /jpeg|jpg|png|webp|pdf|gif/;
+      if (allowed.test(file.mimetype)) {
+        return cb(null, true);
+      }
+      return cb(new Error(`File type ${file.mimetype} not allowed. Only images and PDFs are supported.`));
+    } catch (error) {
+      return cb(new Error('File validation error'));
+    }
   }
 }).fields([
   { name: 'licenseFront', maxCount: 1 },
